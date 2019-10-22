@@ -470,7 +470,7 @@ void MainApp::createRaytracingOutputResource() {
 }
 
 void MainApp::buildGeometry() {
-    Index indices[] =
+    Index indicestmp[] =
     {
         3,1,0,
         2,1,3,
@@ -491,7 +491,14 @@ void MainApp::buildGeometry() {
         23,20,22
     };
 
-    Vertex vertices[] =
+    Index indices[ARRAYSIZE(indicestmp) * 2];
+    int size = ARRAYSIZE(indicestmp);
+    for (int i = 0; i < size; i++) {
+        indices[i] = indicestmp[i];
+        indices[i + size] = indices[i] + 24;
+    }
+
+    Vertex verticestmp[] =
     {
         { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
     { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
@@ -523,6 +530,15 @@ void MainApp::buildGeometry() {
     { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
     { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
     };
+
+    Vertex vertices[ARRAYSIZE(verticestmp) * 2];
+    size = ARRAYSIZE(verticestmp);
+    for (int i = 0; i < size; i++) {
+        vertices[i] = verticestmp[i];
+        XMFLOAT3 pos = verticestmp[i].position;
+        vertices[i + size].position = XMFLOAT3(pos.x + 3, pos.y + 0, pos.z + 0);
+        vertices[i + size].normal = verticestmp[i].normal;
+    }
 
 
     ID3D12Device* device = mDeviceResource->getDevice();
