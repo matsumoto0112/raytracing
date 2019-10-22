@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ImGui/Include/ImGuiInclude.h"
 #include <d3d12.h>
-#include "Framework/Utility/Singleton.h"
-#include "Framework/Utility/Typedef.h"
+#include "ImGui/ImGuiInclude.h"
+#include "Utility/Singleton.h"
+#include "Utility/Typedef.h"
 
 namespace Framework {
     /**

@@ -2,14 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imstb_truetype.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imconfig.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_impl_dx12.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_impl_win32.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_internal.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imstb_rectpack.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imstb_textedit.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\MathUtility.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Matrix3x3.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.h" />
@@ -37,15 +29,18 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDownProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\RaytracingHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\Input.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\ImGuiInclude.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiInclude.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_truetype.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imconfig.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_internal.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_textedit.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_draw.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_impl_dx12.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_impl_win32.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_widgets.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\MathUtility.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Matrix3x3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.cpp" />
@@ -62,5 +57,10 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Scene\SceneBase.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDownProc.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_widgets.cpp" />
   </ItemGroup>
 </Project>
