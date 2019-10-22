@@ -6,11 +6,14 @@
 #include "RaytracingHelper.hlsli"
 
 RaytracingAccelerationStructure g_scene : register(t0, space0);
-RWTexture2D<float4> g_renderTarget : register(u0);
 ByteAddressBuffer Indices : register(t1, space0);
 StructuredBuffer<Vertex> Vertices : register(t2, space0);
 
+RWTexture2D<float4> g_renderTarget : register(u0);
+
 ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
+ConstantBuffer<Instance> l_instance : register(b1);
+
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 
 float3 hitAttribute(float3 vertexAttribute[3], MyAttr attr) {
@@ -45,7 +48,7 @@ inline uint3 getIndex() {
     uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
     uint baseIndex = PrimitiveIndex() * triangleIndexStride;
 
-    return load3x16BitIndices(baseIndex, Indices);
+    return load3x16BitIndices(baseIndex + l_instance.indexOffset * 2, Indices);
 }
 
 [shader("closesthit")]
@@ -53,9 +56,9 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttr attr) {
     uint3 indices = getIndex();
     float3 normals[3] =
     {
-        Vertices[indices[0]].normal,
-        Vertices[indices[1]].normal,
-        Vertices[indices[2]].normal,
+        Vertices[indices[0] + l_instance.vertexOffset].normal,
+        Vertices[indices[1] + l_instance.vertexOffset].normal,
+        Vertices[indices[2] + l_instance.vertexOffset].normal,
     };
 
     float3 N = hitAttribute(normals, attr);

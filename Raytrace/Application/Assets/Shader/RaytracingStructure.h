@@ -47,9 +47,10 @@ struct RayPayload {
     XMFLOAT4 color;
 };
 
-struct PrimitiveInstancePerFrameBuffer {
-    XMMATRIX localToBLAS;
-    XMMATRIX BLASToLocal;
+struct Instance {
+    XMFLOAT4 quatRot;
+    UINT vertexOffset;
+    UINT indexOffset;
 };
 
 #endif // RAYTRACINGHLSLCOMPAT_H

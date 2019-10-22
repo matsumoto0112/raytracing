@@ -18,6 +18,9 @@ using namespace DirectX;
 
 using namespace Framework::DX;
 
+/**
+* @brief グローバルのリソースパラメータ
+*/
 namespace GlobalRootSignatureParameter {
     enum MyEnum {
         RenderTarget = 0,
@@ -28,9 +31,12 @@ namespace GlobalRootSignatureParameter {
     };
 } //GlobalRootSignatureParameter 
 
+/**
+* @brief ローカルのルートシグネチャパラメータ
+*/
 namespace LocalRootSignatureParams {
     enum MyEnum {
-        ViewportConstantSlot = 0,
+        Instance = 0,
         Count
     };
 } //LocalRootSignatureParams
@@ -103,7 +109,7 @@ private:
     ComPtr<ID3D12StateObject> mDXRStateObject;
 
     ComPtr<ID3D12RootSignature> mRaytracingGlobalRootSignature; //!< グローバルルートシグネチャ
-    //ComPtr<ID3D12RootSignature> mRaytracingLocalRootSignature; //!< ローカルルートシグネチャ
+    ComPtr<ID3D12RootSignature> mRaytracingLocalRootSignature; //!< ローカルルートシグネチャ
 
     //ディスクリプタヒープ
     ComPtr<ID3D12DescriptorHeap> mDescriptorHeap;
@@ -111,14 +117,11 @@ private:
     UINT mDescriptorSize;
 
     ConstantBuffer<SceneConstantBuffer> mSceneCB;
+    ConstantBuffer<Instance> mInstanceCB;
     XMVECTOR mEye, mAt, mUp;
 
     D3DBuffer mIndexBuffer;
     D3DBuffer mVertexBuffer;
-
-    D3D12_RAYTRACING_AABB mAABB;
-    D3DBuffer mAABBBuffer;
-    StructuredBuffer<>;
 
     //AS
     ComPtr<ID3D12Resource> mBottomLevelAS;
@@ -139,37 +142,113 @@ private:
     ComPtr<ID3D12Resource> mHitGroupShaderTable;
     ComPtr<ID3D12Resource> mRayGenShaderTable;
 
-    //XMVECTOR mEye, mAt, mUp;
-
+    /**
+    * @brief カメラ行列の更新
+    */
     void updateCameraMatrices();
+    /**
+    * @brief シーンの初期化
+    */
     void initializeScene();
+    /**
+    * @brief デバイスの再生成
+    */
     void recreateD3D();
+    /**
+    * @brief レイトレーシング実行
+    */
     void doRaytracing();
+    /**
+    * @brief コンスタントバッファの作成
+    */
     void createConstantBuffers();
+    /**
+    * @brief デバイスに基づくリソースの生成
+    */
     void createDeviceDependentResources();
+    /**
+    * @brief ウィンドウサイズに基づくリソースの作成
+    */
     void createWindowSizeDependentResources();
-
+    /**
+    * @brief デバイスに基づくリソースの解放
+    */
     void releaseDeviceDependentResources();
+    /**
+    * @brief ウィンドウサイズに基づくリソースの解放
+    */
     void releaseWindowSizeDependentResources();
-
+    /**
+    * @brief レイトレーシング用インターフェース作成
+    */
     void createRaytracinginterfaces();
-
+    /**
+    * @brief ルートシグネチャを作成する
+    */
     void serializeAndCreateRaytracingRootSignature(D3D12_ROOT_SIGNATURE_DESC& desc, ComPtr<ID3D12RootSignature>* rootSig);
+    /**
+    * @brief ルートシグネチャの作成
+    */
     void createRootSignatures();
+    /**
+    * @brief DXILライブラリのサブオブジェクト作成
+    */
     void createDxilLibrarySubobject(CD3DX12_STATE_OBJECT_DESC* pipeline);
+    /**
+    * @brief ヒットグループのサブオブジェクト作成
+    */
     void createHitGroupSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline);
+    /**
+    * @brief ローカルルートシグネチャのサブオブジェクト作成
+    */
     void createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline);
+    /**
+    * @brief レイトレーシングパイプラインオブジェクト作成
+    */
     void createRaytracingPipelineStateObject();
+    /**
+    * @brief いろんな副次的なリソース作成
+    */
     void createAuxillaryDeviceResources();
+    /**
+    * @brief ディスクリプタヒープの作成
+    */
     void createDescriptorHeap();
+    /**
+    * @brief レイトレーシングの出力先を作成
+    */
     void createRaytracingOutputResource();
+    /**
+    * @brief ジオメトリの作成
+    */
     void buildGeometry();
+    /**
+    * @brief ASの作成
+    */
     void buildAccelerationStructures();
+    /**
+    * @brief シェーダーテーブル作成
+    */
     void buildShaderTables();
+    /**
+    * @brief ウィンドウサイズ更新
+    */
     void updateForSizeChange(UINT clientWidth, UINT clientHeight);
+    /**
+    * @brief レイトレーシングの出力をバックバッファにコピーする
+    */
     void copyOutput();
+    /**
+    * @brief 更新処理
+    */
     void calcFrameStatus();
+    /**
+    * @brief ディスクリプタヒープのアロケート処理
+    */
     UINT allocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, UINT descriptorIndexToUse = UINT_MAX);
+    /**
+    * @brief バッファのシェーダーリソースビューを作成する
+    */
     UINT createBufferSRV(D3DBuffer* buffer, UINT numElements, UINT elementSize);
 };
 
@@ -208,15 +287,7 @@ void MainApp::updateCameraMatrices() {
 }
 
 void MainApp::initializeScene() {
-    //カメラ設定
-    {
-        //mEye = { 0.0f,0.0f,-10.0f,1.0f };
-        //mAt = { 0.0f,0.0f,0.0f,1.0f };
-        //mUp = { 0.0f,1.0f,0.0f,1.0f };
-
-        //上記の情報をもとにカメラ行列を生成する
-        updateCameraMatrices();
-    }
+    updateCameraMatrices();
 }
 
 void MainApp::recreateD3D() {
@@ -255,7 +326,6 @@ void MainApp::doRaytracing() {
     list->SetComputeRootSignature(mRaytracingGlobalRootSignature.Get());
     mSceneCB.copyStagingToGPU(frameCount);
     list->SetComputeRootConstantBufferView(GlobalRootSignatureParameter::ConstantBuffer, mSceneCB.gpuVirtualAddress(frameCount));
-    list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::aabb);
 
     D3D12_DISPATCH_RAYS_DESC desc = {};
     list->SetDescriptorHeaps(1, mDescriptorHeap.GetAddressOf());
@@ -362,12 +432,12 @@ void MainApp::createRootSignatures() {
     {
 #define SizeOfInUint32(obj) ((sizeof(obj) - 1) / sizeof(UINT32) + 1)
 
-        //CD3DX12_ROOT_PARAMETER rootParameters[LocalRootSignatureParams::Count];
-        //rootParameters[LocalRootSignatureParams::ViewportConstantSlot].InitAsConstants(SizeOfInUint32(mRaygenCB), 0, 0);
-        //CD3DX12_ROOT_SIGNATURE_DESC localRootSignatureDesc(ARRAYSIZE(rootParameters), rootParameters);
-        //localRootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-        //serializeAndCreateRaytracingRootSignature(localRootSignatureDesc, &mRaytracingLocalRootSignature);
-        //mRaytracingLocalRootSignature->SetName(L"LocalRootSignature");
+        CD3DX12_ROOT_PARAMETER rootParameters[LocalRootSignatureParams::Count];
+        rootParameters[LocalRootSignatureParams::Instance].InitAsConstants(SizeOfInUint32(mInstanceCB), 1, 0);
+        CD3DX12_ROOT_SIGNATURE_DESC localRootSignatureDesc(ARRAYSIZE(rootParameters), rootParameters);
+        localRootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+        serializeAndCreateRaytracingRootSignature(localRootSignatureDesc, &mRaytracingLocalRootSignature);
+        mRaytracingLocalRootSignature->SetName(L"LocalRootSignature");
     }
 }
 
@@ -394,12 +464,12 @@ void MainApp::createHitGroupSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
 }
 
 void MainApp::createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
-    //auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-    //local->SetRootSignature(mRaytracingLocalRootSignature.Get());
+    auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+    local->SetRootSignature(mRaytracingLocalRootSignature.Get());
 
-    //auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-    //asso->SetSubobjectToAssociate(*local);
-    //asso->AddExport(RAY_GEN_SHADER_NAME);
+    auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+    asso->SetSubobjectToAssociate(*local);
+    asso->AddExport(HIT_GROUP_NAME);
 }
 
 void MainApp::createRaytracingPipelineStateObject() {
@@ -475,58 +545,85 @@ void MainApp::createRaytracingOutputResource() {
 }
 
 void MainApp::buildGeometry() {
+    //Index indicestmp[] =
+    //{
+    //    3,1,0,
+    //    2,1,3,
+
+    //    6,4,5,
+    //    7,4,6,
+
+    //    11,9,8,
+    //    10,9,11,
+
+    //    14,12,13,
+    //    15,12,14,
+
+    //    19,17,16,
+    //    18,17,19,
+
+    //    22,20,21,
+    //    23,20,22
+    //};
+
+    //Index indices[ARRAYSIZE(indicestmp) * 2];
+    //int size = ARRAYSIZE(indicestmp);
+    //for (int i = 0; i < size; i++) {
+    //    indices[i] = indicestmp[i];
+    //    indices[i + size] = indices[i] + 24;
+    //}
+
+    //Vertex verticestmp[] =
+    //{
+    //    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    //{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    //{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    //{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+
+    //{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    //{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    //{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    //{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+
+    //{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    //{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    //{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    //{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+
+    //{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    //{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    //{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    //{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+
+    //{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    //{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    //{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    //{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+
+    //{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    //{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    //{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    //{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    //};
+
+    //Vertex vertices[ARRAYSIZE(verticestmp) * 2];
+    //size = ARRAYSIZE(verticestmp);
+    //for (int i = 0; i < size; i++) {
+    //    vertices[i] = verticestmp[i];
+    //    XMFLOAT3 pos = verticestmp[i].position;
+    //    vertices[i + size].position = XMFLOAT3(pos.x + 3, pos.y + 0, pos.z + 0);
+    //    vertices[i + size].normal = verticestmp[i].normal;
+    //}
+
     Index indices[] =
     {
-        3,1,0,
-        2,1,3,
-
-        6,4,5,
-        7,4,6,
-
-        11,9,8,
-        10,9,11,
-
-        14,12,13,
-        15,12,14,
-
-        19,17,16,
-        18,17,19,
-
-        22,20,21,
-        23,20,22
+        0,1,2
     };
-
     Vertex vertices[] =
     {
-        { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-
-    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-
-    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-
-    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-
-    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-
-    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+        {XMFLOAT3(0,3,0),XMFLOAT3(0,0,-1)},
+        {XMFLOAT3(1,-0,0),XMFLOAT3(0,0,-1)},
+        {XMFLOAT3(-1,0,0),XMFLOAT3(0,0,-1)},
     };
 
     ID3D12Device* device = mDeviceResource->getDevice();
@@ -536,20 +633,6 @@ void MainApp::buildGeometry() {
     //UINT IB = createBufferSRV(&mIndexBuffer, ARRAYSIZE(indices), sizeof(Index));
     UINT IB = createBufferSRV(&mIndexBuffer, sizeof(indices) / 4, 0);
     UINT VB = createBufferSRV(&mVertexBuffer, ARRAYSIZE(vertices), sizeof(Vertex));
-
-    auto initAABB = [&](const XMFLOAT3& pos, const XMFLOAT3& size) {
-        const XMFLOAT3 halfSize(size.x *0.5f, size.y *0.5f, size.z *0.5f);
-        return D3D12_RAYTRACING_AABB{
-            pos.x - halfSize.x,
-            pos.y - halfSize.y,
-            pos.y - halfSize.z,
-            pos.x + halfSize.x,
-            pos.y + halfSize.y,
-            pos.y + halfSize.z };
-    };
-
-    mAABB = initAABB(XMFLOAT3(0, 0, 0), XMFLOAT3(1, 1, 1));
-    allocateUploadBuffer(device, &mAABB, sizeof(mAABB), &mAABBBuffer.resource);
 }
 
 void MainApp::buildAccelerationStructures() {
@@ -561,34 +644,28 @@ void MainApp::buildAccelerationStructures() {
     // Reset the command list for the acceleration structure construction.
     commandList->Reset(commandAllocator, nullptr);
 
-    D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc[2] = {};
-    geometryDesc[0].Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-    geometryDesc[0].Triangles.IndexBuffer = mIndexBuffer.resource->GetGPUVirtualAddress();
-    geometryDesc[0].Triangles.IndexCount = static_cast<UINT>(mIndexBuffer.resource->GetDesc().Width) / sizeof(Index);
-    geometryDesc[0].Triangles.IndexFormat = DXGI_FORMAT_R16_UINT;
-    geometryDesc[0].Triangles.Transform3x4 = 0;
-    geometryDesc[0].Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
-    geometryDesc[0].Triangles.VertexCount = static_cast<UINT>(mVertexBuffer.resource->GetDesc().Width) / sizeof(Vertex);
-    geometryDesc[0].Triangles.VertexBuffer.StartAddress = mVertexBuffer.resource->GetGPUVirtualAddress();
-    geometryDesc[0].Triangles.VertexBuffer.StrideInBytes = sizeof(Vertex);
-    geometryDesc[0].Type = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-    geometryDesc[1].AABBs.AABBCount = 1;
-    geometryDesc[1].AABBs.AABBs.StrideInBytes = sizeof(D3D12_RAYTRACING_AABB);
-    geometryDesc[1].AABBs.AABBs.StartAddress = mAABBBuffer.resource->GetGPUVirtualAddress();
-
+    D3D12_RAYTRACING_GEOMETRY_DESC geometryDesc = {};
+    geometryDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+    geometryDesc.Triangles.IndexBuffer = mIndexBuffer.resource->GetGPUVirtualAddress();
+    geometryDesc.Triangles.IndexCount = static_cast<UINT>(mIndexBuffer.resource->GetDesc().Width) / sizeof(Index);
+    geometryDesc.Triangles.IndexFormat = DXGI_FORMAT_R16_UINT;
+    geometryDesc.Triangles.Transform3x4 = 0;
+    geometryDesc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+    geometryDesc.Triangles.VertexCount = static_cast<UINT>(mVertexBuffer.resource->GetDesc().Width) / sizeof(Vertex);
+    geometryDesc.Triangles.VertexBuffer.StartAddress = mVertexBuffer.resource->GetGPUVirtualAddress();
+    geometryDesc.Triangles.VertexBuffer.StrideInBytes = sizeof(Vertex);
 
     // Mark the geometry as opaque. 
     // PERFORMANCE TIP: mark geometry as opaque whenever applicable as it can enable important ray processing optimizations.
     // Note: When rays encounter opaque geometry an any hit shader will not be executed whether it is present or not.
-    geometryDesc[0].Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
-    geometryDesc[1].Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+    geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
 
     // Get required sizes for an acceleration structure.
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS topLevelInputs = {};
     topLevelInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
     topLevelInputs.Flags = buildFlags;
-    topLevelInputs.NumDescs = ARRAYSIZE(geometryDesc);
+    topLevelInputs.NumDescs = 1;
     topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPrebuildInfo = {};
@@ -597,7 +674,7 @@ void MainApp::buildAccelerationStructures() {
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO bottomLevelPrebuildInfo = {};
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS bottomLevelInputs = topLevelInputs;
     bottomLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
-    bottomLevelInputs.pGeometryDescs = geometryDesc;
+    bottomLevelInputs.pGeometryDescs = &geometryDesc;
     mDXRDevice->GetRaytracingAccelerationStructurePrebuildInfo(&bottomLevelInputs, &bottomLevelPrebuildInfo);
 
     ComPtr<ID3D12Resource> scratchResource;
@@ -674,8 +751,16 @@ void MainApp::buildShaderTables() {
     shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
     {
+        struct RootArguments {
+            Instance cb;
+        } rootArguments;
+        Instance cb;
+        XMStoreFloat4(&cb.quatRot, XMQuaternionIdentity());
+        cb.vertexOffset = 0; cb.indexOffset = 0;
+        rootArguments.cb = cb;
+
         UINT numShaderRecords = 1;
-        UINT shaderRecordSize = shaderIDSize;
+        UINT shaderRecordSize = shaderIDSize + sizeof(RootArguments);
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"RayGenShaderTable");
         table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize));
         mRayGenShaderTable = table.getResource();

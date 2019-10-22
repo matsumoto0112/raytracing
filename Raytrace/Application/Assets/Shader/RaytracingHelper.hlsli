@@ -48,6 +48,10 @@ inline float3 hitWorldPosition() {
     return WorldRayOrigin() + RayTCurrent() * WorldRayDirection();
 }
 
+inline float3 rotVectorByQuat(float3 v, float4 q) {
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
 
 
 #endif //! INCLUDE_SHADER_RAYTRACINGHELPER_HLSLI
