@@ -11,6 +11,7 @@
 #include <array>
 #include <vector>
 #include <unordered_map>
+#include <fbxsdk.h>
 
 #include <d3d12.h>
 #include <dxgi1_6.h>

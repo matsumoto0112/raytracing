@@ -3,12 +3,14 @@
   <ItemGroup>
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\stdafx.cpp" />
+    <ClCompile Include="Source\FBXLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
     <ClInclude Include="Assets\Shader\RaytracingStructure.h" />
     <ClInclude Include="Assets\Shader\RaytracingTypedef.h" />
     <ClInclude Include="Assets\Shader\RaytracingDefine.h" />
+    <ClInclude Include="Source\FBXLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\Shader\Raytracing.hlsl" />

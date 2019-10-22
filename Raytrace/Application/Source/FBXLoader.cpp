@@ -168,9 +168,9 @@ namespace Framework {
             const size_t size = position->size();
             index->resize(size * 3);
             for (int i = 0; i < size; i++) {
-                (*index)[i * 3 + 0] = i * 3 + 2;
+                (*index)[i * 3 + 0] = i * 3 + 0;
                 (*index)[i * 3 + 1] = i * 3 + 1;
-                (*index)[i * 3 + 2] = i * 3 + 0;
+                (*index)[i * 3 + 2] = i * 3 + 2;
             }
         }
 

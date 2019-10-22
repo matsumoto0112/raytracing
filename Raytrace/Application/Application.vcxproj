@@ -73,6 +73,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\FBXLoader.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -83,6 +84,7 @@
     <ClInclude Include="Assets\Shader\RaytracingDefine.h" />
     <ClInclude Include="Assets\Shader\RaytracingStructure.h" />
     <ClInclude Include="Assets\Shader\RaytracingTypedef.h" />
+    <ClInclude Include="Source\FBXLoader.h" />
     <ClInclude Include="Source\stdafx.h" />
   </ItemGroup>
   <ItemGroup>

@@ -1,13 +1,11 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <fbxsdk.h>
 #include <Windows.h>
 #include "Framework/Math/Vector2.h"
 #include "Framework/Math/Vector3.h"
 #include "Framework/Math/Vector4.h"
 
-#pragma comment(lib,"libfbxsdk-mt.lib")
 namespace Framework {
 namespace Utility {
 

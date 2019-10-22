@@ -62,8 +62,8 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttr attr) {
     };
 
     float3 N = hitAttribute(normals, attr);
-    N = rotVectorByQuat(N, l_instance.quatRot);
-    float3 lightPosition = float3(0, 10, -10);
+    //N = rotVectorByQuat(N, l_instance.quatRot);
+    float3 lightPosition = float3(0, 10, 0);
     float3 L = normalize(lightPosition - hitWorldPosition());
 
     float3 lightColor = float3(1, 0, 0);
