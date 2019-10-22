@@ -562,7 +562,7 @@ void MainApp::buildGeometry() {
         vertices[i].position = { pos[i].x * scale,pos[i].y * scale,pos[i].z  * scale};
         vertices[i].normal = { normal[i].x,normal[i].y,normal[i].z };
     }
-    MY_DEBUG_LOG(L"load model");
+
     //std::vector<Index> indices =
     //{
     //    3,1,0,

@@ -16,12 +16,14 @@ ConstantBuffer<Instance> l_instance : register(b1);
 
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 
+//当たった点の法線を取得する
 float3 hitAttribute(float3 vertexAttribute[3], MyAttr attr) {
     return vertexAttribute[0] +
         attr.barycentrics.x * (vertexAttribute[1] - vertexAttribute[0]) +
         attr.barycentrics.y * (vertexAttribute[2] - vertexAttribute[0]);
 }
 
+//ランバート反射の色を取得する
 float3 calcLam(float3 color, float3 L, float3 N) {
     return color * max(0.0, dot(L, N)) * (1.0 / PI);
 }
@@ -30,6 +32,7 @@ float3 calcLam(float3 color, float3 L, float3 N) {
 void MyRaygenShader() {
     Ray ray = generateCameraRay(DispatchRaysIndex().xy, g_sceneCB.cameraPosition.xyz, g_sceneCB.projectionToWorld);
 
+    //レイを飛ばす
     RayDesc rayDesc;
     rayDesc.Origin = ray.origin;
     rayDesc.Direction = ray.direction;
@@ -53,7 +56,9 @@ inline uint3 getIndex() {
 
 [shader("closesthit")]
 void MyClosestHitShader(inout RayPayload payload, in MyAttr attr) {
+    //頂点を取得するためのインデックスを取得する
     uint3 indices = getIndex();
+    //頂点のノーマルを取得する
     float3 normals[3] =
     {
         Vertices[indices[0] + l_instance.vertexOffset].normal,
@@ -62,7 +67,7 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttr attr) {
     };
 
     float3 N = hitAttribute(normals, attr);
-    //N = rotVectorByQuat(N, l_instance.quatRot);
+    N = rotVectorByQuat(N, l_instance.quatRot);
     float3 lightPosition = float3(0, 10, 0);
     float3 L = normalize(lightPosition - hitWorldPosition());
 
