@@ -7,32 +7,7 @@
 #include "Framework/Window/Procedure/CreateProc.h"
 #include "Window/Procedure/SysKeyDownProc.h"
 #include "Window/Procedure/ImGuiProc.h"
-
-namespace {
-    class Print : public Framework::Window::IWindowProc {
-    public:
-        /**
-        * @brief コンストラクタ
-        */
-        Print() { }
-        /**
-        * @brief デストラクタ
-        */
-        ~Print() { }
-        /**
-        * @brief ウィンドウプロシージャ処理
-        */
-        virtual LRESULT CALLBACK wndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam, bool* isReturn) override {
-            if (msg == WM_PAINT) {
-                Framework::Device::ISystemEventNotify* game = reinterpret_cast<Framework::Device::ISystemEventNotify*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-                *isReturn = true;
-                game->onUpdate();
-                game->onRender();
-            }
-            return 0L;
-        }
-    };
-}
+#include "Window/Procedure/PaintProc.h"
 
 namespace Framework {
     //コンストラクタ
@@ -48,7 +23,7 @@ namespace Framework {
             Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::DestroyProc>());
             Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::ImGuiProc>());
             Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::SysKeyDownProc>(this));
-            Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Print>());
+            Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::PaintProc>());
 
             //ウィンドウ生成
 

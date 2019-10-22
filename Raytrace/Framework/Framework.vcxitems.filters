@@ -39,6 +39,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_textedit.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDownProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\ImGuiProc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -64,5 +65,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\ImGuiProc.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.cpp" />
   </ItemGroup>
 </Project>

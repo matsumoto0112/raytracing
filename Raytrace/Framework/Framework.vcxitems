@@ -50,6 +50,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Game.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\ImGuiProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\IWindowProc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\Procedures.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDownProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Window.h" />
@@ -75,6 +76,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Game.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\ImGuiProc.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.cpp">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\Procedures.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDownProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Window.cpp" />
