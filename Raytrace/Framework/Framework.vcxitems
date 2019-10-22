@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{975c745a-557b-493f-8c80-8c3cb8e7142c}</ItemsProjectGuid>
+    <ItemsRootNamespace>Framework</ItemsRootNamespace>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Device\ISystemEventNotify.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\IDeviceState.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\RaytracingHelper.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imconfig.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_impl_dx12.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_impl_win32.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_internal.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imstb_rectpack.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imstb_textedit.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imstb_truetype.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\d3dx12.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\MathUtility.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Matrix3x3.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Quaternion.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector2.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector3.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector4.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Scene\SceneBase.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Debug.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\DXHelper.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Singleton.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringBuilder.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Typedef.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\CreateProc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Game.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\IWindowProc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\Procedures.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDownProc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Window\Window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_draw.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_impl_dx12.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_impl_win32.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_widgets.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\MathUtility.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Matrix3x3.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Quaternion.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector2.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector3.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector4.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Scene\SceneBase.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Debug.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\CreateProc.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Game.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\Procedures.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDownProc.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Window\Window.cpp" />
+  </ItemGroup>
+</Project>
