@@ -18,6 +18,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Device\ISystemEventNotify.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\DXRInterface.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\IDeviceState.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\RaytracingHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.h" />
@@ -57,6 +58,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\DXRInterface.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_draw.cpp" />

@@ -81,10 +81,6 @@ namespace Framework {
 
     void Game::onRender() {
         if (!mDeviceResource->isWindowVisible())return;
-        //mDeviceResource->prepare(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT);
-
-        //mDeviceResource->present(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
-        ////MY_DEBUG_LOG(L"render");
     }
 
     //èIóπèàóù

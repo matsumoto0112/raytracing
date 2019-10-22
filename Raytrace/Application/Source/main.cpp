@@ -9,6 +9,7 @@
 #include "FBXLoader.h"
 #include <iomanip>
 #include "Framework/ImGui/ImGuiManager.h"
+#include "DX/DXRInterface.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -67,6 +68,8 @@ public:
     virtual void onInit() override {
         Game::onInit();
 
+        mDXRInterface = std::make_unique<Framework::DX::DXRInterface>(mDeviceResource.get());
+
         //シーン情報を先に作っておく
         initializeScene();
         //リソースが作られた後にデバイスを作成する
@@ -121,9 +124,7 @@ private:
     static constexpr UINT NUM_BLAS = 1; //ボトムレベルAS使用数は1つ
 
     //DXRオブジェクト
-    ComPtr<ID3D12Device5> mDXRDevice;
-    ComPtr<ID3D12GraphicsCommandList5> mDXRCommandList;
-    ComPtr<ID3D12StateObject> mDXRStateObject;
+    std::unique_ptr<Framework::DX::DXRInterface> mDXRInterface;
 
     ComPtr<ID3D12RootSignature> mRaytracingGlobalRootSignature; //!< グローバルルートシグネチャ
     ComPtr<ID3D12RootSignature> mRaytracingLocalRootSignature; //!< ローカルルートシグネチャ
@@ -350,7 +351,7 @@ void MainApp::doRaytracing() {
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::RenderTarget, mRaytracingOutputResourceUAVGpuDescriptor);
     list->SetComputeRootShaderResourceView(GlobalRootSignatureParameter::AccelerationStructureSlot, mTopLevelAS->GetGPUVirtualAddress());
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mIndexBuffer.gpuHandle);
-    dispatchRays(mDXRCommandList.Get(), mDXRStateObject.Get(), &desc);
+    dispatchRays(mDXRInterface->getCommandList(), mDXRInterface->getStateObject(), &desc);
 }
 
 void MainApp::createConstantBuffers() {
@@ -390,9 +391,7 @@ void MainApp::createWindowSizeDependentResources() {
 
 void MainApp::releaseDeviceDependentResources() {
     mRaytracingGlobalRootSignature.Reset();
-    mDXRDevice.Reset();
-    mDXRCommandList.Reset();
-    mDXRStateObject.Reset();
+    mDXRInterface->clear();
 
     mDescriptorHeap.Reset();
     mDescriptorAllocated = 0;
@@ -412,11 +411,7 @@ void MainApp::releaseWindowSizeDependentResources() {
 }
 
 void MainApp::createRaytracinginterfaces() {
-    ID3D12Device* device = mDeviceResource->getDevice();
-    ID3D12CommandList* list = mDeviceResource->getCommandList();
-
-    throwIfFailed(device->QueryInterface(IID_PPV_ARGS(&mDXRDevice)), L"Couldn't get DirectX Raytracing interface for the device.\n");
-    throwIfFailed(list->QueryInterface(IID_PPV_ARGS(&mDXRCommandList)), L"Couldn't get DirectX Raytracing interface for the command list.\n");
+    mDXRInterface->recreate();
 }
 
 void MainApp::serializeAndCreateRaytracingRootSignature(D3D12_ROOT_SIGNATURE_DESC& desc, ComPtr<ID3D12RootSignature>* rootSig) {
@@ -520,7 +515,8 @@ void MainApp::createRaytracingPipelineStateObject() {
     UINT maxDepth = 1;
     pipelineConfig->Config(maxDepth);
 
-    throwIfFailed(mDXRDevice->CreateStateObject(raytracingPipeline, IID_PPV_ARGS(&mDXRStateObject)), L"StateObject作成失敗");
+    mDXRInterface->createStateObject(raytracingPipeline);
+    //throwIfFailed(mDXRDevice->CreateStateObject(raytracingPipeline, IID_PPV_ARGS(&mDXRStateObject)), L"StateObject作成失敗");
 }
 
 void MainApp::createAuxillaryDeviceResources() {
@@ -688,13 +684,13 @@ void MainApp::buildAccelerationStructures() {
     topLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO topLevelPrebuildInfo = {};
-    mDXRDevice->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelInputs, &topLevelPrebuildInfo);
+    mDXRInterface->getDXRDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&topLevelInputs, &topLevelPrebuildInfo);
 
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO bottomLevelPrebuildInfo = {};
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS bottomLevelInputs = topLevelInputs;
     bottomLevelInputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
     bottomLevelInputs.pGeometryDescs = &geometryDesc;
-    mDXRDevice->GetRaytracingAccelerationStructurePrebuildInfo(&bottomLevelInputs, &bottomLevelPrebuildInfo);
+    mDXRInterface->getDXRDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&bottomLevelInputs, &bottomLevelPrebuildInfo);
 
     ComPtr<ID3D12Resource> scratchResource;
     allocateUAVBuffer(device, std::max(topLevelPrebuildInfo.ScratchDataSizeInBytes, bottomLevelPrebuildInfo.ScratchDataSizeInBytes), &scratchResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, L"ScratchResource");
@@ -746,7 +742,7 @@ void MainApp::buildAccelerationStructures() {
     };
 
     // Build acceleration structure.
-    BuildAccelerationStructure(mDXRCommandList.Get());
+    BuildAccelerationStructure(mDXRInterface->getCommandList());
 
     // Kick off acceleration structure construction.
     mDeviceResource->executeCommandList();
@@ -764,7 +760,7 @@ void MainApp::buildShaderTables() {
     UINT shaderIDSize;
 
     ComPtr<ID3D12StateObjectProperties> props;
-    throwIfFailed(mDXRStateObject.As(&props));
+    mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props));
     rayGenShaderID = props->GetShaderIdentifier(RAY_GEN_SHADER_NAME);
     missShaderID = props->GetShaderIdentifier(MISS_SHADER_NAME);
     hitGroupShaderID = props->GetShaderIdentifier(HIT_GROUP_NAME);
@@ -798,17 +794,7 @@ void MainApp::buildShaderTables() {
     }
 }
 
-void MainApp::updateForSizeChange(UINT clientWidth, UINT clientHeight) {
-    //float border = 0.1f;
-    //float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
-    //mRaygenCB.stencil =
-    //{
-    //    -1 + border / aspect, -1 + border,
-    //    1 - border / aspect, 1.0f - border
-    //};
-    //mRaygenCB.viewport = { -1.0f, -1.0f, 1.0f, 1.0f };
-
-}
+void MainApp::updateForSizeChange(UINT clientWidth, UINT clientHeight) { }
 
 void MainApp::copyOutput() {
     ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
@@ -833,10 +819,7 @@ void MainApp::copyOutput() {
     list->ResourceBarrier(ARRAYSIZE(postBarrier), postBarrier);
 }
 
-//static float XXX = 0.0f;
 void MainApp::calcFrameStatus() {
-    //XXX += 0.0001f;
-    //mEye = { XXX,0,-10,1 };
     updateCameraMatrices();
 }
 

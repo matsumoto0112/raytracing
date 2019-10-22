@@ -40,6 +40,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDownProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\ImGuiProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\DXRInterface.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -66,5 +67,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\ImGuiProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\DXRInterface.cpp" />
   </ItemGroup>
 </Project>
