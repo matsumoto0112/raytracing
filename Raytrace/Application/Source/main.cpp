@@ -545,86 +545,70 @@ void MainApp::createRaytracingOutputResource() {
 }
 
 void MainApp::buildGeometry() {
-    //Index indicestmp[] =
-    //{
-    //    3,1,0,
-    //    2,1,3,
-
-    //    6,4,5,
-    //    7,4,6,
-
-    //    11,9,8,
-    //    10,9,11,
-
-    //    14,12,13,
-    //    15,12,14,
-
-    //    19,17,16,
-    //    18,17,19,
-
-    //    22,20,21,
-    //    23,20,22
-    //};
-
-    //Index indices[ARRAYSIZE(indicestmp) * 2];
-    //int size = ARRAYSIZE(indicestmp);
-    //for (int i = 0; i < size; i++) {
-    //    indices[i] = indicestmp[i];
-    //    indices[i + size] = indices[i] + 24;
-    //}
-
-    //Vertex verticestmp[] =
-    //{
-    //    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    //{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-
-    //{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-    //{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-
-    //{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-
-    //{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-
-    //{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-    //{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-    //{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-
-    //{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    //{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    //{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    //};
-
-    //Vertex vertices[ARRAYSIZE(verticestmp) * 2];
-    //size = ARRAYSIZE(verticestmp);
-    //for (int i = 0; i < size; i++) {
-    //    vertices[i] = verticestmp[i];
-    //    XMFLOAT3 pos = verticestmp[i].position;
-    //    vertices[i + size].position = XMFLOAT3(pos.x + 3, pos.y + 0, pos.z + 0);
-    //    vertices[i + size].normal = verticestmp[i].normal;
-    //}
-
     Index indices[] =
     {
-        0,1,2
+        3,1,0,
+        2,1,3,
+
+        6,4,5,
+        7,4,6,
+
+        11,9,8,
+        10,9,11,
+
+        14,12,13,
+        15,12,14,
+
+        19,17,16,
+        18,17,19,
+
+        22,20,21,
+        23,20,22
     };
+
     Vertex vertices[] =
     {
-        {XMFLOAT3(0,3,0),XMFLOAT3(0,0,-1)},
-        {XMFLOAT3(1,-0,0),XMFLOAT3(0,0,-1)},
-        {XMFLOAT3(-1,0,0),XMFLOAT3(0,0,-1)},
+        { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+
+    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+
+    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+
+    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+
+    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+
+    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
     };
+
+    //Index indices[] =
+    //{
+    //    0,1,2
+    //};
+    //Vertex vertices[] =
+    //{
+    //    {XMFLOAT3(0,3,0),XMFLOAT3(0,0,-1)},
+    //    {XMFLOAT3(1,-0,0),XMFLOAT3(0,0,-1)},
+    //    {XMFLOAT3(-1,0,0),XMFLOAT3(0,0,-1)},
+    //};
 
     ID3D12Device* device = mDeviceResource->getDevice();
     allocateUploadBuffer(device, indices, sizeof(indices), &mIndexBuffer.resource);
@@ -697,7 +681,8 @@ void MainApp::buildAccelerationStructures() {
     // Create an instance desc for the bottom-level acceleration structure.
     ComPtr<ID3D12Resource> instanceDescs;
     D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
-    instanceDesc.Transform[0][0] = instanceDesc.Transform[1][1] = instanceDesc.Transform[2][2] = 1;
+    XMMATRIX trans = XMMatrixRotationRollPitchYaw(0, 0, XMConvertToRadians(45.0f)) * XMMatrixTranslation(5.0f, 0.0f, 0.0f);
+    XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc.Transform), trans);
     instanceDesc.InstanceMask = 1;
     instanceDesc.AccelerationStructure = mBottomLevelAS->GetGPUVirtualAddress();
     allocateUploadBuffer(device, &instanceDesc, sizeof(instanceDesc), &instanceDescs, L"InstanceDescs");
@@ -754,15 +739,10 @@ void MainApp::buildShaderTables() {
         struct RootArguments {
             Instance cb;
         } rootArguments;
-        Instance cb;
-        XMStoreFloat4(&cb.quatRot, XMQuaternionIdentity());
-        cb.vertexOffset = 0; cb.indexOffset = 0;
-        rootArguments.cb = cb;
-
         UINT numShaderRecords = 1;
         UINT shaderRecordSize = shaderIDSize + sizeof(RootArguments);
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"RayGenShaderTable");
-        table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize));
+        table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize, &rootArguments, sizeof(rootArguments)));
         mRayGenShaderTable = table.getResource();
     }
 
