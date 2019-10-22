@@ -545,7 +545,7 @@ void MainApp::createRaytracingOutputResource() {
 }
 
 void MainApp::buildGeometry() {
-    Index indices[] =
+    std::vector<Index> indices =
     {
         3,1,0,
         2,1,3,
@@ -566,7 +566,7 @@ void MainApp::buildGeometry() {
         23,20,22
     };
 
-    Vertex vertices[] =
+    std::vector<Vertex> vertices =
     {
         { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
     { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
@@ -611,12 +611,12 @@ void MainApp::buildGeometry() {
     //};
 
     ID3D12Device* device = mDeviceResource->getDevice();
-    allocateUploadBuffer(device, indices, sizeof(indices), &mIndexBuffer.resource);
-    allocateUploadBuffer(device, vertices, sizeof(vertices), &mVertexBuffer.resource);
+    allocateUploadBuffer(device, indices.data(), indices.size() * sizeof(indices[0]), &mIndexBuffer.resource);
+    allocateUploadBuffer(device, vertices.data(), vertices.size() * sizeof(vertices[0]), &mVertexBuffer.resource);
 
     //UINT IB = createBufferSRV(&mIndexBuffer, ARRAYSIZE(indices), sizeof(Index));
-    UINT IB = createBufferSRV(&mIndexBuffer, sizeof(indices) / 4, 0);
-    UINT VB = createBufferSRV(&mVertexBuffer, ARRAYSIZE(vertices), sizeof(Vertex));
+    UINT IB = createBufferSRV(&mIndexBuffer, indices.size() * sizeof(indices[0]) / 4, 0);
+    UINT VB = createBufferSRV(&mVertexBuffer, vertices.size(), sizeof(vertices[0]));
 }
 
 void MainApp::buildAccelerationStructures() {
