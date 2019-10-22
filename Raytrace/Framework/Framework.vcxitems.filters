@@ -36,6 +36,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\IDeviceState.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDownProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\RaytracingHelper.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Input\Input.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\ImGuiInclude.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />

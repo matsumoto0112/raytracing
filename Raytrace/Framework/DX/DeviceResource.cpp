@@ -364,9 +364,12 @@ namespace Framework::DX {
         mAdapter.Reset();
 
 #ifdef _DEBUG
-        ComPtr<IDXGIDebug> dxgiDebug;
-        if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)))) {
-            dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+        {
+
+            ComPtr<IDXGIDebug> dxgiDebug;
+            if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)))) {
+                dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+            }
         }
 #endif
 
@@ -398,6 +401,9 @@ namespace Framework::DX {
             D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mBackBufferIndex].Get(), beforeState, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
             mCommandList->ResourceBarrier(1, &barrier);
         }
+        mCommandList->OMSetRenderTargets(1, &getRenderTargetView(), FALSE, nullptr);
+        float color[4] = { 0.0f,0.0f,0.0f,0.0f };
+        mCommandList->ClearRenderTargetView(getRenderTargetView(), color, 1, &mScissorRect);
     }
 
     void DeviceResource::present(D3D12_RESOURCE_STATES beforeState) {

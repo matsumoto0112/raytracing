@@ -8,6 +8,7 @@
 #include "../Assets/Shader/RaytracingStructure.h"
 #include "FBXLoader.h"
 #include <iomanip>
+#include "Framework/ImGui/ImGuiManager.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -71,9 +72,12 @@ public:
         //リソースが作られた後にデバイスを作成する
         createDeviceDependentResources();
         createWindowSizeDependentResources();
+
+        Framework::ImGuiManager::getInstance()->init(mWindow->getHwnd(), mDeviceResource->getDevice(), mDeviceResource->getBackBufferFormat());
     }
     virtual void onUpdate() override {
         Game::onUpdate();
+        Framework::ImGuiManager::getInstance()->beginFrame();
 
         calcFrameStatus();
     }
@@ -89,7 +93,14 @@ public:
         doRaytracing();
         copyOutput();
 
-        mDeviceResource->present(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT);
+#ifdef _DEBUG
+        ImGui::Begin("TEST");
+        ImGui::Text("TEXT");
+        ImGui::End();
+#endif
+
+        Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
+        mDeviceResource->present(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     }
     virtual void onDeviceLost() override {
@@ -254,6 +265,7 @@ private:
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     setlocale(LC_ALL, "");
     MainApp app(1280, 720, L"Game");
     return app.run(hInstance, nCmdShow);
@@ -559,7 +571,7 @@ void MainApp::buildGeometry() {
     std::vector<Vertex> vertices(pos.size());
     float scale = 0.5f;
     for (UINT i = 0; i < pos.size(); i++) {
-        vertices[i].position = { pos[i].x * scale,pos[i].y * scale,pos[i].z  * scale};
+        vertices[i].position = { pos[i].x * scale,pos[i].y * scale,pos[i].z  * scale };
         vertices[i].normal = { normal[i].x,normal[i].y,normal[i].z };
     }
 
@@ -809,7 +821,7 @@ void MainApp::copyOutput() {
 
     D3D12_RESOURCE_BARRIER postBarrier[2];
     postBarrier[0] = CD3DX12_RESOURCE_BARRIER::Transition(renderTarget,
-        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT);
+        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
     postBarrier[1] = CD3DX12_RESOURCE_BARRIER::Transition(mRaytracingOutput.Get(),
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 

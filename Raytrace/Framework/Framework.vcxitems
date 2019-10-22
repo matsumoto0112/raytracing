@@ -23,12 +23,14 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imconfig.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\ImGuiInclude.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_impl_dx12.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_impl_win32.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imgui_internal.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imstb_rectpack.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imstb_textedit.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Include\imstb_truetype.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Input\Input.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\d3dx12.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\MathUtility.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Matrix3x3.h" />

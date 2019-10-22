@@ -14,7 +14,6 @@ namespace Framework {
 
     //‰Šú‰»
     void ImGuiManager::init(HWND hWnd, ID3D12Device* device, DXGI_FORMAT format) {
-//#ifdef _DEBUG
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -27,17 +26,17 @@ namespace Framework {
         desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mHeap));
 
-        ImGui_ImplDX12_Init(device, 2, format,
+        ImGui_ImplDX12_Init(device, 3, format,
             mHeap->GetCPUDescriptorHandleForHeapStart(),
             mHeap->GetGPUDescriptorHandleForHeapStart());
-//#endif
     }
 
     void ImGuiManager::beginFrame() {
+#if _DEBUG
         ImGui_ImplDX12_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
-
+#endif
     }
 
     void ImGuiManager::endFrame(ID3D12GraphicsCommandList* commandList) {
