@@ -3,19 +3,19 @@
 
 namespace Framework::Window {
     /**
-    * @class CreateProc
-    * @brief ウィンドウ生成プロシージャ
+    * @class ImGuiProc
+    * @brief ImGuiのイベント処理用プロシージャ
     */
-    class CreateProc : public IWindowProc {
+    class ImGuiProc : public IWindowProc {
     public:
         /**
         * @brief コンストラクタ
         */
-        CreateProc();
+        ImGuiProc();
         /**
         * @brief デストラクタ
         */
-        ~CreateProc();
+        ~ImGuiProc();
         /**
         * @brief ウィンドウプロシージャ処理
         */

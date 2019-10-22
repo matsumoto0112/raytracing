@@ -96,6 +96,11 @@ public:
 #ifdef _DEBUG
         ImGui::Begin("TEST");
         ImGui::Text("TEXT");
+        ImGui::Button("BUTTON");
+        static float angle = 0.0f;
+        ImGui::SliderAngle("ANGLE", &angle);
+        static float p[4] = {};
+        ImGui::SliderFloat4("FLOAT4", p, 0.0f, 100.0f);
         ImGui::End();
 #endif
 
@@ -645,8 +650,8 @@ void MainApp::buildGeometry() {
     allocateUploadBuffer(device, vertices.data(), vertices.size() * sizeof(vertices[0]), &mVertexBuffer.resource);
 
     //UINT IB = createBufferSRV(&mIndexBuffer, ARRAYSIZE(indices), sizeof(Index));
-    UINT IB = createBufferSRV(&mIndexBuffer, indices.size() * sizeof(indices[0]) / 4, 0);
-    UINT VB = createBufferSRV(&mVertexBuffer, vertices.size(), sizeof(vertices[0]));
+    UINT IB = createBufferSRV(&mIndexBuffer, static_cast<UINT>(indices.size()) * sizeof(indices[0]) / 4, 0);
+    UINT VB = createBufferSRV(&mVertexBuffer, static_cast<UINT>(vertices.size()), sizeof(vertices[0]));
 }
 
 void MainApp::buildAccelerationStructures() {

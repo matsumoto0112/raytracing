@@ -6,6 +6,7 @@
 #include "Framework/Window/Procedure/DestroyProc.h"
 #include "Framework/Window/Procedure/CreateProc.h"
 #include "Window/Procedure/SysKeyDownProc.h"
+#include "Window/Procedure/ImGuiProc.h"
 
 namespace {
     class Print : public Framework::Window::IWindowProc {
@@ -45,6 +46,7 @@ namespace Framework {
         try {
             Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::CreateProc>());
             Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::DestroyProc>());
+            Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::ImGuiProc>());
             Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::SysKeyDownProc>(this));
             Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Print>());
 
