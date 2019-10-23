@@ -22,6 +22,13 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\IDeviceState.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\RaytracingHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Button.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\CallBackItem.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\FloatField.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\IItem.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\ImGUI.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\IntField.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\InputManager.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\Keyboard.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\KeyCode.h" />
@@ -63,6 +70,10 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DXRInterface.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Button.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\FloatField.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\IntField.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Input\InputManager.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Input\Keyboard.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Input\Mouse.cpp" />
