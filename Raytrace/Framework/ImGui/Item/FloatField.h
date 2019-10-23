@@ -22,6 +22,11 @@ namespace Framework::ImGUI {
         * @brief •`‰æ
         */
         virtual void draw() override;
+        float getValue() const { return mValue; }
+        float getMinValue() const { return mMinValue; }
+        float getMaxValue() const { return mMaxValue; }
+        void setMinValue(float value) { mMinValue = value; }
+        void setMaxValue(float value) { mMaxValue = value; }
     private:
         float mValue; //!< Œ»Ý‚Ì’l
         float mMinValue; //!< Å¬’l

@@ -14,6 +14,7 @@
 #include "Utility/StringUtil.h"
 #include "ImGui/Item/Window.h"
 #include "ImGui/Item/Text.h"
+#include "ImGui/Item/FloatField.h"
 #include "Utility/Time.h"
 
 #ifdef _DEBUG
@@ -107,6 +108,7 @@ public:
         copyOutput();
 
         mImGUIWindow->draw();
+        mCameraParameterWindow->draw();
 
         Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
 
@@ -139,7 +141,9 @@ private:
 
     ConstantBuffer<SceneConstantBuffer> mSceneCB;
     ConstantBuffer<Instance> mInstanceCB;
-    XMVECTOR mEye, mAt, mUp;
+    //XMVECTOR mEye, mAt, mUp;
+    XMFLOAT3 mCameraPosition;
+    XMFLOAT3 mCameraRotation;
 
     D3DBuffer mIndexBuffer;
     D3DBuffer mVertexBuffer;
@@ -167,6 +171,7 @@ private:
     std::unique_ptr<Framework::ImGUI::Window> mImGUIWindow;
     std::shared_ptr<Framework::ImGUI::Text> mGPUInfoText;
     Framework::Utility::Time mTimer;
+    std::shared_ptr<Framework::ImGUI::Window> mCameraParameterWindow;
 
     /**
     * @brief カメラ行列の更新
@@ -294,26 +299,48 @@ const wchar_t* MainApp::MISS_SHADER_NAME = L"MyMissShader";
 //HitGroupは名前は何でもよい
 const wchar_t* MainApp::HIT_GROUP_NAME = L"MyHitGroup";
 
-static float X = 0.0f;
 void MainApp::updateCameraMatrices() {
-
-    mEye = { 0.0f,X,-10.0f,1.0f };
-    mAt = { 0.0f,X,0.0f,1.0f };
-    mUp = { 0.0f,1.0f,0.0f,1.0f };
-    //X += 0.0001f;
-
-    mSceneCB->cameraPosition = mEye;
+    mSceneCB->cameraPosition = XMLoadFloat3(&mCameraPosition);
+    XMMATRIX rot = XMMatrixRotationRollPitchYaw(mCameraRotation.x, mCameraRotation.y, mCameraRotation.z);
+    XMMATRIX trans = XMMatrixTranslation(mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
+    XMMATRIX view = XMMatrixInverse(nullptr, rot * trans);
 
     float fovY = 45.0f;
-    XMMATRIX view = XMMatrixLookAtLH(mEye, mAt, mUp);
+    XMVECTOR mEye = { 0,0,-10,1 };
+    XMVECTOR mAt = { 0,0,0,1 };
+    XMVECTOR mUp = { 0,1,0,1 };
+    //XMMATRIX view = XMMatrixLookAtLH(mEye, mAt, mUp);
     const float aspect = static_cast<float>(mWidth) / static_cast<float>(mHeight);
-    //const float aspect = static_cast<float>(mHeight) / static_cast<float>(mWidth);
     XMMATRIX proj = XMMatrixPerspectiveFovLH(XMConvertToRadians(fovY), aspect, 0.1f, 125.0f);
     XMMATRIX vp = view * proj;
     mSceneCB->projectionToWorld = XMMatrixInverse(nullptr, vp);
 }
 
 void MainApp::initializeScene() {
+    //mEye = { 0.0f,10.0f,-10.0f,1.0f };
+    //mAt = { 0.0f,0.0f,0.0f,1.0f };
+    //mUp = { 0.0f,1.0f,0.0f,1.0f };
+    mCameraPosition = { 0,3.0f,-10.0f };
+    mCameraRotation = { 0,0,0 };
+
+    mCameraParameterWindow = std::make_unique<Framework::ImGUI::Window>("Camera");
+#define PARAMETER_CHANGE_SLIDER(name,type,min,max){\
+    auto field = std::make_shared<Framework::ImGUI::FloatField>(name, type); \
+    field->setCallBack([&](float val) {type = val; }); \
+    field->setMinValue(min); \
+    field->setMaxValue(max); \
+    mCameraParameterWindow->addItem(field); \
+    }
+
+    mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Position"));
+    PARAMETER_CHANGE_SLIDER("X", mCameraPosition.x, -30.0f, 30.0f);
+    PARAMETER_CHANGE_SLIDER("Y", mCameraPosition.y, -30.0f, 30.0f);
+    PARAMETER_CHANGE_SLIDER("Z", mCameraPosition.z, -30.0f, 30.0f);
+    mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Rotation"));
+    PARAMETER_CHANGE_SLIDER("RX", mCameraRotation.x, 0.0f, 2 * 3.14);
+    PARAMETER_CHANGE_SLIDER("RY", mCameraRotation.y, 0.0f, 2 * 3.14);
+    PARAMETER_CHANGE_SLIDER("RZ", mCameraRotation.z, 0.0f, 2 * 3.14);
+
     updateCameraMatrices();
 }
 
@@ -554,7 +581,8 @@ void MainApp::createDescriptorHeap() {
 void MainApp::createRaytracingOutputResource() {
     ID3D12Device* device = mDeviceResource->getDevice();
     DXGI_FORMAT format = mDeviceResource->getBackBufferFormat();
-    CD3DX12_RESOURCE_DESC uavResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(format, mWidth, mHeight, 1, 1, 1, 0, D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    CD3DX12_RESOURCE_DESC uavResourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+        format, mWidth, mHeight, 1, 1, 1, 0, D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
 
     CD3DX12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
     throwIfFailed(device->CreateCommittedResource(
@@ -575,87 +603,59 @@ void MainApp::createRaytracingOutputResource() {
 }
 
 void MainApp::buildGeometry() {
+    std::vector<Index> indices =
+    {
+        3,1,0,
+        2,1,3,
 
-    Framework::Utility::FBXLoader loader("p.fbx");
-    std::vector<UINT> indices32;
-    std::vector<Framework::Math::Vector4> pos;
-    loader.getPosition(&pos, &indices32);
-    std::vector<Framework::Math::Vector3> normal = loader.getNormal();
-    std::vector<Index> indices(indices32.size());
-    for (UINT i = 0; i < indices32.size(); i++) {
-        indices[i] = static_cast<Index>(indices32[i]);
-    }
-    std::vector<Vertex> vertices(pos.size());
-    float scale = 0.5f;
-    for (UINT i = 0; i < pos.size(); i++) {
-        vertices[i].position = { pos[i].x * scale,pos[i].y * scale,pos[i].z  * scale };
-        vertices[i].normal = { normal[i].x,normal[i].y,normal[i].z };
-    }
+        6,4,5,
+        7,4,6,
 
-    //std::vector<Index> indices =
-    //{
-    //    3,1,0,
-    //    2,1,3,
+        11,9,8,
+        10,9,11,
 
-    //    6,4,5,
-    //    7,4,6,
+        14,12,13,
+        15,12,14,
 
-    //    11,9,8,
-    //    10,9,11,
+        19,17,16,
+        18,17,19,
 
-    //    14,12,13,
-    //    15,12,14,
+        22,20,21,
+        23,20,22
+    };
 
-    //    19,17,16,
-    //    18,17,19,
+    std::vector<Vertex> vertices =
+    {
+        { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
 
-    //    22,20,21,
-    //    23,20,22
-    //};
+    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
 
-    //std::vector<Vertex> vertices =
-    //{
-    //    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-    //{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
 
-    //{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-    //{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
 
-    //{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
 
-    //{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-
-    //{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-    //{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-    //{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-
-    //{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    //{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    //{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    //{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    //};
-
-    //Index indices[] =
-    //{
-    //    0,1,2
-    //};
-    //Vertex vertices[] =
-    //{
-    //    {XMFLOAT3(0,3,0),XMFLOAT3(0,0,-1)},
-    //    {XMFLOAT3(1,-0,0),XMFLOAT3(0,0,-1)},
-    //    {XMFLOAT3(-1,0,0),XMFLOAT3(0,0,-1)},
-    //};
+    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    };
 
     ID3D12Device* device = mDeviceResource->getDevice();
     allocateUploadBuffer(device, indices.data(), indices.size() * sizeof(indices[0]), &mIndexBuffer.resource);
@@ -728,7 +728,8 @@ void MainApp::buildAccelerationStructures() {
     // Create an instance desc for the bottom-level acceleration structure.
     ComPtr<ID3D12Resource> instanceDescs;
     D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
-    XMMATRIX trans = XMMatrixRotationRollPitchYaw(0, 0, XMConvertToRadians(45.0f)) * XMMatrixTranslation(5.0f, 0.0f, 0.0f);
+    //XMMATRIX trans = XMMatrixRotationRollPitchYaw(0, 0, XMConvertToRadians(45.0f)) * XMMatrixTranslation(5.0f, 0.0f, 0.0f);
+    XMMATRIX trans = XMMatrixIdentity();
     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDesc.Transform), trans);
     instanceDesc.InstanceMask = 1;
     instanceDesc.AccelerationStructure = mBottomLevelAS->GetGPUVirtualAddress();
