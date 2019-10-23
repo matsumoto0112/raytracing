@@ -29,14 +29,15 @@ namespace Framework::Utility {
 
     void GPUTimer::endFrame(ID3D12GraphicsCommandList* commandList) {
         static UINT resolveToFrameID = 0;
+        //データを取得する
         UINT64 resolveToBaseAddress = resolveToFrameID * TIMER_SLOT_NUM * sizeof(UINT64);
         commandList->ResolveQueryData(mQueryHeap.Get(), D3D12_QUERY_TYPE::D3D12_QUERY_TYPE_TIMESTAMP, 0, TIMER_SLOT_NUM, mBuffer.Get(), resolveToBaseAddress);
 
         UINT readBackID = (resolveToFrameID + 1) % (mMaxFrameCount + 1);
         SIZE_T readBackOffset = readBackID * TIMER_SLOT_NUM * sizeof(UINT64);
 
+        //バッファからデータを読み出す
         D3D12_RANGE range{ readBackOffset ,readBackOffset + TIMER_SLOT_NUM * sizeof(UINT64) };
-
         UINT64* timingData;
         DX::throwIfFailed(mBuffer->Map(0, &range, reinterpret_cast<void**>(&timingData)));
         memcpy(&mTimings[0], timingData, TIMER_SLOT_NUM * sizeof(UINT64));
@@ -91,6 +92,7 @@ namespace Framework::Utility {
         mMaxFrameCount = maxFrameCount;
 
         ComPtr<ID3D12InfoQueue> infoQueue;
+        //デバッグレイヤーの警告の一部を無効化する
         if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
             D3D12_MESSAGE_ID denyIDs[] =
             {
@@ -103,16 +105,20 @@ namespace Framework::Utility {
             MY_DEBUG_LOG(L"Warning: GPUTimer is disabling an unwanted D3D12 debug layer warning: D3D12_MESSAGE_ID_EXECUTECOMMANDLISTS_GPU_WRITTEN_READBACK_RESOURCE_MAPPED.");
         }
 
+        //GPUのタイムスタンプカウンターの周期を取得する
         UINT64 gpuFreq;
         DX::throwIfFailed(commandQueue->GetTimestampFrequency(&gpuFreq));
+        //ミリ秒として使う
         mGpuFreqInv = 1000.0f / double(gpuFreq);
 
+        //時間を計測するためのクエリを発行する
         D3D12_QUERY_HEAP_DESC desc = {};
         desc.Type = D3D12_QUERY_HEAP_TYPE::D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
         desc.Count = TIMER_SLOT_NUM;
         DX::throwIfFailed(device->CreateQueryHeap(&desc, IID_PPV_ARGS(&mQueryHeap)));
         mQueryHeap->SetName(L"GPUTimerQuery");
 
+        //計測した時間を格納するためのバッファを確保する
         CD3DX12_HEAP_PROPERTIES prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_READBACK);
         size_t perFrameInstances = mMaxFrameCount + 1;
 
@@ -123,6 +129,7 @@ namespace Framework::Utility {
             &bufferDesc,
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST,
             nullptr,
+            //IID_PPV_ARGS(mBuffer.ReleaseAndGetAddressOf())));
             IID_GRAPHICS_PPV_ARGS(mBuffer.ReleaseAndGetAddressOf())));
 
         mBuffer->SetName(L"GPUTimerBuffer");
