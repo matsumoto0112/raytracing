@@ -1,6 +1,6 @@
 #pragma once
+#include <Windows.h>
 #include <unordered_map>
-#include "Framework/Input/KeyCode.h"
 #include "Framework/Math/Vector2.h"
 
 namespace Framework::Input {

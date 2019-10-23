@@ -1,6 +1,4 @@
 #include "Mouse.h"
-#include "Framework/Input/Keyboard.h"
-#include "Framework/Window/Window.h"
 
 namespace Framework::Input {
     //コンストラクタ
