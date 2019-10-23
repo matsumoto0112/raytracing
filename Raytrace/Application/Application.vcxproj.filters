@@ -11,6 +11,7 @@
     <ClInclude Include="Assets\Shader\RaytracingTypedef.h" />
     <ClInclude Include="Assets\Shader\RaytracingDefine.h" />
     <ClInclude Include="Source\FBXLoader.h" />
+    <ClInclude Include="Source\targetvar.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\Shader\Raytracing.hlsl" />
