@@ -1,15 +1,17 @@
 #include "stdafx.h"
-#include "Framework/Game.h"
-#include "Framework/Utility/Debug.h"
-#include <locale>
-#include "DX/RaytracingHelper.h"
-#include "Framework/DX/DXHelper.h"
-#include "Framework/DX/ConstantBuffer.h"
-#include "../Assets/Shader/RaytracingStructure.h"
-#include "FBXLoader.h"
 #include <iomanip>
-#include "Framework/ImGui/ImGuiManager.h"
+#include <locale>
 #include "DX/DXRInterface.h"
+#include "DX/RaytracingHelper.h"
+#include "Framework/Game.h"
+#include "Framework/DX/ConstantBuffer.h"
+#include "Framework/DX/DXHelper.h"
+#include "Framework/Utility/Debug.h"
+#include "Framework/ImGui/ImGuiManager.h"
+#include "FBXLoader.h"
+#include "../Assets/Shader/RaytracingStructure.h"
+#include "Utility/GPUTimer.h"
+#include "Utility/StringUtil.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -92,22 +94,14 @@ public:
         ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
 
         mDeviceResource->prepare();
+        mGPUTimer.beginFrame();
 
         doRaytracing();
         copyOutput();
 
-#ifdef _DEBUG
-        ImGui::Begin("TEST");
-        ImGui::Text("TEXT");
-        ImGui::Button("BUTTON");
-        static float angle = 0.0f;
-        ImGui::SliderAngle("ANGLE", &angle);
-        static float p[4] = {};
-        ImGui::SliderFloat4("FLOAT4", p, 0.0f, 100.0f);
-        ImGui::End();
-#endif
-
         Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
+
+        mGPUTimer.endFrame(list);
         mDeviceResource->present(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     }
@@ -159,6 +153,7 @@ private:
     ComPtr<ID3D12Resource> mMissShaderTable;
     ComPtr<ID3D12Resource> mHitGroupShaderTable;
     ComPtr<ID3D12Resource> mRayGenShaderTable;
+    Framework::Utility::GPUTimer mGPUTimer;
 
     /**
     * @brief カメラ行列の更新
@@ -339,7 +334,10 @@ void MainApp::doRaytracing() {
         desc->Depth = 1;
 
         list->SetPipelineState1(state);
+
+        mGPUTimer.start(list);
         list->DispatchRays(desc);
+        mGPUTimer.stop(list);
     };
 
     list->SetComputeRootSignature(mRaytracingGlobalRootSignature.Get());
@@ -362,7 +360,7 @@ void MainApp::createConstantBuffers() {
 
 void MainApp::createDeviceDependentResources() {
     //補助リソースを先に生成
-    //createAuxillaryDeviceResources();
+    createAuxillaryDeviceResources();
     //レイトレース用インターフェース作成
     createRaytracinginterfaces();
     ////ルートシグネチャを作成する
@@ -390,6 +388,7 @@ void MainApp::createWindowSizeDependentResources() {
 }
 
 void MainApp::releaseDeviceDependentResources() {
+    mGPUTimer.releaseDevice();
     mRaytracingGlobalRootSignature.Reset();
     mDXRInterface->clear();
 
@@ -520,7 +519,11 @@ void MainApp::createRaytracingPipelineStateObject() {
 }
 
 void MainApp::createAuxillaryDeviceResources() {
-    //タイマー作ったりなんかする
+    ID3D12Device* device = mDeviceResource->getDevice();
+    ID3D12CommandQueue* queue = mDeviceResource->getCommandQueue();
+    UINT frameCount = mDeviceResource->getBackBufferCount();
+
+    mGPUTimer.storeDevice(device, queue, frameCount);
 }
 
 void MainApp::createDescriptorHeap() {

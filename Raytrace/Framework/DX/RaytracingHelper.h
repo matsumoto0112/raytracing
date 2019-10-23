@@ -107,5 +107,11 @@ namespace Framework::DX {
         (*resource)->Unmap(0, nullptr);
     }
 
+    inline float NumMRaysPerSecond(UINT width, UINT height, float dispatchRaysTimeMs)
+    {
+        float resolutionMRays = static_cast<float>(width * height);
+        float raytracingTimeInSeconds = 0.001f * dispatchRaysTimeMs;
+        return resolutionMRays / (raytracingTimeInSeconds * static_cast<float>(1e6));
+    }
 
 } //Framework::DX 

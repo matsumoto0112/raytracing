@@ -13,6 +13,10 @@ namespace Framework::Utility {
         /**
         * @brief コンストラクタ
         */
+        GPUTimer();
+        /**
+        * @brief コンストラクタ
+        */
         GPUTimer(ID3D12Device* device, ID3D12CommandQueue* commandQueue, UINT maxFrameCount);
         /**
         * @brief デストラクタ

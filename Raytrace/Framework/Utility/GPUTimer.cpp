@@ -17,8 +17,15 @@ namespace {
 
 namespace Framework::Utility {
     //コンストラクタ
-    GPUTimer::GPUTimer(ID3D12Device* device, ID3D12CommandQueue* commandQueue, UINT maxFrameCount)
+    GPUTimer::GPUTimer()
         :mGpuFreqInv(1.0f),
+        mAverages{},
+        mTimings{},
+        mMaxFrameCount(0){ }
+
+    //コンストラクタ
+    GPUTimer::GPUTimer(ID3D12Device* device, ID3D12CommandQueue* commandQueue, UINT maxFrameCount)
+        : mGpuFreqInv(1.0f),
         mAverages{},
         mTimings{} {
         storeDevice(device, commandQueue, maxFrameCount);
@@ -44,7 +51,7 @@ namespace Framework::Utility {
         D3D12_RANGE range{ readBackOffset ,readBackOffset + TIMER_SLOT_NUM * sizeof(UINT64) };
         UINT64* timingData;
         DX::throwIfFailed(mBuffer->Map(0, &range, reinterpret_cast<void**>(&timingData)));
-        memcpy(&mTimings[0], timingData, TIMER_SLOT_NUM * sizeof(UINT64));
+        memcpy(mTimings.data(), timingData, TIMER_SLOT_NUM * sizeof(UINT64));
         mBuffer->Unmap(0, nullptr);
 
         for (UINT i = 0; i < TIMER_COUNT; i++) {
