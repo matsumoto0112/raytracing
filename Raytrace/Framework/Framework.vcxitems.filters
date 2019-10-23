@@ -56,7 +56,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Math\MathUtility.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Matrix3x3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Quaternion.cpp" />

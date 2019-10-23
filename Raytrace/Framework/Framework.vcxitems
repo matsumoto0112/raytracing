@@ -85,7 +85,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_widgets.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Math\MathUtility.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Matrix3x3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Quaternion.cpp" />
