@@ -16,17 +16,21 @@ namespace {
 }
 
 namespace Framework::Utility {
+    //コンストラクタ
     GPUTimer::GPUTimer(ID3D12Device* device, ID3D12CommandQueue* commandQueue, UINT maxFrameCount)
         :mGpuFreqInv(1.0f),
         mAverages{},
         mTimings{} {
         storeDevice(device, commandQueue, maxFrameCount);
     }
-
+    //デストラクタ
     GPUTimer::~GPUTimer() { releaseDevice(); }
+    //フレーム開始
+    void GPUTimer::beginFrame() {
+        //特に処理することはない
+    }
 
-    void GPUTimer::beginFrame() { }
-
+    //フレーム終了
     void GPUTimer::endFrame(ID3D12GraphicsCommandList* commandList) {
         static UINT resolveToFrameID = 0;
         //データを取得する
@@ -54,22 +58,23 @@ namespace Framework::Utility {
         resolveToFrameID = readBackID;
     }
 
+    //計測開始
     void GPUTimer::start(ID3D12GraphicsCommandList* commandList, UINT timerID) {
         MY_ASSERTION(timerID < TIMER_COUNT, L"timerIDの値が不正です");
 
         commandList->EndQuery(mQueryHeap.Get(), D3D12_QUERY_TYPE::D3D12_QUERY_TYPE_TIMESTAMP, timerID * 2);
     }
-
+    //計測終了
     void GPUTimer::stop(ID3D12GraphicsCommandList* commandList, UINT timerID) {
         MY_ASSERTION(timerID < TIMER_COUNT, L"timerIDの値が不正です");
 
         commandList->EndQuery(mQueryHeap.Get(), D3D12_QUERY_TYPE::D3D12_QUERY_TYPE_TIMESTAMP, timerID * 2 + 1);
     }
-
+    //平均のリセット
     void GPUTimer::reset() {
         mAverages.fill(0.0f);
     }
-
+    //経過時間の取得
     float GPUTimer::getElapsedTime(UINT timerID) {
         MY_ASSERTION(timerID < TIMER_COUNT, L"timerIDの値が不正です");
 
@@ -78,16 +83,18 @@ namespace Framework::Utility {
         return float(Math::MathUtil::mymax(0.0, double(end - start))* mGpuFreqInv);
     }
 
+    //平均経過時間の取得
     float GPUTimer::getAverageTime(UINT timerID) {
         MY_ASSERTION(timerID < TIMER_COUNT, L"timerIDの値が不正です");
         return mAverages[timerID];
     }
 
+    //デバイスの解放
     void GPUTimer::releaseDevice() {
         mQueryHeap.Reset();
         mBuffer.Reset();
     }
-
+    //デバイスの登録
     void GPUTimer::storeDevice(ID3D12Device* device, ID3D12CommandQueue* commandQueue, UINT maxFrameCount) {
         mMaxFrameCount = maxFrameCount;
 

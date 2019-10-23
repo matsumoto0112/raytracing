@@ -51,6 +51,6 @@ namespace Framework::Utility {
             return wss.str();
         }
     private:
-        std::wstringstream wss;
+        std::wstringstream wss; //!< ƒXƒgƒŠ[ƒ€
     };
 } //Framework::Utility 
