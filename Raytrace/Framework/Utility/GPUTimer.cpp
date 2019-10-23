@@ -11,7 +11,7 @@ namespace {
 
     //平均を更新する
     inline float runningAverage(float ave, float value) {
-        Framework::Math::MathUtil::lerp(value, ave, AVERAGE_IMPACT);
+        return Framework::Math::MathUtil::lerp(value, ave, AVERAGE_IMPACT);
     }
 }
 
@@ -116,7 +116,7 @@ namespace Framework::Utility {
         UINT64 gpuFreq;
         DX::throwIfFailed(commandQueue->GetTimestampFrequency(&gpuFreq));
         //ミリ秒として使う
-        mGpuFreqInv = 1000.0f / double(gpuFreq);
+        mGpuFreqInv = float(1000.0 / double(gpuFreq));
 
         //時間を計測するためのクエリを発行する
         D3D12_QUERY_HEAP_DESC desc = {};
@@ -136,8 +136,8 @@ namespace Framework::Utility {
             &bufferDesc,
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST,
             nullptr,
-            //IID_PPV_ARGS(mBuffer.ReleaseAndGetAddressOf())));
-            IID_GRAPHICS_PPV_ARGS(mBuffer.ReleaseAndGetAddressOf())));
+            IID_PPV_ARGS(mBuffer.ReleaseAndGetAddressOf())));
+            //IID_GRAPHICS_PPV_ARGS(mBuffer.ReleaseAndGetAddressOf())));
 
         mBuffer->SetName(L"GPUTimerBuffer");
     }

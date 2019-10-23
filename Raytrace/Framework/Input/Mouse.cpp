@@ -1,10 +1,11 @@
 #include "Mouse.h"
+#include <algorithm>
 
 namespace Framework::Input {
     //コンストラクタ
     Mouse::Mouse(HWND hWnd)
         :mHWnd(hWnd) {
-    #define CHECK_MOUSE_BUTTON_PRESS(key) { \
+#define CHECK_MOUSE_BUTTON_PRESS(key) { \
         mCurrentMouseInfo[key] = GetKeyState(key) & 0x80; \
         } 
 
@@ -28,7 +29,8 @@ namespace Framework::Input {
         mPosition.x = (float)pos.x;
         mPosition.y = (float)pos.y;
 
-        std::copy(mCurrentMouseInfo.begin(), mCurrentMouseInfo.end(), mPrevMouseInfo.begin());
+        mPrevMouseInfo = mCurrentMouseInfo;
+        //std::copy(mCurrentMouseInfo.begin(), mCurrentMouseInfo.end(), mPrevMouseInfo.begin());
         CHECK_MOUSE_BUTTON_PRESS(MouseButton::Left);
         CHECK_MOUSE_BUTTON_PRESS(MouseButton::Middle);
         CHECK_MOUSE_BUTTON_PRESS(MouseButton::Right);
