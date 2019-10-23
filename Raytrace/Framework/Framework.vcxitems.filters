@@ -43,6 +43,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\KeyCode.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\Keyboard.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\Mouse.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Input\InputManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -72,5 +73,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DXRInterface.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Input\Keyboard.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Input\Mouse.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Input\InputManager.cpp" />
   </ItemGroup>
 </Project>
