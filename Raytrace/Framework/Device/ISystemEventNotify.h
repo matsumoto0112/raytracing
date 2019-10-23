@@ -22,7 +22,10 @@ namespace Framework::Device {
         * @brief I—¹ˆ—
         */
         virtual void onDestroy() = 0;
-
+        /**
+        * @brief Alt+Enter‚ª‰Ÿ‚³‚ê‚½
+        * @details ‘S‰æ–Ê‰»‚Ìˆ—‚ğ‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢‚½‚ß
+        */
         virtual void pushAltEnter() = 0;
     };
 } //Framework::Device

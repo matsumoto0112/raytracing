@@ -19,6 +19,7 @@ namespace Framework {
     int Game::run(HINSTANCE hInstance, int nCmdShow) {
 
         try {
+            //プロシージャの登録
             Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::CreateProc>());
             Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::DestroyProc>());
             Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::ImGuiProc>());
@@ -26,7 +27,6 @@ namespace Framework {
             Window::Procedures::mWindowProcs.emplace_back(std::make_unique<Window::PaintProc>());
 
             //ウィンドウ生成
-
             mWindow = std::make_unique<Window::Window>(mWidth, mHeight, mTitle,
                 hInstance, nCmdShow, this);
 
@@ -48,7 +48,7 @@ namespace Framework {
             return static_cast<char>(msg.lParam);
         }
         catch (const std::exception& e) {
-            OutputDebugString(L"ERROR:\n");
+            MY_DEBUG_LOG(L"ERROR:\n");
             OutputDebugStringA(e.what());
             onDestroy();
             return EXIT_FAILURE;
