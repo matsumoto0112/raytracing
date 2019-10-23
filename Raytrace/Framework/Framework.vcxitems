@@ -24,6 +24,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\Keyboard.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\KeyCode.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Input\Mouse.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imconfig.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiInclude.h" />
@@ -62,6 +63,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DXRInterface.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Input\Keyboard.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Input\Mouse.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_draw.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.cpp" />
