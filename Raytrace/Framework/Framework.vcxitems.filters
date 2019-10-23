@@ -27,7 +27,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\IDeviceState.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\RaytracingHelper.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Input\Input.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiInclude.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_truetype.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imconfig.h" />
@@ -41,6 +40,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\ImGuiProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DXRInterface.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Input\KeyCode.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Input\Keyboard.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -68,5 +69,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\ImGuiProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DXRInterface.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Input\Keyboard.cpp" />
   </ItemGroup>
 </Project>
