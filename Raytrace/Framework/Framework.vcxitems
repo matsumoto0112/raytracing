@@ -59,6 +59,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Singleton.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringBuilder.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringUtil.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Time.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Typedef.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\CreateProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.h" />
@@ -96,6 +97,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Scene\SceneBase.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Debug.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Time.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\CreateProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Game.cpp" />

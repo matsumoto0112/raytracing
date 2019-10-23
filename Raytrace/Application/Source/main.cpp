@@ -14,6 +14,7 @@
 #include "Utility/StringUtil.h"
 #include "ImGui/Item/Window.h"
 #include "ImGui/Item/Text.h"
+#include "Utility/Time.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -87,6 +88,7 @@ public:
     }
     virtual void onUpdate() override {
         Game::onUpdate();
+        mTimer.update();
         Framework::ImGuiManager::getInstance()->beginFrame();
 
         calcFrameStatus();
@@ -164,7 +166,7 @@ private:
 
     std::unique_ptr<Framework::ImGUI::Window> mImGUIWindow;
     std::shared_ptr<Framework::ImGUI::Text> mGPUInfoText;
-
+    Framework::Utility::Time mTimer;
 
     /**
     * @brief カメラ行列の更新
@@ -838,8 +840,11 @@ void MainApp::calcFrameStatus() {
 
     std::stringstream ss;
     float time = mGPUTimer.getElapsedTime();
-    ss << std::setprecision(2) << std::fixed << "Dispatch Rays" << time << "ms\n"
-        << NumMRaysPerSecond(mWidth, mHeight, time) << "Rays/s";
+    ss << std::setprecision(5) << std::fixed << "Dispatch Rays" << time << "ms\n"
+        << NumMRaysPerSecond(mWidth, mHeight, time) << "Rays/s\n" <<
+        "FPS:" << mTimer.getFPS() << "\n" <<
+        "DeltaTime:" << mTimer.getDeltaTime() << "s\n";
+
     mGPUInfoText->setText(ss.str());
 }
 
