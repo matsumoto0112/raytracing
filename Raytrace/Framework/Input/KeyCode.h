@@ -1,7 +1,7 @@
 #pragma once
 #include <Windows.h>
 
-namespace Framework::Input {    
+namespace Framework::Input {
     namespace KeyCode {
         /**
         * @enum Enum
@@ -65,10 +65,6 @@ namespace Framework::Input {
             Left = VK_LEFT, //!< Leftキー
             Right = VK_RIGHT, //!< Rightキー
             Down = VK_DOWN, //!< Downキー
-
-            LButton = VK_LBUTTON, //!< マウス左ボタン
-            RButton = VK_RBUTTON, //!< マウス右ボタン
-            MButton = VK_MBUTTON, //!< マウス中ボタン
         };
     } //KeyCode 
 } //Framework::Input

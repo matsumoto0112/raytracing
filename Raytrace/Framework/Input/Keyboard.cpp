@@ -10,7 +10,9 @@ namespace Framework::Input {
     Keyboard::~Keyboard() { }
     //更新
     void Keyboard::update() {
+        //前フレームのキーの情報をコピーする
         std::copy(mCurrentKeys.begin(), mCurrentKeys.end(), mPrevKeys.begin());
+        //現在のキーの押下状態を取得する
         GetKeyboardState(mCurrentKeys.data());
     }
     //キーの押下情報の取得

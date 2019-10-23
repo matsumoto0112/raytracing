@@ -10,9 +10,9 @@ namespace Framework::Input {
         * @brief マウスのボタン定義
         */
         enum Enum {
-            Left = KeyCode::LButton,
-            Right = KeyCode::RButton,
-            Middle = KeyCode::MButton,
+            Left = VK_LBUTTON,
+            Right = VK_RBUTTON,
+            Middle = VK_MBUTTON,
         };
     }; //MouseButton
 
@@ -22,14 +22,13 @@ namespace Framework::Input {
     */
     class Mouse {
         using MouseButton = MouseButton::Enum;
+        using MouseInfo = std::unordered_map<MouseButton, bool>;
     public:
         /**
         * @brief コンストラクタ
         * @param hWnd ウィンドウハンドル
-        * @param keyboard キーボード
-        * @details 入力の取得はキーボードと一緒に行うためキーボードが必要
         */
-        Mouse(HWND hWnd, Keyboard& keyboard);
+        Mouse(HWND hWnd);
         /**
         * @brief デストラクタ
         */
@@ -65,10 +64,15 @@ namespace Framework::Input {
         * @brief マウスの移動量を取得
         */
         Math::Vector2 getMove() const;
+        /**
+        * @brief マウスが出現しているかどうか判定する
+        */
+        bool isMouseVisible() const;
     private:
         HWND mHWnd; //!< ウィンドウハンドル
-        Keyboard& mKeyboard; //!< キーボード
         Math::Vector2 mPosition; //!< 今のマウスの座標
         Math::Vector2 mPrevPosition; //!< 前のマウスの座標
+        MouseInfo mPrevMouseInfo; //!< 前フレームのマウスのボタンの状態
+        MouseInfo mCurrentMouseInfo; //!< 今フレームのマウスのボタンの状態
     };
 } //Framework::Input
