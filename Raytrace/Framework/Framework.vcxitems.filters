@@ -51,6 +51,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\IntField.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\CallBackItem.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -85,5 +86,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\FloatField.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\IntField.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.cpp" />
   </ItemGroup>
 </Project>

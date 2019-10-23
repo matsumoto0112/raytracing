@@ -29,6 +29,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\ImGUI.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\IntField.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\InputManager.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\Keyboard.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\KeyCode.h" />
@@ -74,6 +75,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\FloatField.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\IntField.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Input\InputManager.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Input\Keyboard.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Input\Mouse.cpp" />
