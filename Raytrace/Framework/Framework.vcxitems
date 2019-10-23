@@ -57,6 +57,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Singleton.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringBuilder.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringUtil.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Typedef.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\CreateProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.h" />

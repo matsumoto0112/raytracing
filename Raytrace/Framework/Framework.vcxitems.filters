@@ -53,6 +53,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\CallBackItem.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringUtil.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
