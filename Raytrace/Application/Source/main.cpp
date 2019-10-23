@@ -12,6 +12,8 @@
 #include "../Assets/Shader/RaytracingStructure.h"
 #include "Utility/GPUTimer.h"
 #include "Utility/StringUtil.h"
+#include "ImGui/Item/Window.h"
+#include "ImGui/Item/Text.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -58,7 +60,10 @@ public:
     MainApp(UINT width, UINT height, const std::wstring& title)
         :Game(width, height, title),
         mRaytracingOutputResourceUAVDescriptorHeapIndex(UINT_MAX),
-        mDescriptorSize(0) {
+        mDescriptorSize(0),
+        mImGUIWindow(std::make_unique<Framework::ImGUI::Window>("GPU")) {
+        mGPUInfoText = std::make_shared<Framework::ImGUI::Text>("");
+        mImGUIWindow->addItem(mGPUInfoText);
         updateForSizeChange(width, height);
     }
     /**
@@ -98,6 +103,8 @@ public:
 
         doRaytracing();
         copyOutput();
+
+        mImGUIWindow->draw();
 
         Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
 
@@ -154,6 +161,10 @@ private:
     ComPtr<ID3D12Resource> mHitGroupShaderTable;
     ComPtr<ID3D12Resource> mRayGenShaderTable;
     Framework::Utility::GPUTimer mGPUTimer;
+
+    std::unique_ptr<Framework::ImGUI::Window> mImGUIWindow;
+    std::shared_ptr<Framework::ImGUI::Text> mGPUInfoText;
+
 
     /**
     * @brief カメラ行列の更新
@@ -824,6 +835,12 @@ void MainApp::copyOutput() {
 
 void MainApp::calcFrameStatus() {
     updateCameraMatrices();
+
+    std::stringstream ss;
+    float time = mGPUTimer.getElapsedTime();
+    ss << std::setprecision(2) << std::fixed << "Dispatch Rays" << time << "ms\n"
+        << NumMRaysPerSecond(mWidth, mHeight, time) << "Rays/s";
+    mGPUInfoText->setText(ss.str());
 }
 
 UINT MainApp::allocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, UINT descriptorIndexToUse) {

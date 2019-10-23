@@ -47,6 +47,14 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\Mouse.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringUtil.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Button.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\CallBackItem.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\FloatField.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\IItem.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\ImGUI.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\IntField.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -77,6 +85,10 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Input\Keyboard.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Input\Mouse.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Math\MathUtility.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Button.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\FloatField.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\IntField.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.cpp" />
   </ItemGroup>
 </Project>

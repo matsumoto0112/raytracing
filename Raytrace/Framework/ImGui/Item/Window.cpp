@@ -9,8 +9,8 @@ namespace Framework::ImGUI {
         mItems.clear();
     }
     //ƒAƒCƒeƒ€‚Ì’Ç‰Á
-    void Window::addItem(IItem* item) {
-        mItems.emplace_back(std::unique_ptr<IItem>(item));
+    void Window::addItem(std::shared_ptr<IItem> item) {
+        mItems.emplace_back(item);
     }
     //•`‰æ
     void Framework::ImGUI::Window::draw() {

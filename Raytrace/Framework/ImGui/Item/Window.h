@@ -21,13 +21,13 @@ namespace Framework::ImGUI {
         * @brief アイテムを追加する
         * @param 追加するアイテム
         */
-        void addItem(IItem* item);
+        void addItem(std::shared_ptr<IItem> item);
         /**
         * @brief 描画
         */
         void draw();
     private:
         std::string mName;
-        std::vector<std::unique_ptr<IItem>> mItems;
+        std::vector<std::shared_ptr<IItem>> mItems;
     };
 } //Framework::ImGUI 
