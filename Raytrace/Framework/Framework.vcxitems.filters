@@ -52,6 +52,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\CallBackItem.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -87,5 +88,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\IntField.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.cpp" />
   </ItemGroup>
 </Project>

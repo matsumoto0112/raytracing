@@ -54,6 +54,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Scene\SceneBase.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Debug.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DXHelper.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Singleton.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringBuilder.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Typedef.h" />
@@ -93,6 +94,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector4.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Scene\SceneBase.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Debug.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\CreateProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Game.cpp" />

@@ -1,0 +1,130 @@
+#include "GPUTimer.h"
+#include "DX/DXHelper.h"
+#include "Math/MathUtility.h"
+#include "Utility/Debug.h"
+
+namespace {
+    //新しい値に対する現在の平均が与える影響度(0～1)
+   //この値が大きいほど平均の値が更新されにくくなる。
+   //この値が小さいほど平均の値が更新されやすくなる
+    static constexpr float AVERAGE_IMPACT = 0.95f;
+
+    //平均を更新する
+    inline float runningAverage(float ave, float value) {
+        Framework::Math::MathUtil::lerp(value, ave, AVERAGE_IMPACT);
+    }
+}
+
+namespace Framework::Utility {
+    GPUTimer::GPUTimer(ID3D12Device* device, ID3D12CommandQueue* commandQueue, UINT maxFrameCount)
+        :mGpuFreqInv(1.0f),
+        mAverages{},
+        mTimings{} {
+        storeDevice(device, commandQueue, maxFrameCount);
+    }
+
+    GPUTimer::~GPUTimer() { releaseDevice(); }
+
+    void GPUTimer::beginFrame() { }
+
+    void GPUTimer::endFrame(ID3D12GraphicsCommandList* commandList) {
+        static UINT resolveToFrameID = 0;
+        UINT64 resolveToBaseAddress = resolveToFrameID * TIMER_SLOT_NUM * sizeof(UINT64);
+        commandList->ResolveQueryData(mQueryHeap.Get(), D3D12_QUERY_TYPE::D3D12_QUERY_TYPE_TIMESTAMP, 0, TIMER_SLOT_NUM, mBuffer.Get(), resolveToBaseAddress);
+
+        UINT readBackID = (resolveToFrameID + 1) % (mMaxFrameCount + 1);
+        SIZE_T readBackOffset = readBackID * TIMER_SLOT_NUM * sizeof(UINT64);
+
+        D3D12_RANGE range{ readBackOffset ,readBackOffset + TIMER_SLOT_NUM * sizeof(UINT64) };
+
+        UINT64* timingData;
+        DX::throwIfFailed(mBuffer->Map(0, &range, reinterpret_cast<void**>(&timingData)));
+        memcpy(&mTimings[0], timingData, TIMER_SLOT_NUM * sizeof(UINT64));
+        mBuffer->Unmap(0, nullptr);
+
+        for (UINT i = 0; i < TIMER_COUNT; i++) {
+            UINT64 start = mTimings[i * 2];
+            UINT64 end = mTimings[i * 2 + 1];
+            //なるべく有効桁数を保った状態で演算したい
+            float value = float(double(end - start) * mGpuFreqInv);
+            mAverages[i] = runningAverage(mAverages[i], value);
+        }
+
+        resolveToFrameID = readBackID;
+    }
+
+    void GPUTimer::start(ID3D12GraphicsCommandList* commandList, UINT timerID) {
+        MY_ASSERTION(timerID < TIMER_COUNT, L"timerIDの値が不正です");
+
+        commandList->EndQuery(mQueryHeap.Get(), D3D12_QUERY_TYPE::D3D12_QUERY_TYPE_TIMESTAMP, timerID * 2);
+    }
+
+    void GPUTimer::stop(ID3D12GraphicsCommandList* commandList, UINT timerID) {
+        MY_ASSERTION(timerID < TIMER_COUNT, L"timerIDの値が不正です");
+
+        commandList->EndQuery(mQueryHeap.Get(), D3D12_QUERY_TYPE::D3D12_QUERY_TYPE_TIMESTAMP, timerID * 2 + 1);
+    }
+
+    void GPUTimer::reset() {
+        mAverages.fill(0.0f);
+    }
+
+    float GPUTimer::getElapsedTime(UINT timerID) {
+        MY_ASSERTION(timerID < TIMER_COUNT, L"timerIDの値が不正です");
+
+        UINT64 start = mTimings[timerID * 2];
+        UINT64 end = mTimings[timerID * 2 + 1];
+        return float(Math::MathUtil::mymax(0.0, double(end - start))* mGpuFreqInv);
+    }
+
+    float GPUTimer::getAverageTime(UINT timerID) {
+        MY_ASSERTION(timerID < TIMER_COUNT, L"timerIDの値が不正です");
+        return mAverages[timerID];
+    }
+
+    void GPUTimer::releaseDevice() {
+        mQueryHeap.Reset();
+        mBuffer.Reset();
+    }
+
+    void GPUTimer::storeDevice(ID3D12Device* device, ID3D12CommandQueue* commandQueue, UINT maxFrameCount) {
+        mMaxFrameCount = maxFrameCount;
+
+        ComPtr<ID3D12InfoQueue> infoQueue;
+        if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue)))) {
+            D3D12_MESSAGE_ID denyIDs[] =
+            {
+                D3D12_MESSAGE_ID::D3D12_MESSAGE_ID_EXECUTECOMMANDLISTS_GPU_WRITTEN_READBACK_RESOURCE_MAPPED,
+            };
+            D3D12_INFO_QUEUE_FILTER filter = {};
+            filter.DenyList.NumIDs = _countof(denyIDs);
+            filter.DenyList.pIDList = denyIDs;
+            infoQueue->AddStorageFilterEntries(&filter);
+            MY_DEBUG_LOG(L"Warning: GPUTimer is disabling an unwanted D3D12 debug layer warning: D3D12_MESSAGE_ID_EXECUTECOMMANDLISTS_GPU_WRITTEN_READBACK_RESOURCE_MAPPED.");
+        }
+
+        UINT64 gpuFreq;
+        DX::throwIfFailed(commandQueue->GetTimestampFrequency(&gpuFreq));
+        mGpuFreqInv = 1000.0f / double(gpuFreq);
+
+        D3D12_QUERY_HEAP_DESC desc = {};
+        desc.Type = D3D12_QUERY_HEAP_TYPE::D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
+        desc.Count = TIMER_SLOT_NUM;
+        DX::throwIfFailed(device->CreateQueryHeap(&desc, IID_PPV_ARGS(&mQueryHeap)));
+        mQueryHeap->SetName(L"GPUTimerQuery");
+
+        CD3DX12_HEAP_PROPERTIES prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_READBACK);
+        size_t perFrameInstances = mMaxFrameCount + 1;
+
+        CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(perFrameInstances * TIMER_SLOT_NUM * sizeof(UINT64));
+        DX::throwIfFailed(device->CreateCommittedResource(
+            &prop,
+            D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+            &bufferDesc,
+            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST,
+            nullptr,
+            IID_GRAPHICS_PPV_ARGS(mBuffer.ReleaseAndGetAddressOf())));
+
+        mBuffer->SetName(L"GPUTimerBuffer");
+    }
+} //Framework::Utility 
