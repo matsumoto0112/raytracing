@@ -394,8 +394,8 @@ namespace Framework::DX {
     }
 
     void DeviceResource::prepare(D3D12_RESOURCE_STATES beforeState) {
-        //throwIfFailed(mCommandAllocators[mBackBufferIndex]->Reset());
-        //throwIfFailed(mCommandList->Reset(mCommandAllocators[mBackBufferIndex].Get(), nullptr));
+        throwIfFailed(mCommandAllocators[mBackBufferIndex]->Reset());
+        throwIfFailed(mCommandList->Reset(mCommandAllocators[mBackBufferIndex].Get(), nullptr));
 
         if (beforeState != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET) {
             D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mBackBufferIndex].Get(), beforeState, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);

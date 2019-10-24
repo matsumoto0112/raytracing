@@ -86,6 +86,12 @@ void MyClosestHitShader_Triangle(inout RayPayload payload, in MyAttr attr) {
     payload.color = color;
 }
 
+[shader("closesthit")]
+void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
+    float4 color = float4(l_material.color);
+    payload.color = color;
+}
+
 [shader("miss")]
 void MyMissShader(inout RayPayload payload) {
     float4 back = float4(0, 0.8, 0.8, 1.0f);

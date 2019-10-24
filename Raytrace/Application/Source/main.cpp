@@ -45,12 +45,15 @@ namespace GeometryType {
     enum MyEnum {
         Cube,
         Triangle,
+        Plane,
         Count
     };
 }
 
 static constexpr UINT TRIANGLE_COUNT = 9;
 static constexpr UINT CUBE_COUNT = 1;
+static constexpr UINT PLANE_COUNT = 1;
+static constexpr UINT TLAS_NUM = TRIANGLE_COUNT + CUBE_COUNT + PLANE_COUNT;
 
 /**
 * @class MainApp
@@ -93,9 +96,7 @@ public:
     virtual void onUpdate() override {
         //更新開始時に準備をかける
         Game::onUpdate();
-        mDeviceResource->prepare();
         mTimer.update();
-        Framework::ImGuiManager::getInstance()->beginFrame();
 
         calcFrameStatus();
         updateTLAS();
@@ -104,11 +105,12 @@ public:
 
     virtual void onRender() override {
         Game::onRender();
+        mDeviceResource->prepare();
+        Framework::ImGuiManager::getInstance()->beginFrame();
 
         ID3D12Device* device = mDeviceResource->getDevice();
         ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
 
-        //mDeviceResource->prepare();
         mGPUTimer.beginFrame();
 
 
@@ -150,13 +152,9 @@ private:
     UINT mDescriptorSize;
 
     ConstantBuffer<SceneConstantBuffer> mSceneCB;
-    //ConstantBuffer<Instance> mInstanceCB;
-    //XMVECTOR mEye, mAt, mUp;
     XMFLOAT3 mCameraPosition;
     XMFLOAT3 mCameraRotation;
 
-    //D3DBuffer mIndexBuffer;
-    //D3DBuffer mVertexBuffer;
     float mRotation;
 
 
@@ -173,9 +171,11 @@ private:
     //シェーダーテーブル
     static const wchar_t* HIT_GROUP_CUBE_NAME;
     static const wchar_t* HIT_GROUP_TRIANGLE_NAME;
+    static const wchar_t* HIT_GROUP_PLANE_NAME;
     static const wchar_t* RAY_GEN_SHADER_NAME;
     static const wchar_t* CLOSEST_HIT_SHADER_CUBE_NAME;
     static const wchar_t* CLOSEST_HIT_SHADER_TRIGNALE_NAME;
+    static const wchar_t* CLOSEST_HIT_SHADER_PLANE_NAME;
     static const wchar_t* MISS_SHADER_NAME;
 
     ComPtr<ID3D12Resource> mMissShaderTable;
@@ -278,10 +278,14 @@ private:
     */
     void buildTriangleGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer);
     /**
+    * @brief 平面のジオメトリ生成
+    */
+    void buildPlaneGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer);
+    /**
     * @brief ボトムレベルのASを構築する
     */
     Framework::DX::AccelerationStructureBuffers buildBLAS(std::vector<D3DBuffer> indexBuffers, std::vector<D3DBuffer> vertexBuffers);
-    Framework::DX::AccelerationStructureBuffers buildTLAS(ComPtr<ID3D12Resource> bottomLevelAS[GeometryType::Count], uint64_t tlasSize);
+    Framework::DX::AccelerationStructureBuffers buildTLAS(ComPtr<ID3D12Resource> bottomLevelAS[GeometryType::Count], uint64_t& tlasSize, float rotate);
 
     /**
     * @brief ASの作成
@@ -329,11 +333,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
 const wchar_t* MainApp::RAY_GEN_SHADER_NAME = L"MyRaygenShader";
 const wchar_t* MainApp::CLOSEST_HIT_SHADER_CUBE_NAME = L"MyClosestHitShader_Cube";
 const wchar_t* MainApp::CLOSEST_HIT_SHADER_TRIGNALE_NAME = L"MyClosestHitShader_Triangle";
+const wchar_t* MainApp::CLOSEST_HIT_SHADER_PLANE_NAME = L"MyClosestHitShader_Plane";
 const wchar_t* MainApp::MISS_SHADER_NAME = L"MyMissShader";
 
 //HitGroupは名前は何でもよい
 const wchar_t* MainApp::HIT_GROUP_CUBE_NAME = L"MyHitGroup_Cube";
 const wchar_t* MainApp::HIT_GROUP_TRIANGLE_NAME = L"MyHitGroup_Triangle";
+const wchar_t* MainApp::HIT_GROUP_PLANE_NAME = L"MyHitGroup_Plane";
 
 void MainApp::updateCameraMatrices() {
     mSceneCB->cameraPosition = XMLoadFloat3(&mCameraPosition);
@@ -353,7 +359,7 @@ void MainApp::updateCameraMatrices() {
 }
 
 void MainApp::initializeScene() {
-    mCameraPosition = { 0,3.0f,-10.0f };
+    mCameraPosition = { 0,3.0f,-30.0f };
     mCameraRotation = { 0,0,0 };
 
     mCameraParameterWindow = std::make_unique<Framework::ImGUI::Window>("Camera");
@@ -426,7 +432,6 @@ void MainApp::doRaytracing() {
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::RenderTarget, mRaytracingOutputResourceUAVGpuDescriptor);
     list->SetComputeRootShaderResourceView(GlobalRootSignatureParameter::AccelerationStructureSlot, mTopLevelAS->GetGPUVirtualAddress());
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mGeometryIndexBuffers[0].gpuHandle);
-    //list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mIndexBuffer.gpuHandle);
     dispatchRays(mDXRInterface->getCommandList(), mDXRInterface->getStateObject(), &desc);
 }
 
@@ -441,13 +446,13 @@ void MainApp::createDeviceDependentResources() {
     createAuxillaryDeviceResources();
     //レイトレース用インターフェース作成
     createRaytracinginterfaces();
-    ////ルートシグネチャを作成する
+    //ルートシグネチャを作成する
     createRootSignatures();
-    ////レイトレーシングに必要なパイプラインオブジェクトを生成する
+    //レイトレーシングに必要なパイプラインオブジェクトを生成する
     createRaytracingPipelineStateObject();
     //ヒープ作成
     createDescriptorHeap();
-    ////AS作成
+    //AS作成
     buildAccelerationStructures();
     //コンスタントバッファ作成
     createConstantBuffers();
@@ -544,6 +549,15 @@ void MainApp::createRootSignatures() {
             desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
             serializeAndCreateRaytracingRootSignature(desc, &mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Triangle]);
         }
+        //Plane
+        {
+            CD3DX12_ROOT_PARAMETER params[LocalRootSignatureParams::Plane::Count];
+            params[LocalRootSignatureParams::Plane::Material].InitAsConstants(SizeOfInUint32(MaterialConstantBuffer), 1);
+
+            CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(params), params);
+            desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+            serializeAndCreateRaytracingRootSignature(desc, &mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Plane]);
+        }
     }
 }
 
@@ -558,6 +572,7 @@ void MainApp::createDxilLibrarySubobject(CD3DX12_STATE_OBJECT_DESC* pipeline) {
     lib->DefineExport(RAY_GEN_SHADER_NAME);
     lib->DefineExport(CLOSEST_HIT_SHADER_CUBE_NAME);
     lib->DefineExport(CLOSEST_HIT_SHADER_TRIGNALE_NAME);
+    lib->DefineExport(CLOSEST_HIT_SHADER_PLANE_NAME);
     lib->DefineExport(MISS_SHADER_NAME);
 }
 
@@ -569,10 +584,15 @@ void MainApp::createHitGroupSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
     hitGroup->SetHitGroupExport(HIT_GROUP_CUBE_NAME);
     hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
 
-    auto hitGroup2 = pipeline->CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
-    hitGroup2->SetClosestHitShaderImport(CLOSEST_HIT_SHADER_TRIGNALE_NAME);
-    hitGroup2->SetHitGroupExport(HIT_GROUP_TRIANGLE_NAME);
-    hitGroup2->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
+    hitGroup = pipeline->CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+    hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_SHADER_TRIGNALE_NAME);
+    hitGroup->SetHitGroupExport(HIT_GROUP_TRIANGLE_NAME);
+    hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
+
+    hitGroup = pipeline->CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+    hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_SHADER_PLANE_NAME);
+    hitGroup->SetHitGroupExport(HIT_GROUP_PLANE_NAME);
+    hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
 }
 
 void MainApp::createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
@@ -593,6 +613,15 @@ void MainApp::createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipe
         auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
         asso->SetSubobjectToAssociate(*local);
         asso->AddExport(HIT_GROUP_TRIANGLE_NAME);
+    }
+    //Plane
+    {
+        auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+        local->SetRootSignature(mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Plane].Get());
+
+        auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+        asso->SetSubobjectToAssociate(*local);
+        asso->AddExport(HIT_GROUP_PLANE_NAME);
     }
 }
 
@@ -739,16 +768,30 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
 
 //三角形のジオメトリを作成する
 void MainApp::buildTriangleGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer) {
-    Index indices[] = { 0,1,2 };
-    Vertex vertices[] = {
+    std::vector<Index> indices = { 0,1,2 };
+    std::vector<Vertex> vertices = {
         {XMFLOAT3(0,1,0),XMFLOAT3(0,0,-1) },
         {XMFLOAT3(1,0,0),XMFLOAT3(0,0,-1) },
         {XMFLOAT3(-1,0,0),XMFLOAT3(0,0,-1) },
     };
 
     ID3D12Device* device = mDeviceResource->getDevice();
-    allocateUploadBuffer(device, indices, _countof(indices) * sizeof(indices[0]), &indexBuffer->resource);
-    allocateUploadBuffer(device, vertices, _countof(vertices) * sizeof(vertices[0]), &vertexBuffer->resource);
+    allocateUploadBuffer(device, indices.data(), indices.size() * sizeof(indices[0]), &indexBuffer->resource);
+    allocateUploadBuffer(device, vertices.data(), vertices.size() * sizeof(vertices[0]), &vertexBuffer->resource);
+}
+
+void MainApp::buildPlaneGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer) {
+    std::vector<Index> indices = { 0,1,2 ,0,2,3 };
+    std::vector<Vertex> vertices = {
+         {XMFLOAT3(-0.5f,0,0.5f),XMFLOAT3(0,1,0) },
+         {XMFLOAT3(0.5f,0,0.5f),XMFLOAT3(0,1,0) },
+         {XMFLOAT3(0.5f,0,-0.5f),XMFLOAT3(0,1,0) },
+         {XMFLOAT3(-0.5f,0,-0.5f),XMFLOAT3(0,1,0) },
+    };
+
+    ID3D12Device* device = mDeviceResource->getDevice();
+    allocateUploadBuffer(device, indices.data(), indices.size() * sizeof(indices[0]), &indexBuffer->resource);
+    allocateUploadBuffer(device, vertices.data(), vertices.size() * sizeof(vertices[0]), &vertexBuffer->resource);
 }
 
 //ボトムレベルASを構築する
@@ -806,11 +849,12 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildBLAS(
     return buffers;
 }
 
-Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(ComPtr<ID3D12Resource> bottomLevelAS[GeometryType::Count], uint64_t tlasSize) {
+Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
+    ComPtr<ID3D12Resource> bottomLevelAS[GeometryType::Count], uint64_t& tlasSize, float rotate) {
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
     inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-    inputs.NumDescs = TRIANGLE_COUNT + CUBE_COUNT;
+    inputs.NumDescs = TLAS_NUM;
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO pre;
@@ -828,38 +872,50 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(ComPtr<ID3D12Reso
         CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));
     tlasSize = pre.ResultDataMaxSizeInBytes;
 
-    buffers.instanceDesc = createBuffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * (TRIANGLE_COUNT + CUBE_COUNT),
+    buffers.instanceDesc = createBuffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * TLAS_NUM,
         D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
         CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD));
     D3D12_RAYTRACING_INSTANCE_DESC* instanceDescs;
     buffers.instanceDesc->Map(0, nullptr, (void**)&instanceDescs);
-    ZeroMemory(instanceDescs, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * (TRIANGLE_COUNT + CUBE_COUNT));
+    ZeroMemory(instanceDescs, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) *TLAS_NUM);
 
-    XMMATRIX transform[TRIANGLE_COUNT + CUBE_COUNT];
+    XMMATRIX transform[TLAS_NUM];
     //キューブのトランスフォーム
     transform[0] = XMMatrixIdentity();
     for (int i = 0; i < TRIANGLE_COUNT; i++) {
         float x = 3.0f * (i / 3);
         float y = 3.0f * (i % 3);
-        transform[i + 1] = XMMatrixTranslation(x, y, 0);
+        transform[i + 1] = XMMatrixRotationRollPitchYaw(0, rotate, 0) * XMMatrixTranslation(x, y, 0);
     }
+    transform[CUBE_COUNT + TRIANGLE_COUNT] = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
 
-    instanceDescs[0].InstanceID = 0;
-    instanceDescs[0].InstanceContributionToHitGroupIndex = 0;
-    instanceDescs[0].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+    UINT offset = 0;
+
+    instanceDescs[offset].InstanceID = 0;
+    instanceDescs[offset].InstanceContributionToHitGroupIndex = 0;
+    instanceDescs[offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[0].Transform), transform[0]);
-    instanceDescs[0].AccelerationStructure = bottomLevelAS[0]->GetGPUVirtualAddress();
-    instanceDescs[0].InstanceMask = 0xff;
+    instanceDescs[offset].AccelerationStructure = bottomLevelAS[GeometryType::Cube]->GetGPUVirtualAddress();
+    instanceDescs[offset].InstanceMask = 0xff;
 
+    offset = 1;
     for (int i = 1; i <= TRIANGLE_COUNT; i++) {
         instanceDescs[i].InstanceID = i;
         instanceDescs[i].InstanceContributionToHitGroupIndex = 1;
         instanceDescs[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
         XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[i].Transform), transform[i]);
-        instanceDescs[i].AccelerationStructure = bottomLevelAS[1]->GetGPUVirtualAddress();
+        instanceDescs[i].AccelerationStructure = bottomLevelAS[GeometryType::Triangle]->GetGPUVirtualAddress();
         instanceDescs[i].InstanceMask = 0xff;
     }
+
+    offset = CUBE_COUNT + TRIANGLE_COUNT;
+    instanceDescs[offset].InstanceID = CUBE_COUNT + TRIANGLE_COUNT;
+    instanceDescs[offset].InstanceContributionToHitGroupIndex = 2;
+    instanceDescs[offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+    XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[offset].Transform), transform[offset]);
+    instanceDescs[offset].AccelerationStructure = bottomLevelAS[GeometryType::Plane]->GetGPUVirtualAddress();
+    instanceDescs[offset].InstanceMask = 0xff;
 
     buffers.instanceDesc->Unmap(0, nullptr);
 
@@ -875,7 +931,6 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(ComPtr<ID3D12Reso
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_UAV;
     barrier.UAV.pResource = buffers.accelerationStructure.Get();
     mDXRInterface->getCommandList()->ResourceBarrier(1, &barrier);
-
     return buffers;
 }
 
@@ -883,10 +938,12 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(ComPtr<ID3D12Reso
 void MainApp::buildAccelerationStructures() {
     mDeviceResource->getCommandList()->Reset(mDeviceResource->getCommandAllocator(), nullptr);
 
+    //ジオメトリを生成
     buildCubeGeometry(&mGeometryIndexBuffers[GeometryType::Cube], &mGeometryVertexBuffers[GeometryType::Cube]);
     buildTriangleGeometry(&mGeometryIndexBuffers[GeometryType::Triangle], &mGeometryVertexBuffers[GeometryType::Triangle]);
+    buildPlaneGeometry(&mGeometryIndexBuffers[GeometryType::Plane], &mGeometryVertexBuffers[GeometryType::Plane]);
 
-    AccelerationStructureBuffers blasBuffers[2];
+    AccelerationStructureBuffers blasBuffers[GeometryType::Count];
     blasBuffers[GeometryType::Cube] =
         buildBLAS({ mGeometryIndexBuffers[GeometryType::Cube] }, { mGeometryVertexBuffers[GeometryType::Cube] });
     mBottomLevelAS[GeometryType::Cube] = blasBuffers[GeometryType::Cube].accelerationStructure;
@@ -895,7 +952,11 @@ void MainApp::buildAccelerationStructures() {
         buildBLAS({ mGeometryIndexBuffers[GeometryType::Triangle] }, { mGeometryVertexBuffers[GeometryType::Triangle] });
     mBottomLevelAS[GeometryType::Triangle] = blasBuffers[GeometryType::Triangle].accelerationStructure;
 
-    AccelerationStructureBuffers tlasBuffer = buildTLAS(mBottomLevelAS, mTLASSize);
+    blasBuffers[GeometryType::Plane] =
+        buildBLAS({ mGeometryIndexBuffers[GeometryType::Plane] }, { mGeometryVertexBuffers[GeometryType::Plane] });
+    mBottomLevelAS[GeometryType::Plane] = blasBuffers[GeometryType::Plane].accelerationStructure;
+
+    AccelerationStructureBuffers tlasBuffer = buildTLAS(mBottomLevelAS, mTLASSize, mRotation);
 
     mDeviceResource->executeCommandList();
     mDeviceResource->waitForGPU();
@@ -911,6 +972,7 @@ void MainApp::buildShaderTables() {
     void* missShaderID;
     void* hitGroupCubeShaderID;
     void* hitGroupTriangleShaderID;
+    void* hitGroupPlaneShaderID;
     UINT shaderIDSize;
 
     ComPtr<ID3D12StateObjectProperties> props;
@@ -919,6 +981,7 @@ void MainApp::buildShaderTables() {
     missShaderID = props->GetShaderIdentifier(MISS_SHADER_NAME);
     hitGroupCubeShaderID = props->GetShaderIdentifier(HIT_GROUP_CUBE_NAME);
     hitGroupTriangleShaderID = props->GetShaderIdentifier(HIT_GROUP_TRIANGLE_NAME);
+    hitGroupPlaneShaderID = props->GetShaderIdentifier(HIT_GROUP_PLANE_NAME);
     shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
     {
@@ -938,14 +1001,14 @@ void MainApp::buildShaderTables() {
     }
 
     {
-        UINT numShaderRecords = 2; //AABB + Triangle
+        UINT numShaderRecords = 3; //AABB + Triangle + Plane
         UINT shaderRecordSize = shaderIDSize +
-            std::max(sizeof(LocalRootSignatureParams::AABB::RootArgument), sizeof(LocalRootSignatureParams::Triangle::RootArgument));
+            std::max({ sizeof(LocalRootSignatureParams::AABB::RootArgument), sizeof(LocalRootSignatureParams::Triangle::RootArgument),sizeof(LocalRootSignatureParams::Plane::RootArgument) });
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupTable");
         //AABB
         {
             LocalRootSignatureParams::AABB::RootArgument cb;
-            cb.material.color = XMFLOAT4(1, 1, 0, 1);
+            cb.material.color = XMFLOAT4(0.6f, 0.2f, 0.3f, 1.0f);
             cb.power.power = 1.0f;
             table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &cb, sizeof(cb)));
         }
@@ -954,6 +1017,12 @@ void MainApp::buildShaderTables() {
             LocalRootSignatureParams::Triangle::RootArgument cb;
             cb.material.color = XMFLOAT4(0, 0, 1, 1);
             table.push_back(ShaderRecord(hitGroupTriangleShaderID, shaderIDSize, &cb, sizeof(cb)));
+        }
+        //Plane
+        {
+            LocalRootSignatureParams::Plane::RootArgument cb;
+            cb.material.color = XMFLOAT4(0.4f, 0.2f, 0.2f, 1.0f);
+            table.push_back(ShaderRecord(hitGroupPlaneShaderID, shaderIDSize, &cb, sizeof(cb)));
         }
         mHitGroupShaderStrideInBytes = table.getShaderRecordSize();
         mHitGroupShaderTable = table.getResource();
@@ -1051,84 +1120,11 @@ ComPtr<ID3D12Resource> MainApp::createBuffer(uint64_t size, D3D12_RESOURCE_FLAGS
 }
 
 void MainApp::updateTLAS() {
-    auto build = [&](ComPtr<ID3D12Resource> bottomLevelAS[GeometryType::Count], uint64_t& tlasSize, float rotate) {
-        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
-        inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
-        inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-        inputs.NumDescs = TRIANGLE_COUNT + CUBE_COUNT;
-        inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
-
-        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO pre;
-        auto device = mDXRInterface->getDXRDevice();
-        device->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &pre);
-
-        AccelerationStructureBuffers buffers;
-        buffers.scratch = createBuffer(pre.ScratchDataSizeInBytes,
-            D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
-            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-            CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));
-        buffers.accelerationStructure = createBuffer(pre.ResultDataMaxSizeInBytes,
-            D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
-            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
-            CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));
-        tlasSize = pre.ResultDataMaxSizeInBytes;
-
-        buffers.instanceDesc = createBuffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * (TRIANGLE_COUNT + CUBE_COUNT),
-            D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
-            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
-            CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD));
-        D3D12_RAYTRACING_INSTANCE_DESC* instanceDescs;
-        buffers.instanceDesc->Map(0, nullptr, (void**)&instanceDescs);
-        ZeroMemory(instanceDescs, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * (TRIANGLE_COUNT + CUBE_COUNT));
-
-        XMMATRIX transform[TRIANGLE_COUNT + CUBE_COUNT];
-        //キューブのトランスフォーム
-        transform[0] = XMMatrixIdentity();
-        for (int i = 0; i < TRIANGLE_COUNT; i++) {
-            float x = 3.0f * (i / 3);
-            float y = 3.0f * (i % 3);
-            transform[i + 1] = XMMatrixRotationRollPitchYaw(0, rotate, 0) * XMMatrixTranslation(x, y, 0);
-        }
-
-        instanceDescs[0].InstanceID = 0;
-        instanceDescs[0].InstanceContributionToHitGroupIndex = 0;
-        instanceDescs[0].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[0].Transform), transform[0]);
-        instanceDescs[0].AccelerationStructure = bottomLevelAS[0]->GetGPUVirtualAddress();
-        instanceDescs[0].InstanceMask = 0xff;
-
-        for (int i = 1; i <= TRIANGLE_COUNT; i++) {
-            instanceDescs[i].InstanceID = i;
-            instanceDescs[i].InstanceContributionToHitGroupIndex = 1;
-            instanceDescs[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-            XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[i].Transform), transform[i]);
-            instanceDescs[i].AccelerationStructure = bottomLevelAS[1]->GetGPUVirtualAddress();
-            instanceDescs[i].InstanceMask = 0xff;
-        }
-
-        buffers.instanceDesc->Unmap(0, nullptr);
-
-        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
-        asDesc.Inputs = inputs;
-        asDesc.Inputs.InstanceDescs = buffers.instanceDesc->GetGPUVirtualAddress();
-        asDesc.DestAccelerationStructureData = buffers.accelerationStructure->GetGPUVirtualAddress();
-        asDesc.ScratchAccelerationStructureData = buffers.scratch->GetGPUVirtualAddress();
-
-        mDXRInterface->getCommandList()->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
-
-        D3D12_RESOURCE_BARRIER barrier = {};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_UAV;
-        barrier.UAV.pResource = buffers.accelerationStructure.Get();
-        mDXRInterface->getCommandList()->ResourceBarrier(1, &barrier);
-        return buffers;
-
-    };
-    AccelerationStructureBuffers tlasBuffer = build(mBottomLevelAS, mTLASSize, mRotation);
+    AccelerationStructureBuffers tlasBuffer = buildTLAS(mBottomLevelAS, mTLASSize, mRotation);
 
     //ASの構築はGPUでやっているらしいので終了まで待つ必要がある
     mDeviceResource->executeCommandList();
     mDeviceResource->waitForGPU();
-    mDeviceResource->getCommandList()->Reset(mDeviceResource->getCommandAllocator(), nullptr);
 
     mTopLevelAS = tlasBuffer.accelerationStructure;
 }

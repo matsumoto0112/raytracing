@@ -70,6 +70,7 @@ namespace LocalRootSignatureParams {
         enum MyEnum {
             AABB,
             Triangle,
+            Plane,
             Count
         };
     } //Type 
@@ -93,6 +94,15 @@ namespace LocalRootSignatureParams {
             MaterialConstantBuffer material;
         };
     } //Triangle 
+    namespace Plane {
+        enum MyEnum {
+            Material = 0,
+            Count
+        };
+        struct RootArgument {
+            MaterialConstantBuffer material;
+        };
+    } //Plane 
 } //LocalRootSignatureParams
 
 
