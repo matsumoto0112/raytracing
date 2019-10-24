@@ -58,7 +58,8 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT GEOMETRY_COUNT = 2;
+static constexpr UINT TRIANGLE_COUNT = 9;
+static constexpr UINT CUBE_COUNT = 1;
 
 /**
 * @class MainApp
@@ -768,7 +769,7 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(ComPtr<ID3D12Reso
     D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
     inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
     inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-    inputs.NumDescs = GEOMETRY_COUNT;
+    inputs.NumDescs = TRIANGLE_COUNT + CUBE_COUNT;
     inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
 
     D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO pre;
@@ -786,17 +787,20 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(ComPtr<ID3D12Reso
         CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));
     tlasSize = pre.ResultDataMaxSizeInBytes;
 
-    buffers.instanceDesc = createBuffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * GEOMETRY_COUNT,
+    buffers.instanceDesc = createBuffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * (TRIANGLE_COUNT + CUBE_COUNT),
         D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
         D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
         CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD));
     D3D12_RAYTRACING_INSTANCE_DESC* instanceDescs;
     buffers.instanceDesc->Map(0, nullptr, (void**)&instanceDescs);
-    ZeroMemory(instanceDescs, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * GEOMETRY_COUNT);
+    ZeroMemory(instanceDescs, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * (TRIANGLE_COUNT + CUBE_COUNT));
 
-    XMMATRIX transform[GEOMETRY_COUNT];
+    XMMATRIX transform[TRIANGLE_COUNT + CUBE_COUNT];
+    //キューブのトランスフォーム
     transform[0] = XMMatrixIdentity();
-    transform[1] = XMMatrixTranslation(5, 0, 0);
+    for (int i = 0; i < TRIANGLE_COUNT; i++) {
+        transform[i + 1] = XMMatrixTranslation((i / 3) * 3, (i % 3) * 3, 0);
+    }
 
     instanceDescs[0].InstanceID = 0;
     instanceDescs[0].InstanceContributionToHitGroupIndex = 0;
@@ -805,12 +809,14 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(ComPtr<ID3D12Reso
     instanceDescs[0].AccelerationStructure = bottomLevelAS[0]->GetGPUVirtualAddress();
     instanceDescs[0].InstanceMask = 0xff;
 
-    instanceDescs[1].InstanceID = 1;
-    instanceDescs[1].InstanceContributionToHitGroupIndex = 1;
-    instanceDescs[1].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-    XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[1].Transform), transform[1]);
-    instanceDescs[1].AccelerationStructure = bottomLevelAS[1]->GetGPUVirtualAddress();
-    instanceDescs[1].InstanceMask = 0xff;
+    for (int i = 1; i <= TRIANGLE_COUNT; i++) {
+        instanceDescs[i].InstanceID = 1;
+        instanceDescs[i].InstanceContributionToHitGroupIndex = 1;
+        instanceDescs[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[i].Transform), transform[i]);
+        instanceDescs[i].AccelerationStructure = bottomLevelAS[1]->GetGPUVirtualAddress();
+        instanceDescs[i].InstanceMask = 0xff;
+    }
 
     buffers.instanceDesc->Unmap(0, nullptr);
 
