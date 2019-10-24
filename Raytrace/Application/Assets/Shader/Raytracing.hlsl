@@ -61,7 +61,12 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
     float3 N = getHitAttribute(normals, attr);
     float3 L = normalize(g_sceneCB.lightPosition.xyz - hitWorldPosition());
     float dotNL = max(0.0, dot(N, L));
-    float4 color = g_sceneCB.lightAmbient + g_sceneCB.lightDiffuse * dotNL;
+
+    float4 lambert = g_sceneCB.lightDiffuse * dotNL;
+    float4 color = float4(0, 0, 0, 1);
+    color.rgb += lambert.rgb;
+    color.rgb += g_sceneCB.lightAmbient.rgb;
+    color.a = 1.0;
     payload.color = color;
 }
 
@@ -88,9 +93,7 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
         shadowPayload);
 
     float factor = shadowPayload.hit ? 0.1 : 1.0;
-    //float factor = 0.1f;
     float4 color = float4(l_material.color) * factor;
-
 
     payload.color = color;
 }
