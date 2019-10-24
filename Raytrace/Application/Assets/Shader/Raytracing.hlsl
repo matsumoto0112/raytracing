@@ -16,9 +16,7 @@ ConstantBuffer<MaterialConstantBuffer> l_material : register(b1);
 
 //closesthitで引数として受け取る三角形の重心
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
-
-static const float FOG_START = 0.1f;
-static const float FOG_END = 100.0f;
+static const float A = 0.2f;
 
 //レイ生成
 [shader("raygeneration")]
@@ -45,52 +43,28 @@ void MyRaygenShader() {
     g_renderTarget[DispatchRaysIndex().xy] = payload.color;
 }
 
-inline float4 getFinalColor(float3 N, float3 L, float3 worldPos, float4 materialColor) {
+//ランバート反射の色を求める
+inline float3 lambertColor(float3 N, float3 L, float4 diffuse) {
     float dotNL = max(0.0, dot(N, L));
-    float4 lambert = g_sceneCB.lightDiffuse * dotNL;
-    float4 color = float4(0, 0, 0, 1);
-    color.rgb += lambert.rgb;
-    color.rgb += g_sceneCB.lightAmbient.rgb;
-    color *= materialColor;
+    return diffuse.rgb * dotNL;
+}
 
+//フォグを適用する
+inline float4 applyFog(in float3 worldPos, in float4 color) {
     float len = distance(g_sceneCB.cameraPosition.xyz, worldPos);
-    float fog = saturate((FOG_END - len) / (FOG_END - FOG_START));
+    float fog = saturate((g_sceneCB.fogEnd - len) / (g_sceneCB.fogEnd - g_sceneCB.fogStart));
     color.rgb = color.rgb * fog + float3(1, 1, 1) * (1.0 - fog);
     color.a = 1.0;
     return color;
 }
 
-//キューブに当たった時
-[shader("closesthit")]
-void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
-    uint indexSizeInBytes = 2;
-    uint indicesPerTriangle = 3;
-    uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
-    uint baseIndex = PrimitiveIndex() * triangleIndexStride;
-
-    const uint3 indices = load3x16BitIndices(baseIndex, Indices);
-    float3 normals[3] =
-    {
-        Vertices[indices[0]].normal,
-        Vertices[indices[1]].normal,
-        Vertices[indices[2]].normal,
-    };
-    float3 N = getHitAttribute(normals, attr);
-    float3 L = normalize(g_sceneCB.lightPosition.xyz - hitWorldPosition());
-
-    payload.color = getFinalColor(N, L, hitWorldPosition(), l_material.color);
-}
-
-//床に当たった時
-[shader("closesthit")]
-void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
-    float3 worldPos = hitWorldPosition();
-
-    RayDesc ray;
-    ray.Origin = worldPos;
-    ray.Direction = normalize(g_sceneCB.lightPosition.xyz - worldPos);
-    ray.TMin = 0.01f;
-    ray.TMax = 10000.0;
+//影に覆われているか判定する
+inline bool castShadow(Ray ray) {
+    RayDesc rayDesc;
+    rayDesc.Origin = ray.origin;
+    rayDesc.Direction = ray.direction;
+    rayDesc.TMin = 0.01;
+    rayDesc.TMax = 10000.0;
     ShadowPayload shadowPayload = { true };
 
     //影ができるかどうか
@@ -100,24 +74,79 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
         1, //ヒットグループの影用シェーダー
         1,
         1, //影用のミスシェーダー
-        ray,
+        rayDesc,
         shadowPayload);
+    return shadowPayload.hit;
+}
 
+//頂点インデックスを取得する
+inline uint3 getIndices() {
     uint indexSizeInBytes = 2;
     uint indicesPerTriangle = 3;
     uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
     uint baseIndex = PrimitiveIndex() * triangleIndexStride;
-    const uint3 indices = load3x16BitIndices(baseIndex, Indices);
+
+    return load3x16BitIndices(baseIndex, Indices);
+}
+
+//衝突した三角形の法線を取得する
+inline float3 getNormal(in MyAttr attr) {
+    const uint3 indices = getIndices();
     float3 normals[3] =
     {
-        Vertices[indices[0]].normal,
-        Vertices[indices[1]].normal,
-        Vertices[indices[2]].normal,
+        Vertices[indices.x].normal,
+        Vertices[indices.y].normal,
+        Vertices[indices.z].normal,
     };
-    float3 N = getHitAttribute(normals, attr);
+    return getHitAttribute(normals, attr);
+}
+
+//キューブに当たった時
+[shader("closesthit")]
+void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
+    float3 N = getNormal(attr);
     float3 L = normalize(g_sceneCB.lightPosition.xyz - hitWorldPosition());
-    float factor = shadowPayload.hit ? 0.1f : 1.0f;
-    payload.color = getFinalColor(N, L, hitWorldPosition(), l_material.color) * factor;
+    float4 color = float4(0, 0, 0, 0);
+    //ランバート
+    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse);
+    //アンビエント
+    color.rgb += g_sceneCB.lightAmbient.rgb;
+
+    color = applyFog(hitWorldPosition(), color);
+    payload.color = color;
+}
+
+//床に当たった時
+[shader("closesthit")]
+void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
+    //再帰回数を制限する
+    if (payload.recursion > 0) {
+        payload.color = float4(0, 0, 0, 0);
+        return;
+    }
+
+    float3 worldPos = hitWorldPosition();
+
+    //影用のレイキャスト
+    RayDesc ray;
+    ray.Origin = worldPos;
+    Ray shadowRay = { worldPos, normalize(g_sceneCB.lightPosition.xyz - worldPos) };
+    bool shadow = castShadow(shadowRay);
+
+    float3 N = getNormal(attr);
+    float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
+
+    float4 color = float4(0, 0, 0, 0);
+    //ランバート
+    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse);
+    //アンビエント
+    color.rgb += g_sceneCB.lightAmbient.rgb;
+    //フォグの適用
+    color = applyFog(hitWorldPosition(), color);
+
+    //影に覆われていたら黒くする
+    float factor = shadow ? 0.1f : 1.0f;
+    payload.color = color * factor;
 }
 
 [shader("closesthit")]
@@ -127,7 +156,7 @@ void MyClosestHitShader_Shadow(inout ShadowPayload payload, in MyAttr attr) {
 
 [shader("miss")]
 void MyMissShader(inout RayPayload payload) {
-    float4 back = float4(1, 1, 1, 1);
+    float4 back = float4(144.0 / 255.0, 215.0 / 255.0, 236.0 / 255.0, 1);
     payload.color = back;
 }
 

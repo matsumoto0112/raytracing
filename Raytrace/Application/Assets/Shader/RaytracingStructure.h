@@ -32,6 +32,8 @@ struct SceneConstantBuffer {
     XMVECTOR lightPosition;
     XMVECTOR lightAmbient;
     XMVECTOR lightDiffuse;
+    float fogStart;
+    float fogEnd;
 };
 
 /**

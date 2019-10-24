@@ -395,9 +395,11 @@ void MainApp::initializeScene() {
 #pragma warning(pop)
 
     mSceneCB->lightAmbient = { 0.3f,0.3f,0.3f,1.0f };
-    mSceneCB->lightDiffuse = { 0.6f,0.5f,0.0f,1.0f };
+    mSceneCB->lightDiffuse = { 0.7f,0.2f,0.7f,1.0f };
+    mSceneCB->fogStart = 50.0f;
+    mSceneCB->fogEnd = 100.0f;
     for (int i = 0; i < CUBE_COUNT; i++) {
-        mCubePositions[i] = { static_cast<float>(i / 3) * 5,5,static_cast<float>(i % 3) * 5 };
+        mCubePositions[i] = { static_cast<float>(i / 3) * 5,1.25f,static_cast<float>(i % 3) * 5 };
     }
     updateCameraMatrices();
 }
@@ -888,7 +890,7 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
     instanceDescs[offset].InstanceID = CUBE_COUNT;
     instanceDescs[offset].InstanceContributionToHitGroupIndex = 2;
     instanceDescs[offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-    XMMATRIX trans = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -10, 0);
+    XMMATRIX trans = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -0, 0);
     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[offset].Transform), trans);
     instanceDescs[offset].AccelerationStructure = bottomLevelAS[GeometryType::Plane]->GetGPUVirtualAddress();
     instanceDescs[offset].InstanceMask = 0xff;
@@ -986,7 +988,7 @@ void MainApp::buildShaderTables() {
         //AABB
         {
             LocalRootSignatureParams::AABB::RootArgument cb;
-            cb.material.color = XMFLOAT4(1,1,1,1);
+            cb.material.color = XMFLOAT4(1, 1, 1, 1);
             cb.material.indexOffset = mIndexOffsets[GeometryType::Cube];
             cb.material.vertexOffset = mVertexOffsets[GeometryType::Cube];
             table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &cb, sizeof(cb)));
