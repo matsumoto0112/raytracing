@@ -810,8 +810,8 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(ComPtr<ID3D12Reso
     instanceDescs[0].InstanceMask = 0xff;
 
     for (int i = 1; i <= TRIANGLE_COUNT; i++) {
-        instanceDescs[i].InstanceID = 1;
-        instanceDescs[i].InstanceContributionToHitGroupIndex = 1;
+        instanceDescs[i].InstanceID = i;
+        instanceDescs[i].InstanceContributionToHitGroupIndex = 0;
         instanceDescs[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
         XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[i].Transform), transform[i]);
         instanceDescs[i].AccelerationStructure = bottomLevelAS[1]->GetGPUVirtualAddress();
