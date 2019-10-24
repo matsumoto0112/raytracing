@@ -24,7 +24,7 @@ static uint3 load3x16BitIndices(uint offsetBytes, ByteAddressBuffer Indices) {
     else {
         indices.x = (four16BitIndices.x >> 16) & 0xffff;
         indices.y = four16BitIndices.y & 0xffff;
-        indices.y = (four16BitIndices.y >> 16) & 0xffff;
+        indices.z = (four16BitIndices.y >> 16) & 0xffff;
     }
     return indices;
 }
@@ -52,6 +52,10 @@ inline float3 rotVectorByQuat(float3 v, float4 q) {
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }
 
-
+inline float3 getHitAttribute(in float3 normal[3], in BuiltInTriangleIntersectionAttributes attr) {
+    return normal[0] +
+        (attr.barycentrics.x * (normal[1] - normal[0])) +
+        (attr.barycentrics.y * (normal[2] - normal[0]));
+}
 
 #endif //! INCLUDE_SHADER_RAYTRACINGHELPER_HLSLI

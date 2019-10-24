@@ -30,6 +30,8 @@ struct SceneConstantBuffer {
     XMMATRIX projectionToWorld;
     XMVECTOR cameraPosition;
     XMVECTOR lightPosition;
+    XMVECTOR lightAmbient;
+    XMVECTOR lightDiffuse;
 };
 
 /**
@@ -55,6 +57,7 @@ struct RayPayload {
 struct ShadowPayload {
     bool hit;
 };
+
 
 struct MaterialConstantBuffer {
     XMFLOAT4 color;

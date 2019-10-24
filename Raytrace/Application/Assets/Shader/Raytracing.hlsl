@@ -15,6 +15,7 @@ ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
 ConstantBuffer<MaterialConstantBuffer> l_material : register(b1);
 ConstantBuffer<PowerConstantBuffer> l_power : register(b2);
 
+//closesthitで引数として受け取る三角形の重心
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 
 //レイ生成
@@ -45,18 +46,29 @@ void MyRaygenShader() {
 //キューブに当たった時
 [shader("closesthit")]
 void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
-    float4 color = float4(l_material.color);
+    uint indexSizeInBytes = 2;
+    uint indicesPerTriangle = 3;
+    uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
+    uint baseIndex = PrimitiveIndex() * triangleIndexStride;
+
+    const uint3 indices = load3x16BitIndices(baseIndex, Indices);
+    float3 normals[3] =
+    {
+        Vertices[indices[0]].normal,
+        Vertices[indices[1]].normal,
+        Vertices[indices[2]].normal,
+    };
+    float3 N = getHitAttribute(normals, attr);
+    float3 L = normalize(g_sceneCB.lightPosition.xyz - hitWorldPosition());
+    float dotNL = max(0.0, dot(N, L));
+    float4 color = g_sceneCB.lightAmbient + g_sceneCB.lightDiffuse * dotNL;
     payload.color = color;
 }
 
 //床に当たった時
 [shader("closesthit")]
 void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
-    float hitT = RayTCurrent();
-    float3 worldRayDir = WorldRayDirection();
-    float3 worldRayOrigin = WorldRayOrigin();
-
-    float3 worldPos = worldRayOrigin + worldRayDir * hitT;
+    float3 worldPos = hitWorldPosition();
 
     RayDesc ray;
     ray.Origin = worldPos;

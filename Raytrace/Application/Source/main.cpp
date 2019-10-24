@@ -323,7 +323,7 @@ private:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     setlocale(LC_ALL, "");
-    MainApp app(1280, 720, L"Game");
+    MainApp app(800, 600, L"Game");
     return app.run(hInstance, nCmdShow);
 }
 
@@ -392,8 +392,10 @@ void MainApp::initializeScene() {
     PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
 #pragma warning(pop)
 
+    mSceneCB->lightAmbient = { 0.3f,0.3f,0.3f,1.0f };
+    mSceneCB->lightDiffuse = { 0.6f,0.5f,0.0f,1.0f };
     for (int i = 0; i < CUBE_COUNT; i++) {
-        mCubePositions[i] = { static_cast<float>(i / 3) * 5,5,static_cast<float>(i % 3) *5};
+        mCubePositions[i] = { static_cast<float>(i / 3) * 5,5,static_cast<float>(i % 3) * 5 };
     }
     updateCameraMatrices();
 }
@@ -760,8 +762,8 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
     };
 
     ID3D12Device* device = mDeviceResource->getDevice();
-    allocateUploadBuffer(device, indices.data(), indices.size() * sizeof(indices[0]), &indexBuffer->resource);
-    allocateUploadBuffer(device, vertices.data(), vertices.size() * sizeof(vertices[0]), &vertexBuffer->resource);
+    allocateUploadBuffer(device, indices.data(), indices.size() * sizeof(indices[0]), &indexBuffer->resource, L"IndexBuffer");
+    allocateUploadBuffer(device, vertices.data(), vertices.size() * sizeof(vertices[0]), &vertexBuffer->resource, L"VertexBuffer");
 
     createBufferSRV(indexBuffer, static_cast<UINT>(indices.size()) * sizeof(indices[0]) / 4, 0);
     createBufferSRV(vertexBuffer, static_cast<UINT>(vertices.size()), sizeof(vertices[0]));
