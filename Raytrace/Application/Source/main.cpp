@@ -29,6 +29,7 @@ using namespace Framework::DX;
 
 /**
 * @brief グローバルのリソースパラメータ
+* @details シェーダーファイル全体で共有するパラメータ
 */
 namespace GlobalRootSignatureParameter {
     enum MyEnum {
@@ -39,16 +40,6 @@ namespace GlobalRootSignatureParameter {
         Count
     };
 } //GlobalRootSignatureParameter 
-
-/**
-* @brief ローカルのルートシグネチャパラメータ
-*/
-namespace LocalRootSignatureParams {
-    enum MyEnum {
-        Instance = 0,
-        Count
-    };
-} //LocalRootSignatureParams
 
 namespace GeometryType {
     enum MyEnum {
@@ -151,7 +142,7 @@ private:
     std::unique_ptr<Framework::DX::DXRInterface> mDXRInterface;
 
     ComPtr<ID3D12RootSignature> mRaytracingGlobalRootSignature; //!< グローバルルートシグネチャ
-    ComPtr<ID3D12RootSignature> mRaytracingLocalRootSignature; //!< ローカルルートシグネチャ
+    ComPtr<ID3D12RootSignature> mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Count]; //!< ローカルルートシグネチャ
 
     //ディスクリプタヒープ
     ComPtr<ID3D12DescriptorHeap> mDescriptorHeap;
@@ -159,7 +150,7 @@ private:
     UINT mDescriptorSize;
 
     ConstantBuffer<SceneConstantBuffer> mSceneCB;
-    ConstantBuffer<Instance> mInstanceCB;
+    //ConstantBuffer<Instance> mInstanceCB;
     //XMVECTOR mEye, mAt, mUp;
     XMFLOAT3 mCameraPosition;
     XMFLOAT3 mCameraRotation;
@@ -534,13 +525,25 @@ void MainApp::createRootSignatures() {
     //ローカルルートシグネチャを作成する
     {
 #define SizeOfInUint32(obj) ((sizeof(obj) - 1) / sizeof(UINT32) + 1)
+        //AABB ローカルルートシグネチャ
+        {
+            CD3DX12_ROOT_PARAMETER params[LocalRootSignatureParams::AABB::Count];
+            params[LocalRootSignatureParams::AABB::Material].InitAsConstants(SizeOfInUint32(MaterialConstantBuffer), 1);
+            params[LocalRootSignatureParams::AABB::Power].InitAsConstants(SizeOfInUint32(PowerConstantBuffer), 2);
 
-        CD3DX12_ROOT_PARAMETER rootParameters[LocalRootSignatureParams::Count];
-        rootParameters[LocalRootSignatureParams::Instance].InitAsConstants(SizeOfInUint32(mInstanceCB), 1, 0);
-        CD3DX12_ROOT_SIGNATURE_DESC localRootSignatureDesc(ARRAYSIZE(rootParameters), rootParameters);
-        localRootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-        serializeAndCreateRaytracingRootSignature(localRootSignatureDesc, &mRaytracingLocalRootSignature);
-        mRaytracingLocalRootSignature->SetName(L"LocalRootSignature");
+            CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(params), params);
+            desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+            serializeAndCreateRaytracingRootSignature(desc, &mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::AABB]);
+        }
+        //Triangle
+        {
+            CD3DX12_ROOT_PARAMETER params[LocalRootSignatureParams::Triangle::Count];
+            params[LocalRootSignatureParams::Triangle::Material].InitAsConstants(SizeOfInUint32(MaterialConstantBuffer), 1);
+
+            CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(params), params);
+            desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+            serializeAndCreateRaytracingRootSignature(desc, &mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Triangle]);
+        }
     }
 }
 
@@ -573,13 +576,24 @@ void MainApp::createHitGroupSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
 }
 
 void MainApp::createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
-    auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-    local->SetRootSignature(mRaytracingLocalRootSignature.Get());
+    //AABB
+    {
+        auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+        local->SetRootSignature(mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::AABB].Get());
 
-    auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-    asso->SetSubobjectToAssociate(*local);
-    asso->AddExport(HIT_GROUP_CUBE_NAME);
-    asso->AddExport(HIT_GROUP_TRIANGLE_NAME);
+        auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+        asso->SetSubobjectToAssociate(*local);
+        asso->AddExport(HIT_GROUP_CUBE_NAME);
+    }
+    //Triangle
+    {
+        auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+        local->SetRootSignature(mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Triangle].Get());
+
+        auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+        asso->SetSubobjectToAssociate(*local);
+        asso->AddExport(HIT_GROUP_TRIANGLE_NAME);
+    }
 }
 
 void MainApp::createRaytracingPipelineStateObject() {
@@ -924,16 +938,23 @@ void MainApp::buildShaderTables() {
     }
 
     {
-        struct RootArguments {
-            Instance cb;
-        } arguments;
-        UINT numShaderRecords = 2;
-        UINT shaderRecordSize = shaderIDSize + sizeof(arguments);
+        UINT numShaderRecords = 2; //AABB + Triangle
+        UINT shaderRecordSize = shaderIDSize +
+            std::max(sizeof(LocalRootSignatureParams::AABB::RootArgument), sizeof(LocalRootSignatureParams::Triangle::RootArgument));
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupTable");
-        arguments.cb.indexOffset = 0;
-        table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &arguments, sizeof(arguments)));
-        arguments.cb.indexOffset = 1;
-        table.push_back(ShaderRecord(hitGroupTriangleShaderID, shaderIDSize, &arguments, sizeof(arguments)));
+        //AABB
+        {
+            LocalRootSignatureParams::AABB::RootArgument cb;
+            cb.material.color = XMFLOAT4(1, 1, 0, 1);
+            cb.power.power = 1.0f;
+            table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &cb, sizeof(cb)));
+        }
+        //Triangle
+        {
+            LocalRootSignatureParams::Triangle::RootArgument cb;
+            cb.material.color = XMFLOAT4(0, 0, 1, 1);
+            table.push_back(ShaderRecord(hitGroupTriangleShaderID, shaderIDSize, &cb, sizeof(cb)));
+        }
         mHitGroupShaderStrideInBytes = table.getShaderRecordSize();
         mHitGroupShaderTable = table.getResource();
     }

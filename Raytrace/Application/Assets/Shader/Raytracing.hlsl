@@ -12,7 +12,9 @@ StructuredBuffer<Vertex> Vertices : register(t2, space0);
 RWTexture2D<float4> g_renderTarget : register(u0);
 
 ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
-ConstantBuffer<Instance> l_instance : register(b1);
+//ConstantBuffer<Instance> l_instance : register(b1);
+ConstantBuffer<MaterialConstantBuffer> l_material : register(b1);
+ConstantBuffer<PowerConstantBuffer> l_power : register(b2);
 
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 
@@ -46,12 +48,13 @@ void MyRaygenShader() {
 }
 
 inline uint3 getIndex() {
-    uint indexSizeInBytes = 2;
-    uint indicesPerTriangle = 3;
-    uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
-    uint baseIndex = PrimitiveIndex() * triangleIndexStride;
+    //uint indexSizeInBytes = 2;
+    //uint indicesPerTriangle = 3;
+    //uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
+    //uint baseIndex = PrimitiveIndex() * triangleIndexStride;
 
-    return load3x16BitIndices(baseIndex + l_instance.indexOffset * 2, Indices);
+    //return load3x16BitIndices(baseIndex + l_instance.indexOffset * 2, Indices);
+    return uint3(0, 0, 0);
 }
 
 [shader("closesthit")]
@@ -73,13 +76,13 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
 
     //float3 lightColor = float3(1, 0, 0);
     //float4 color = float4(calcLam(lightColor, L, N), 1.0f);
-    float4 color = float4(l_instance.indexOffset, 0, 0, 1);
+    float4 color = float4(l_material.color) * l_power.power;
     payload.color = color;
 }
 
 [shader("closesthit")]
 void MyClosestHitShader_Triangle(inout RayPayload payload, in MyAttr attr) {
-    float4 color = float4(l_instance.indexOffset, 0, 0, 1);
+    float4 color = float4(l_material.color);
     payload.color = color;
 }
 

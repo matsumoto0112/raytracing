@@ -53,4 +53,47 @@ struct Instance {
     UINT indexOffset;
 };
 
+struct MaterialConstantBuffer {
+    XMFLOAT4 color;
+};
+struct PowerConstantBuffer {
+    float power;
+};
+
+/**
+* @brief ローカルのルートシグネチャパラメータ
+* @details シェーダーファイルの一部でのみ使用するパラメータ
+*/
+namespace LocalRootSignatureParams {
+    namespace Type {
+        enum MyEnum {
+            AABB,
+            Triangle,
+            Count
+        };
+    } //Type 
+    namespace AABB {
+        enum MyEnum {
+            Material = 0,
+            Power,
+            Count
+        };
+        struct RootArgument {
+            MaterialConstantBuffer material;
+            PowerConstantBuffer power;
+        };
+    } //AABB
+    namespace Triangle {
+        enum MyEnum {
+            Material = 0,
+            Count
+        };
+        struct RootArgument {
+            MaterialConstantBuffer material;
+        };
+    } //Triangle 
+} //LocalRootSignatureParams
+
+
+
 #endif // RAYTRACINGHLSLCOMPAT_H
