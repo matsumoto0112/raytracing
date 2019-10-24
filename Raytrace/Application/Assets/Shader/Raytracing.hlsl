@@ -49,13 +49,6 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
     payload.color = color;
 }
 
-//éOäpå`Ç…ìñÇΩÇ¡ÇΩéû
-[shader("closesthit")]
-void MyClosestHitShader_Triangle(inout RayPayload payload, in MyAttr attr) {
-    float4 color = float4(l_material.color);
-    payload.color = color;
-}
-
 //è∞Ç…ìñÇΩÇ¡ÇΩéû
 [shader("closesthit")]
 void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
@@ -67,7 +60,7 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
 
     RayDesc ray;
     ray.Origin = worldPos;
-    ray.Direction = normalize(g_sceneCB.lightPosition - worldPos);
+    ray.Direction = normalize(g_sceneCB.lightPosition.xyz - worldPos);
     ray.TMin = 0.01f;
     ray.TMax = 10000.0;
     ShadowPayload shadowPayload = { true };

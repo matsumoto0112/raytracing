@@ -87,15 +87,6 @@ namespace LocalRootSignatureParams {
             PowerConstantBuffer power;
         };
     } //AABB
-    namespace Triangle {
-        enum MyEnum {
-            Material = 0,
-            Count
-        };
-        struct RootArgument {
-            MaterialConstantBuffer material;
-        };
-    } //Triangle 
     namespace Plane {
         enum MyEnum {
             Material = 0,
