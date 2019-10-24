@@ -612,7 +612,7 @@ void MainApp::createRaytracingPipelineStateObject() {
     //シェーダー設定
     //サイズは使用するオブジェクトの最大値を利用する
     auto* config = raytracingPipeline.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
-    UINT payloadSize = sizeof(float) * 4; //レイが当たった時の情報を格納するpayload
+    UINT payloadSize = sizeof(RayPayload); //レイが当たった時の情報を格納するpayload
     UINT attrSize = 2 * sizeof(float); //三角形の重心情報を利用する
     config->Config(payloadSize, attrSize);
 
