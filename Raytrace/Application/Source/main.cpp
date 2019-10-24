@@ -74,6 +74,7 @@ public:
         :Game(width, height, title),
         mRaytracingOutputResourceUAVDescriptorHeapIndex(UINT_MAX),
         mDescriptorSize(0),
+        mRotation(0.0f),
         mImGUIWindow(std::make_unique<Framework::ImGUI::Window>("GPU")) {
         mGPUInfoText = std::make_shared<Framework::ImGUI::Text>("");
         mImGUIWindow->addItem(mGPUInfoText);
@@ -99,11 +100,15 @@ public:
         Framework::ImGuiManager::getInstance()->init(mWindow->getHwnd(), mDeviceResource->getDevice(), mDeviceResource->getBackBufferFormat());
     }
     virtual void onUpdate() override {
+        //更新開始時に準備をかける
         Game::onUpdate();
+        mDeviceResource->prepare();
         mTimer.update();
         Framework::ImGuiManager::getInstance()->beginFrame();
 
         calcFrameStatus();
+        updateTLAS();
+
     }
 
     virtual void onRender() override {
@@ -112,8 +117,9 @@ public:
         ID3D12Device* device = mDeviceResource->getDevice();
         ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
 
-        mDeviceResource->prepare();
+        //mDeviceResource->prepare();
         mGPUTimer.beginFrame();
+
 
         doRaytracing();
         copyOutput();
@@ -125,6 +131,7 @@ public:
         Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
 
         mGPUTimer.endFrame(list);
+        //終了時にコマンドリストを初期化したい
         mDeviceResource->present(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     }
@@ -159,7 +166,7 @@ private:
 
     //D3DBuffer mIndexBuffer;
     //D3DBuffer mVertexBuffer;
-
+    float mRotation;
 
 
     //AS
@@ -312,6 +319,8 @@ private:
     UINT createBufferSRV(D3DBuffer* buffer, UINT numElements, UINT elementSize);
 
     ComPtr<ID3D12Resource> createBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps);
+
+    void updateTLAS();
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
@@ -856,6 +865,7 @@ void MainApp::buildAccelerationStructures() {
 
     mDeviceResource->executeCommandList();
     mDeviceResource->waitForGPU();
+    mDeviceResource->getCommandList()->Reset(mDeviceResource->getCommandAllocator(), nullptr);
 
     mTopLevelAS = tlasBuffer.accelerationStructure;
 }
@@ -939,6 +949,8 @@ void MainApp::calcFrameStatus() {
         "DeltaTime:" << mTimer.getDeltaTime() << "s\n";
 
     mGPUInfoText->setText(ss.str());
+
+    mRotation += 0.01f;
 }
 
 UINT MainApp::allocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, UINT descriptorIndexToUse) {
@@ -989,4 +1001,85 @@ ComPtr<ID3D12Resource> MainApp::createBuffer(uint64_t size, D3D12_RESOURCE_FLAGS
         IID_PPV_ARGS(&buffer)));
 
     return buffer;
+}
+
+void MainApp::updateTLAS() {
+    auto build = [&](ComPtr<ID3D12Resource> bottomLevelAS[GeometryType::Count], uint64_t& tlasSize, float rotate) {
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
+        inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
+        inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+        inputs.NumDescs = TRIANGLE_COUNT + CUBE_COUNT;
+        inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO pre;
+        auto device = mDXRInterface->getDXRDevice();
+        device->GetRaytracingAccelerationStructurePrebuildInfo(&inputs, &pre);
+
+        AccelerationStructureBuffers buffers;
+        buffers.scratch = createBuffer(pre.ScratchDataSizeInBytes,
+            D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+            CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));
+        buffers.accelerationStructure = createBuffer(pre.ResultDataMaxSizeInBytes,
+            D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
+            CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));
+        tlasSize = pre.ResultDataMaxSizeInBytes;
+
+        buffers.instanceDesc = createBuffer(sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * (TRIANGLE_COUNT + CUBE_COUNT),
+            D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
+            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
+            CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD));
+        D3D12_RAYTRACING_INSTANCE_DESC* instanceDescs;
+        buffers.instanceDesc->Map(0, nullptr, (void**)&instanceDescs);
+        ZeroMemory(instanceDescs, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * (TRIANGLE_COUNT + CUBE_COUNT));
+
+        XMMATRIX transform[TRIANGLE_COUNT + CUBE_COUNT];
+        //キューブのトランスフォーム
+        transform[0] = XMMatrixIdentity();
+        for (int i = 0; i < TRIANGLE_COUNT; i++) {
+            transform[i + 1] = XMMatrixRotationRollPitchYaw(0, rotate, 0) * XMMatrixTranslation((i / 3) * 3, (i % 3) * 3, 0);
+        }
+
+        instanceDescs[0].InstanceID = 0;
+        instanceDescs[0].InstanceContributionToHitGroupIndex = 0;
+        instanceDescs[0].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[0].Transform), transform[0]);
+        instanceDescs[0].AccelerationStructure = bottomLevelAS[0]->GetGPUVirtualAddress();
+        instanceDescs[0].InstanceMask = 0xff;
+
+        for (int i = 1; i <= TRIANGLE_COUNT; i++) {
+            instanceDescs[i].InstanceID = i;
+            instanceDescs[i].InstanceContributionToHitGroupIndex = 0;
+            instanceDescs[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+            XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[i].Transform), transform[i]);
+            instanceDescs[i].AccelerationStructure = bottomLevelAS[1]->GetGPUVirtualAddress();
+            instanceDescs[i].InstanceMask = 0xff;
+        }
+
+        buffers.instanceDesc->Unmap(0, nullptr);
+
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC asDesc = {};
+        asDesc.Inputs = inputs;
+        asDesc.Inputs.InstanceDescs = buffers.instanceDesc->GetGPUVirtualAddress();
+        asDesc.DestAccelerationStructureData = buffers.accelerationStructure->GetGPUVirtualAddress();
+        asDesc.ScratchAccelerationStructureData = buffers.scratch->GetGPUVirtualAddress();
+
+        mDXRInterface->getCommandList()->BuildRaytracingAccelerationStructure(&asDesc, 0, nullptr);
+
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        barrier.UAV.pResource = buffers.accelerationStructure.Get();
+        mDXRInterface->getCommandList()->ResourceBarrier(1, &barrier);
+        return buffers;
+
+    };
+    AccelerationStructureBuffers tlasBuffer = build(mBottomLevelAS, mTLASSize, mRotation);
+
+    //ASの構築はGPUでやっているらしいので終了まで待つ必要がある
+    mDeviceResource->executeCommandList();
+    mDeviceResource->waitForGPU();
+    mDeviceResource->getCommandList()->Reset(mDeviceResource->getCommandAllocator(), nullptr);
+
+    mTopLevelAS = tlasBuffer.accelerationStructure;
 }
