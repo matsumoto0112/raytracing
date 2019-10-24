@@ -49,7 +49,7 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT CUBE_COUNT = 1;
+static constexpr UINT CUBE_COUNT = 9;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 
@@ -156,6 +156,7 @@ private:
 
     float mRotation;
 
+    std::array<XMFLOAT3, CUBE_COUNT> mCubePositions;
 
     //AS
     ComPtr<ID3D12Resource> mBottomLevelAS[GeometryType::Count];
@@ -391,6 +392,9 @@ void MainApp::initializeScene() {
     PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
 #pragma warning(pop)
 
+    for (int i = 0; i < CUBE_COUNT; i++) {
+        mCubePositions[i] = { static_cast<float>(i / 3) * 5,5,static_cast<float>(i % 3) *5};
+    }
     updateCameraMatrices();
 }
 
@@ -863,25 +867,23 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
     buffers.instanceDesc->Map(0, nullptr, (void**)&instanceDescs);
     ZeroMemory(instanceDescs, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) *TLAS_NUM);
 
-    XMMATRIX transform[TLAS_NUM];
-    //キューブのトランスフォーム
-    transform[0] = XMMatrixIdentity();
-    transform[CUBE_COUNT] = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -10, 0);
-
     UINT offset = 0;
+    for (int i = 0; i < CUBE_COUNT; i++) {
+        instanceDescs[offset + i].InstanceID = offset;
+        instanceDescs[offset + i].InstanceContributionToHitGroupIndex = offset;
+        instanceDescs[offset + i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+        XMMATRIX trans = XMMatrixTranslation(mCubePositions[i].x, mCubePositions[i].y, mCubePositions[i].z);
+        XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[offset + i].Transform), trans);
+        instanceDescs[offset + i].AccelerationStructure = bottomLevelAS[GeometryType::Cube]->GetGPUVirtualAddress();
+        instanceDescs[offset + i].InstanceMask = 0xff;
+    }
 
-    instanceDescs[offset].InstanceID = 0;
-    instanceDescs[offset].InstanceContributionToHitGroupIndex = 0;
-    instanceDescs[offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-    XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[0].Transform), transform[0]);
-    instanceDescs[offset].AccelerationStructure = bottomLevelAS[GeometryType::Cube]->GetGPUVirtualAddress();
-    instanceDescs[offset].InstanceMask = 0xff;
-
-    offset = 1;
+    offset = CUBE_COUNT;
     instanceDescs[offset].InstanceID = CUBE_COUNT;
     instanceDescs[offset].InstanceContributionToHitGroupIndex = 2;
     instanceDescs[offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-    XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[offset].Transform), transform[offset]);
+    XMMATRIX trans = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -10, 0);
+    XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[offset].Transform), trans);
     instanceDescs[offset].AccelerationStructure = bottomLevelAS[GeometryType::Plane]->GetGPUVirtualAddress();
     instanceDescs[offset].InstanceMask = 0xff;
 
@@ -968,7 +970,7 @@ void MainApp::buildShaderTables() {
     }
 
     {
-        UINT numShaderRecords = 4; //AABB + Triangle + Plane
+        UINT numShaderRecords = 4; //AABB + Plane
         UINT shaderRecordSize = shaderIDSize +
             std::max({ sizeof(LocalRootSignatureParams::AABB::RootArgument),sizeof(LocalRootSignatureParams::Plane::RootArgument) });
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupTable");
