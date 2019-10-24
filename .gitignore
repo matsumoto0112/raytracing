@@ -329,3 +329,5 @@ ASALocalRun/
 .mfractor/
 
 *.lnk
+
+/imgui.ini
