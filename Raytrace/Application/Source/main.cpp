@@ -180,13 +180,16 @@ private:
     UINT mRaytracingOutputResourceUAVDescriptorHeapIndex;
 
     //シェーダーテーブル
-    static const wchar_t* HIT_GROUP_NAME;
+    static const wchar_t* HIT_GROUP_CUBE_NAME;
+    static const wchar_t* HIT_GROUP_TRIANGLE_NAME;
     static const wchar_t* RAY_GEN_SHADER_NAME;
-    static const wchar_t* CLOSEST_HIT_SHADER_NAME;
+    static const wchar_t* CLOSEST_HIT_SHADER_CUBE_NAME;
+    static const wchar_t* CLOSEST_HIT_SHADER_TRIGNALE_NAME;
     static const wchar_t* MISS_SHADER_NAME;
 
     ComPtr<ID3D12Resource> mMissShaderTable;
     ComPtr<ID3D12Resource> mHitGroupShaderTable;
+    UINT mHitGroupShaderStrideInBytes;
     ComPtr<ID3D12Resource> mRayGenShaderTable;
     Framework::Utility::GPUTimer mGPUTimer;
 
@@ -333,11 +336,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
 //これらの名前はシェーダーファイルの関数名と一致させる必要がある
 //この名前をもとにエントリポイントを探すため
 const wchar_t* MainApp::RAY_GEN_SHADER_NAME = L"MyRaygenShader";
-const wchar_t* MainApp::CLOSEST_HIT_SHADER_NAME = L"MyClosestHitShader";
+const wchar_t* MainApp::CLOSEST_HIT_SHADER_CUBE_NAME = L"MyClosestHitShader_Cube";
+const wchar_t* MainApp::CLOSEST_HIT_SHADER_TRIGNALE_NAME = L"MyClosestHitShader_Triangle";
 const wchar_t* MainApp::MISS_SHADER_NAME = L"MyMissShader";
 
 //HitGroupは名前は何でもよい
-const wchar_t* MainApp::HIT_GROUP_NAME = L"MyHitGroup";
+const wchar_t* MainApp::HIT_GROUP_CUBE_NAME = L"MyHitGroup_Cube";
+const wchar_t* MainApp::HIT_GROUP_TRIANGLE_NAME = L"MyHitGroup_Triangle";
 
 void MainApp::updateCameraMatrices() {
     mSceneCB->cameraPosition = XMLoadFloat3(&mCameraPosition);
@@ -357,22 +362,22 @@ void MainApp::updateCameraMatrices() {
 }
 
 void MainApp::initializeScene() {
-    //mEye = { 0.0f,10.0f,-10.0f,1.0f };
-    //mAt = { 0.0f,0.0f,0.0f,1.0f };
-    //mUp = { 0.0f,1.0f,0.0f,1.0f };
     mCameraPosition = { 0,3.0f,-10.0f };
     mCameraRotation = { 0,0,0 };
 
     mCameraParameterWindow = std::make_unique<Framework::ImGUI::Window>("Camera");
 #define PARAMETER_CHANGE_SLIDER(name,type,min,max){\
     auto field = std::make_shared<Framework::ImGUI::FloatField>(name, type); \
-    field->setCallBack([&](float val) {type = val; }); \
-    field->setMinValue(min); \
-    field->setMaxValue(max); \
-    mCameraParameterWindow->addItem(field); \
+        field->setCallBack([&](float val) {type = val; }); \
+        field->setMinValue(min); \
+        field->setMaxValue(max); \
+        mCameraParameterWindow->addItem(field); \
     }
 
     mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Position"));
+
+#pragma warning( push ) 
+#pragma warning (disable: 4305)
     PARAMETER_CHANGE_SLIDER("X", mCameraPosition.x, -30.0f, 30.0f);
     PARAMETER_CHANGE_SLIDER("Y", mCameraPosition.y, -30.0f, 30.0f);
     PARAMETER_CHANGE_SLIDER("Z", mCameraPosition.z, -30.0f, 30.0f);
@@ -380,6 +385,7 @@ void MainApp::initializeScene() {
     PARAMETER_CHANGE_SLIDER("RX", mCameraRotation.x, 0.0f, 2 * 3.14);
     PARAMETER_CHANGE_SLIDER("RY", mCameraRotation.y, 0.0f, 2 * 3.14);
     PARAMETER_CHANGE_SLIDER("RZ", mCameraRotation.z, 0.0f, 2 * 3.14);
+#pragma warning(pop)
 
     updateCameraMatrices();
 }
@@ -400,7 +406,7 @@ void MainApp::doRaytracing() {
     auto dispatchRays = [&](ID3D12GraphicsCommandList5* list, ID3D12StateObject* state, D3D12_DISPATCH_RAYS_DESC* desc) {
         desc->HitGroupTable.StartAddress = mHitGroupShaderTable->GetGPUVirtualAddress();
         desc->HitGroupTable.SizeInBytes = mHitGroupShaderTable->GetDesc().Width;
-        desc->HitGroupTable.StrideInBytes = desc->HitGroupTable.SizeInBytes;
+        desc->HitGroupTable.StrideInBytes = mHitGroupShaderStrideInBytes;
 
         desc->MissShaderTable.StartAddress = mMissShaderTable->GetGPUVirtualAddress();
         desc->MissShaderTable.SizeInBytes = mMissShaderTable->GetDesc().Width;
@@ -474,11 +480,17 @@ void MainApp::releaseDeviceDependentResources() {
     mDescriptorHeap.Reset();
     mDescriptorAllocated = 0;
     mRaytracingOutputResourceUAVDescriptorHeapIndex = UINT_MAX;
-    //mIndexBuffer.resource.Reset();
-    //mVertexBuffer.resource.Reset();
+    for (auto&& index : mGeometryIndexBuffers) {
+        index.resource.Reset();
+    }
+    for (auto&& vertex : mGeometryVertexBuffers) {
+        vertex.resource.Reset();
+    }
 
-    //mBottomLevelAS.Reset();
-    //mTopLevelAS.Reset();
+    for (UINT i = 0; i < GeometryType::Count; i++) {
+        mBottomLevelAS[i].Reset();
+    }
+    mTopLevelAS.Reset();
 }
 
 void MainApp::releaseWindowSizeDependentResources() {
@@ -541,17 +553,23 @@ void MainApp::createDxilLibrarySubobject(CD3DX12_STATE_OBJECT_DESC* pipeline) {
     ////実際に使用するシェーダーの名前を定義する
     ////この定義された名前のエントリポイントをシェーダーコードの中から探すため、一致させる必要がある
     lib->DefineExport(RAY_GEN_SHADER_NAME);
-    lib->DefineExport(CLOSEST_HIT_SHADER_NAME);
+    lib->DefineExport(CLOSEST_HIT_SHADER_CUBE_NAME);
+    lib->DefineExport(CLOSEST_HIT_SHADER_TRIGNALE_NAME);
     lib->DefineExport(MISS_SHADER_NAME);
 }
 
 void MainApp::createHitGroupSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
     auto hitGroup = pipeline->CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
     //今回はClosest Hitのみ使う
-    hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_SHADER_NAME);
+    hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_SHADER_CUBE_NAME);
     //HitGroupをエクスポートする
-    hitGroup->SetHitGroupExport(HIT_GROUP_NAME);
+    hitGroup->SetHitGroupExport(HIT_GROUP_CUBE_NAME);
     hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
+
+    auto hitGroup2 = pipeline->CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+    hitGroup2->SetClosestHitShaderImport(CLOSEST_HIT_SHADER_TRIGNALE_NAME);
+    hitGroup2->SetHitGroupExport(HIT_GROUP_TRIANGLE_NAME);
+    hitGroup2->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
 }
 
 void MainApp::createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
@@ -560,7 +578,7 @@ void MainApp::createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipe
 
     auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
     asso->SetSubobjectToAssociate(*local);
-    asso->AddExport(HIT_GROUP_NAME);
+    asso->AddExport(HIT_GROUP_CUBE_NAME);
 }
 
 void MainApp::createRaytracingPipelineStateObject() {
@@ -594,7 +612,6 @@ void MainApp::createRaytracingPipelineStateObject() {
     pipelineConfig->Config(maxDepth);
 
     mDXRInterface->createStateObject(raytracingPipeline);
-    //throwIfFailed(mDXRDevice->CreateStateObject(raytracingPipeline, IID_PPV_ARGS(&mDXRStateObject)), L"StateObject作成失敗");
 }
 
 void MainApp::createAuxillaryDeviceResources() {
@@ -723,20 +740,20 @@ void MainApp::buildTriangleGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuf
 Framework::DX::AccelerationStructureBuffers MainApp::buildBLAS(
     std::vector<D3DBuffer> indexBuffers, std::vector<D3DBuffer> vertexBuffers) {
     //ジオメトリ情報を入れる
-    const UINT size = indexBuffers.size();
+    const UINT size = static_cast<UINT>(indexBuffers.size());
     std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> geometryDescs(size);
 
-    for (int i = 0; i < size; i++) {
+    for (UINT i = 0; i < size; i++) {
         D3D12_RAYTRACING_GEOMETRY_DESC& desc = geometryDescs[i];
         desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE::D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
         desc.Triangles.IndexBuffer = indexBuffers[i].resource->GetGPUVirtualAddress();
         //インデックスの数はインデックスのバイトサイズに依存しているため16ビットから変更した場合が不安
-        desc.Triangles.IndexCount = indexBuffers[i].resource->GetDesc().Width / sizeof(Index);
+        desc.Triangles.IndexCount = static_cast<UINT>(indexBuffers[i].resource->GetDesc().Width) / sizeof(Index);
         desc.Triangles.IndexFormat = DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
         desc.Triangles.VertexBuffer.StartAddress = vertexBuffers[i].resource->GetGPUVirtualAddress();
         desc.Triangles.VertexBuffer.StrideInBytes = sizeof(Vertex);
         //頂点も同じく不安
-        desc.Triangles.VertexCount = vertexBuffers[i].resource->GetDesc().Width / sizeof(Vertex);
+        desc.Triangles.VertexCount = static_cast<UINT>(vertexBuffers[i].resource->GetDesc().Width) / sizeof(Vertex);
         desc.Triangles.VertexFormat = DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
         desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAGS::D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
     }
@@ -808,7 +825,9 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(ComPtr<ID3D12Reso
     //キューブのトランスフォーム
     transform[0] = XMMatrixIdentity();
     for (int i = 0; i < TRIANGLE_COUNT; i++) {
-        transform[i + 1] = XMMatrixTranslation((i / 3) * 3, (i % 3) * 3, 0);
+        float x = 3.0f * (i / 3);
+        float y = 3.0f * (i % 3);
+        transform[i + 1] = XMMatrixTranslation(x, y, 0);
     }
 
     instanceDescs[0].InstanceID = 0;
@@ -820,7 +839,7 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(ComPtr<ID3D12Reso
 
     for (int i = 1; i <= TRIANGLE_COUNT; i++) {
         instanceDescs[i].InstanceID = i;
-        instanceDescs[i].InstanceContributionToHitGroupIndex = 0;
+        instanceDescs[i].InstanceContributionToHitGroupIndex = 1;
         instanceDescs[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
         XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[i].Transform), transform[i]);
         instanceDescs[i].AccelerationStructure = bottomLevelAS[1]->GetGPUVirtualAddress();
@@ -875,14 +894,16 @@ void MainApp::buildShaderTables() {
 
     void* rayGenShaderID;
     void* missShaderID;
-    void* hitGroupShaderID;
+    void* hitGroupCubeShaderID;
+    void* hitGroupTriangleShaderID;
     UINT shaderIDSize;
 
     ComPtr<ID3D12StateObjectProperties> props;
     mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props));
     rayGenShaderID = props->GetShaderIdentifier(RAY_GEN_SHADER_NAME);
     missShaderID = props->GetShaderIdentifier(MISS_SHADER_NAME);
-    hitGroupShaderID = props->GetShaderIdentifier(HIT_GROUP_NAME);
+    hitGroupCubeShaderID = props->GetShaderIdentifier(HIT_GROUP_CUBE_NAME);
+    hitGroupTriangleShaderID = props->GetShaderIdentifier(HIT_GROUP_TRIANGLE_NAME);
     shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
     {
@@ -905,10 +926,12 @@ void MainApp::buildShaderTables() {
     }
 
     {
-        UINT numShaderRecords = 1;
+        UINT numShaderRecords = 2;
         UINT shaderRecordSize = shaderIDSize;
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupTable");
-        table.push_back(ShaderRecord(hitGroupShaderID, shaderIDSize));
+        table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize));
+        table.push_back(ShaderRecord(hitGroupTriangleShaderID, shaderIDSize));
+        mHitGroupShaderStrideInBytes = table.getShaderRecordSize();
         mHitGroupShaderTable = table.getResource();
     }
 }
@@ -1038,7 +1061,9 @@ void MainApp::updateTLAS() {
         //キューブのトランスフォーム
         transform[0] = XMMatrixIdentity();
         for (int i = 0; i < TRIANGLE_COUNT; i++) {
-            transform[i + 1] = XMMatrixRotationRollPitchYaw(0, rotate, 0) * XMMatrixTranslation((i / 3) * 3, (i % 3) * 3, 0);
+            float x = 3.0f * (i / 3);
+            float y = 3.0f * (i % 3);
+            transform[i + 1] = XMMatrixRotationRollPitchYaw(0, rotate, 0) * XMMatrixTranslation(x, y, 0);
         }
 
         instanceDescs[0].InstanceID = 0;
@@ -1050,7 +1075,7 @@ void MainApp::updateTLAS() {
 
         for (int i = 1; i <= TRIANGLE_COUNT; i++) {
             instanceDescs[i].InstanceID = i;
-            instanceDescs[i].InstanceContributionToHitGroupIndex = 0;
+            instanceDescs[i].InstanceContributionToHitGroupIndex = 1;
             instanceDescs[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
             XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[i].Transform), transform[i]);
             instanceDescs[i].AccelerationStructure = bottomLevelAS[1]->GetGPUVirtualAddress();
