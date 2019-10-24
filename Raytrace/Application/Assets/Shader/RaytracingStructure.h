@@ -45,6 +45,7 @@ struct Vertex {
 */
 struct RayPayload {
     XMFLOAT4 color;
+    UINT recursion;
 };
 
 struct Instance {
