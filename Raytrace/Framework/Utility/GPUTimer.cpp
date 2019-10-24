@@ -87,7 +87,7 @@ namespace Framework::Utility {
 
         UINT64 start = mTimings[timerID * 2];
         UINT64 end = mTimings[timerID * 2 + 1];
-        return float(Math::MathUtil::mymax(0.0, double(end - start))* mGpuFreqInv);
+        return float(Math::MathUtil::mymax(0.0, double(end - start)) * mGpuFreqInv);
     }
 
     //•½‹ÏŒo‰ßŽžŠÔ‚ÌŽæ“¾

@@ -172,13 +172,18 @@ private:
     static const wchar_t* HIT_GROUP_CUBE_NAME;
     static const wchar_t* HIT_GROUP_TRIANGLE_NAME;
     static const wchar_t* HIT_GROUP_PLANE_NAME;
+    static const wchar_t* HIT_GROUP_SHADER_NAME;
+
     static const wchar_t* RAY_GEN_SHADER_NAME;
     static const wchar_t* CLOSEST_HIT_SHADER_CUBE_NAME;
     static const wchar_t* CLOSEST_HIT_SHADER_TRIGNALE_NAME;
     static const wchar_t* CLOSEST_HIT_SHADER_PLANE_NAME;
+    static const wchar_t* CLOSEST_HIT_SHADER_SHADOW_NAME;
     static const wchar_t* MISS_SHADER_NAME;
+    static const wchar_t* MISS_SHADER_SHADOW_NAME;
 
     ComPtr<ID3D12Resource> mMissShaderTable;
+    UINT mMissShaderStrideInBytes;
     ComPtr<ID3D12Resource> mHitGroupShaderTable;
     UINT mHitGroupShaderStrideInBytes;
     ComPtr<ID3D12Resource> mRayGenShaderTable;
@@ -334,12 +339,15 @@ const wchar_t* MainApp::RAY_GEN_SHADER_NAME = L"MyRaygenShader";
 const wchar_t* MainApp::CLOSEST_HIT_SHADER_CUBE_NAME = L"MyClosestHitShader_Cube";
 const wchar_t* MainApp::CLOSEST_HIT_SHADER_TRIGNALE_NAME = L"MyClosestHitShader_Triangle";
 const wchar_t* MainApp::CLOSEST_HIT_SHADER_PLANE_NAME = L"MyClosestHitShader_Plane";
+const wchar_t* MainApp::CLOSEST_HIT_SHADER_SHADOW_NAME = L"MyClosestHitShader_Shadow";
 const wchar_t* MainApp::MISS_SHADER_NAME = L"MyMissShader";
+const wchar_t* MainApp::MISS_SHADER_SHADOW_NAME = L"MyMissShader_Shadow";
 
 //HitGroup‚Í–¼‘O‚Í‰½‚Å‚à‚æ‚¢
 const wchar_t* MainApp::HIT_GROUP_CUBE_NAME = L"MyHitGroup_Cube";
 const wchar_t* MainApp::HIT_GROUP_TRIANGLE_NAME = L"MyHitGroup_Triangle";
 const wchar_t* MainApp::HIT_GROUP_PLANE_NAME = L"MyHitGroup_Plane";
+const wchar_t* MainApp::HIT_GROUP_SHADER_NAME = L"MyHitGroup_Shadow";
 
 void MainApp::updateCameraMatrices() {
     mSceneCB->cameraPosition = XMLoadFloat3(&mCameraPosition);
@@ -375,9 +383,9 @@ void MainApp::initializeScene() {
 
 #pragma warning( push ) 
 #pragma warning (disable: 4305)
-    PARAMETER_CHANGE_SLIDER("X", mCameraPosition.x, -30.0f, 30.0f);
-    PARAMETER_CHANGE_SLIDER("Y", mCameraPosition.y, -30.0f, 30.0f);
-    PARAMETER_CHANGE_SLIDER("Z", mCameraPosition.z, -30.0f, 30.0f);
+    PARAMETER_CHANGE_SLIDER("X", mCameraPosition.x, -50.0f, 50.0f);
+    PARAMETER_CHANGE_SLIDER("Y", mCameraPosition.y, -50.0f, 50.0f);
+    PARAMETER_CHANGE_SLIDER("Z", mCameraPosition.z, -50.0f, 50.0f);
     mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Rotation"));
     PARAMETER_CHANGE_SLIDER("RX", mCameraRotation.x, 0.0f, 2 * 3.14);
     PARAMETER_CHANGE_SLIDER("RY", mCameraRotation.y, 0.0f, 2 * 3.14);
@@ -407,7 +415,7 @@ void MainApp::doRaytracing() {
 
         desc->MissShaderTable.StartAddress = mMissShaderTable->GetGPUVirtualAddress();
         desc->MissShaderTable.SizeInBytes = mMissShaderTable->GetDesc().Width;
-        desc->MissShaderTable.StrideInBytes = desc->MissShaderTable.SizeInBytes;
+        desc->MissShaderTable.StrideInBytes = mMissShaderStrideInBytes;
 
         desc->RayGenerationShaderRecord.StartAddress = mRayGenShaderTable->GetGPUVirtualAddress();
         desc->RayGenerationShaderRecord.SizeInBytes = mRayGenShaderTable->GetDesc().Width;
@@ -573,7 +581,9 @@ void MainApp::createDxilLibrarySubobject(CD3DX12_STATE_OBJECT_DESC* pipeline) {
     lib->DefineExport(CLOSEST_HIT_SHADER_CUBE_NAME);
     lib->DefineExport(CLOSEST_HIT_SHADER_TRIGNALE_NAME);
     lib->DefineExport(CLOSEST_HIT_SHADER_PLANE_NAME);
+    lib->DefineExport(CLOSEST_HIT_SHADER_SHADOW_NAME);
     lib->DefineExport(MISS_SHADER_NAME);
+    lib->DefineExport(MISS_SHADER_SHADOW_NAME);
 }
 
 void MainApp::createHitGroupSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
@@ -592,6 +602,11 @@ void MainApp::createHitGroupSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
     hitGroup = pipeline->CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
     hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_SHADER_PLANE_NAME);
     hitGroup->SetHitGroupExport(HIT_GROUP_PLANE_NAME);
+    hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
+
+    hitGroup = pipeline->CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+    hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_SHADER_SHADOW_NAME);
+    hitGroup->SetHitGroupExport(HIT_GROUP_SHADER_NAME);
     hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
 }
 
@@ -623,6 +638,13 @@ void MainApp::createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipe
         asso->SetSubobjectToAssociate(*local);
         asso->AddExport(HIT_GROUP_PLANE_NAME);
     }
+    //Shadow
+    {
+        auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
+        auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
+        asso->SetSubobjectToAssociate(*local);
+        asso->AddExport(HIT_GROUP_SHADER_NAME);
+    }
 }
 
 void MainApp::createRaytracingPipelineStateObject() {
@@ -652,7 +674,7 @@ void MainApp::createRaytracingPipelineStateObject() {
     global->SetRootSignature(mRaytracingGlobalRootSignature.Get());
 
     auto* pipelineConfig = raytracingPipeline.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
-    UINT maxDepth = 1;
+    UINT maxDepth = 2;
     pipelineConfig->Config(maxDepth);
 
     mDXRInterface->createStateObject(raytracingPipeline);
@@ -888,7 +910,7 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
         float y = 3.0f * (i % 3);
         transform[i + 1] = XMMatrixRotationRollPitchYaw(0, rotate, 0) * XMMatrixTranslation(x, y, 0);
     }
-    transform[CUBE_COUNT + TRIANGLE_COUNT] = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
+    transform[CUBE_COUNT + TRIANGLE_COUNT] = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -1, 0);
 
     UINT offset = 0;
 
@@ -902,7 +924,7 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
     offset = 1;
     for (int i = 1; i <= TRIANGLE_COUNT; i++) {
         instanceDescs[i].InstanceID = i;
-        instanceDescs[i].InstanceContributionToHitGroupIndex = 1;
+        instanceDescs[i].InstanceContributionToHitGroupIndex = 2;
         instanceDescs[i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
         XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[i].Transform), transform[i]);
         instanceDescs[i].AccelerationStructure = bottomLevelAS[GeometryType::Triangle]->GetGPUVirtualAddress();
@@ -911,7 +933,7 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
 
     offset = CUBE_COUNT + TRIANGLE_COUNT;
     instanceDescs[offset].InstanceID = CUBE_COUNT + TRIANGLE_COUNT;
-    instanceDescs[offset].InstanceContributionToHitGroupIndex = 2;
+    instanceDescs[offset].InstanceContributionToHitGroupIndex = 4;
     instanceDescs[offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[offset].Transform), transform[offset]);
     instanceDescs[offset].AccelerationStructure = bottomLevelAS[GeometryType::Plane]->GetGPUVirtualAddress();
@@ -970,18 +992,22 @@ void MainApp::buildShaderTables() {
 
     void* rayGenShaderID;
     void* missShaderID;
+    void* missShaderShadowID;
     void* hitGroupCubeShaderID;
     void* hitGroupTriangleShaderID;
     void* hitGroupPlaneShaderID;
+    void* hitGroupShadowShaderID;
     UINT shaderIDSize;
 
     ComPtr<ID3D12StateObjectProperties> props;
     mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props));
     rayGenShaderID = props->GetShaderIdentifier(RAY_GEN_SHADER_NAME);
     missShaderID = props->GetShaderIdentifier(MISS_SHADER_NAME);
+    missShaderShadowID = props->GetShaderIdentifier(MISS_SHADER_SHADOW_NAME);
     hitGroupCubeShaderID = props->GetShaderIdentifier(HIT_GROUP_CUBE_NAME);
     hitGroupTriangleShaderID = props->GetShaderIdentifier(HIT_GROUP_TRIANGLE_NAME);
     hitGroupPlaneShaderID = props->GetShaderIdentifier(HIT_GROUP_PLANE_NAME);
+    hitGroupShadowShaderID = props->GetShaderIdentifier(HIT_GROUP_SHADER_NAME);
     shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
     {
@@ -993,36 +1019,42 @@ void MainApp::buildShaderTables() {
     }
 
     {
-        UINT numShaderRecords = 1;
+        UINT numShaderRecords = 2;
         UINT shaderRecordSize = shaderIDSize;
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"MissShaderTable");
         table.push_back(ShaderRecord(missShaderID, shaderIDSize));
+        table.push_back(ShaderRecord(missShaderShadowID, shaderIDSize));
+        mMissShaderStrideInBytes = table.getShaderRecordSize();
         mMissShaderTable = table.getResource();
     }
 
     {
-        UINT numShaderRecords = 3; //AABB + Triangle + Plane
+        UINT numShaderRecords = 6; //AABB + Triangle + Plane
         UINT shaderRecordSize = shaderIDSize +
             std::max({ sizeof(LocalRootSignatureParams::AABB::RootArgument), sizeof(LocalRootSignatureParams::Triangle::RootArgument),sizeof(LocalRootSignatureParams::Plane::RootArgument) });
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupTable");
         //AABB
         {
             LocalRootSignatureParams::AABB::RootArgument cb;
-            cb.material.color = XMFLOAT4(0.6f, 0.2f, 0.3f, 1.0f);
+            cb.material.color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
             cb.power.power = 1.0f;
             table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &cb, sizeof(cb)));
+            table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize));
         }
         //Triangle
         {
             LocalRootSignatureParams::Triangle::RootArgument cb;
-            cb.material.color = XMFLOAT4(0, 0, 1, 1);
+            cb.material.color = XMFLOAT4(0, 1, 0, 1);
             table.push_back(ShaderRecord(hitGroupTriangleShaderID, shaderIDSize, &cb, sizeof(cb)));
+            table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize));
+
         }
         //Plane
         {
             LocalRootSignatureParams::Plane::RootArgument cb;
-            cb.material.color = XMFLOAT4(0.4f, 0.2f, 0.2f, 1.0f);
+            cb.material.color = XMFLOAT4(0, 0, 1, 1);
             table.push_back(ShaderRecord(hitGroupPlaneShaderID, shaderIDSize, &cb, sizeof(cb)));
+            table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize));
         }
         mHitGroupShaderStrideInBytes = table.getShaderRecordSize();
         mHitGroupShaderTable = table.getResource();

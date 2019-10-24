@@ -12,24 +12,12 @@ StructuredBuffer<Vertex> Vertices : register(t2, space0);
 RWTexture2D<float4> g_renderTarget : register(u0);
 
 ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
-//ConstantBuffer<Instance> l_instance : register(b1);
 ConstantBuffer<MaterialConstantBuffer> l_material : register(b1);
 ConstantBuffer<PowerConstantBuffer> l_power : register(b2);
 
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 
-//当たった点の法線を取得する
-float3 hitAttribute(float3 vertexAttribute[3], MyAttr attr) {
-    return vertexAttribute[0] +
-        attr.barycentrics.x * (vertexAttribute[1] - vertexAttribute[0]) +
-        attr.barycentrics.y * (vertexAttribute[2] - vertexAttribute[0]);
-}
-
-//ランバート反射の色を取得する
-float3 calcLam(float3 color, float3 L, float3 N) {
-    return color * max(0.0, dot(L, N)) * (1.0 / PI);
-}
-
+//レイ生成
 [shader("raygeneration")]
 void MyRaygenShader() {
     Ray ray = generateCameraRay(DispatchRaysIndex().xy, g_sceneCB.cameraPosition.xyz, g_sceneCB.projectionToWorld);
@@ -42,60 +30,80 @@ void MyRaygenShader() {
     rayDesc.TMax = 10000.0;
 
     RayPayload payload = { float4(0,0,0,0),0 };
-    TraceRay(g_scene, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, ~0, 0, 1, 0, rayDesc, payload);
+    TraceRay(g_scene, //AS
+        RAY_FLAG_CULL_BACK_FACING_TRIANGLES,//レイのフラグ バックカリングを有効に
+        ~0, //マスクなし すべてにヒットするように
+        0, //ヒットグループのオフセット
+        1, //よくわからん 1を使うらしい
+        0, //ミスシェーダーのインデックス
+        rayDesc, //レイ
+        payload); //戻り値
 
     g_renderTarget[DispatchRaysIndex().xy] = payload.color;
 }
 
-inline uint3 getIndex() {
-    //uint indexSizeInBytes = 2;
-    //uint indicesPerTriangle = 3;
-    //uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
-    //uint baseIndex = PrimitiveIndex() * triangleIndexStride;
-
-    //return load3x16BitIndices(baseIndex + l_instance.indexOffset * 2, Indices);
-    return uint3(0, 0, 0);
-}
-
+//キューブに当たった時
 [shader("closesthit")]
 void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
-    ////頂点を取得するためのインデックスを取得する
-    //uint3 indices = getIndex();
-    ////頂点のノーマルを取得する
-    //float3 normals[3] =
-    //{
-    //    Vertices[indices[0] + l_instance.vertexOffset].normal,
-    //    Vertices[indices[1] + l_instance.vertexOffset].normal,
-    //    Vertices[indices[2] + l_instance.vertexOffset].normal,
-    //};
-
-    //float3 N = hitAttribute(normals, attr);
-    ////N = rotVectorByQuat(N, l_instance.quatRot);
-    //float3 lightPosition = float3(0, 10, 0);
-    //float3 L = normalize(lightPosition - hitWorldPosition());
-
-    //float3 lightColor = float3(1, 0, 0);
-    //float4 color = float4(calcLam(lightColor, L, N), 1.0f);
-    float4 color = float4(l_material.color) * l_power.power;
+    float4 color = float4(l_material.color);
     payload.color = color;
 }
 
+//三角形に当たった時
 [shader("closesthit")]
 void MyClosestHitShader_Triangle(inout RayPayload payload, in MyAttr attr) {
     float4 color = float4(l_material.color);
     payload.color = color;
 }
 
+//床に当たった時
 [shader("closesthit")]
 void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
-    float4 color = float4(l_material.color);
+    float hitT = RayTCurrent();
+    float3 worldRayDir = WorldRayDirection();
+    float3 worldRayOrigin = WorldRayOrigin();
+
+    float3 worldPos = worldRayOrigin + worldRayDir * hitT;
+
+    RayDesc ray;
+    ray.Origin = worldPos;
+    ray.Direction = normalize(float3(-1, 1, 1));
+    ray.TMin = 0.01f;
+    ray.TMax = 10000.0;
+    ShadowPayload shadowPayload = { true };
+
+    //影ができるかどうか
+    TraceRay(g_scene,
+        RAY_FLAG_NONE,
+        ~0,
+        1, //ヒットグループの影用シェーダー
+        1,
+        1, //影用のミスシェーダー
+        ray,
+        shadowPayload);
+
+    float factor = shadowPayload.hit ? 0.1 : 1.0;
+    //float factor = 0.1f;
+    float4 color = float4(l_material.color) * factor;
+
+
     payload.color = color;
+}
+
+[shader("closesthit")]
+void MyClosestHitShader_Shadow(inout ShadowPayload payload, in MyAttr attr) {
+    payload.hit = true;
 }
 
 [shader("miss")]
 void MyMissShader(inout RayPayload payload) {
     float4 back = float4(0, 0.8, 0.8, 1.0f);
     payload.color = back;
+}
+
+[shader("miss")]
+void MyMissShader_Shadow(inout ShadowPayload payload) {
+    payload.hit = false;
 }
 
 #endif //! INCLUDE_SHADER_RAYTRACING_HLSL

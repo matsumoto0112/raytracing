@@ -48,10 +48,11 @@ struct RayPayload {
     UINT recursion;
 };
 
-struct Instance {
-    XMFLOAT4 quatRot;
-    UINT vertexOffset;
-    UINT indexOffset;
+/**
+* @brief ‰e—p
+*/
+struct ShadowPayload {
+    bool hit;
 };
 
 struct MaterialConstantBuffer {
