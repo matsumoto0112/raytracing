@@ -986,7 +986,7 @@ void MainApp::buildShaderTables() {
         //AABB
         {
             LocalRootSignatureParams::AABB::RootArgument cb;
-            cb.material.color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+            cb.material.color = XMFLOAT4(1,1,1,1);
             cb.material.indexOffset = mIndexOffsets[GeometryType::Cube];
             cb.material.vertexOffset = mVertexOffsets[GeometryType::Cube];
             table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &cb, sizeof(cb)));
@@ -995,7 +995,7 @@ void MainApp::buildShaderTables() {
         //Plane
         {
             LocalRootSignatureParams::Plane::RootArgument cb;
-            cb.material.color = XMFLOAT4(0, 0, 1, 1);
+            cb.material.color = XMFLOAT4(1, 1, 1, 1);
             cb.material.indexOffset = mIndexOffsets[GeometryType::Plane];
             cb.material.vertexOffset = mVertexOffsets[GeometryType::Plane];
             table.push_back(ShaderRecord(hitGroupPlaneShaderID, shaderIDSize, &cb, sizeof(cb)));

@@ -17,6 +17,9 @@ ConstantBuffer<MaterialConstantBuffer> l_material : register(b1);
 //closesthitで引数として受け取る三角形の重心
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 
+static const float FOG_START = 0.1f;
+static const float FOG_END = 100.0f;
+
 //レイ生成
 [shader("raygeneration")]
 void MyRaygenShader() {
@@ -42,6 +45,21 @@ void MyRaygenShader() {
     g_renderTarget[DispatchRaysIndex().xy] = payload.color;
 }
 
+inline float4 getFinalColor(float3 N, float3 L, float3 worldPos, float4 materialColor) {
+    float dotNL = max(0.0, dot(N, L));
+    float4 lambert = g_sceneCB.lightDiffuse * dotNL;
+    float4 color = float4(0, 0, 0, 1);
+    color.rgb += lambert.rgb;
+    color.rgb += g_sceneCB.lightAmbient.rgb;
+    color *= materialColor;
+
+    float len = distance(g_sceneCB.cameraPosition.xyz, worldPos);
+    float fog = saturate((FOG_END - len) / (FOG_END - FOG_START));
+    color.rgb = color.rgb * fog + float3(1, 1, 1) * (1.0 - fog);
+    color.a = 1.0;
+    return color;
+}
+
 //キューブに当たった時
 [shader("closesthit")]
 void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
@@ -59,16 +77,8 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
     };
     float3 N = getHitAttribute(normals, attr);
     float3 L = normalize(g_sceneCB.lightPosition.xyz - hitWorldPosition());
-    float dotNL = max(0.0, dot(N, L));
 
-    float4 lambert = g_sceneCB.lightDiffuse * dotNL;
-    float4 color = float4(0, 0, 0, 1);
-    color.rgb += lambert.rgb;
-    color.rgb += g_sceneCB.lightAmbient.rgb;
-    color.rgb *= l_material.color.rgb;
-    color.a = 1.0;
-
-    payload.color = color;
+    payload.color = getFinalColor(N, L, hitWorldPosition(), l_material.color);
 }
 
 //床に当たった時
@@ -106,17 +116,8 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     };
     float3 N = getHitAttribute(normals, attr);
     float3 L = normalize(g_sceneCB.lightPosition.xyz - hitWorldPosition());
-    float dotNL = max(0.0, dot(N, L));
-
-    float4 lambert = g_sceneCB.lightDiffuse * dotNL;
-
-    float factor = shadowPayload.hit ? 0.1 : 1.0;
-    float4 color = lambert;
-    color.rgb += g_sceneCB.lightAmbient.rgb;
-    color.rgb *= factor;
-    color.a = 1.0;
-
-    payload.color = color;
+    float factor = shadowPayload.hit ? 0.1f : 1.0f;
+    payload.color = getFinalColor(N, L, hitWorldPosition(), l_material.color) * factor;
 }
 
 [shader("closesthit")]
@@ -126,7 +127,7 @@ void MyClosestHitShader_Shadow(inout ShadowPayload payload, in MyAttr attr) {
 
 [shader("miss")]
 void MyMissShader(inout RayPayload payload) {
-    float4 back = float4(0, 0.8, 0.8, 1.0f);
+    float4 back = float4(1, 1, 1, 1);
     payload.color = back;
 }
 
