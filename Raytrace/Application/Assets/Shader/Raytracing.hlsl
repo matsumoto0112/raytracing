@@ -67,7 +67,7 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
 
     RayDesc ray;
     ray.Origin = worldPos;
-    ray.Direction = normalize(float3(-1, 1, 1));
+    ray.Direction = normalize(g_sceneCB.lightPosition - worldPos);
     ray.TMin = 0.01f;
     ray.TMax = 10000.0;
     ShadowPayload shadowPayload = { true };

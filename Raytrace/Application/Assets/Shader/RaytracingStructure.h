@@ -29,6 +29,7 @@ typedef UINT16 Index;
 struct SceneConstantBuffer {
     XMMATRIX projectionToWorld;
     XMVECTOR cameraPosition;
+    XMVECTOR lightPosition;
 };
 
 /**

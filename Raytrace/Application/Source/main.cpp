@@ -154,6 +154,7 @@ private:
     ConstantBuffer<SceneConstantBuffer> mSceneCB;
     XMFLOAT3 mCameraPosition;
     XMFLOAT3 mCameraRotation;
+    XMFLOAT3 mLightPosition;
 
     float mRotation;
 
@@ -364,6 +365,8 @@ void MainApp::updateCameraMatrices() {
     XMMATRIX proj = XMMatrixPerspectiveFovLH(XMConvertToRadians(fovY), aspect, 0.1f, 125.0f);
     XMMATRIX vp = view * proj;
     mSceneCB->projectionToWorld = XMMatrixInverse(nullptr, vp);
+
+    mSceneCB->lightPosition = XMLoadFloat3(&mLightPosition);
 }
 
 void MainApp::initializeScene() {
@@ -383,13 +386,18 @@ void MainApp::initializeScene() {
 
 #pragma warning( push ) 
 #pragma warning (disable: 4305)
-    PARAMETER_CHANGE_SLIDER("X", mCameraPosition.x, -50.0f, 50.0f);
-    PARAMETER_CHANGE_SLIDER("Y", mCameraPosition.y, -50.0f, 50.0f);
-    PARAMETER_CHANGE_SLIDER("Z", mCameraPosition.z, -50.0f, 50.0f);
+    float range = 50.0f;
+    PARAMETER_CHANGE_SLIDER("X", mCameraPosition.x, -range, range);
+    PARAMETER_CHANGE_SLIDER("Y", mCameraPosition.y, -range, range);
+    PARAMETER_CHANGE_SLIDER("Z", mCameraPosition.z, -range, range);
     mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Rotation"));
     PARAMETER_CHANGE_SLIDER("RX", mCameraRotation.x, 0.0f, 2 * 3.14);
     PARAMETER_CHANGE_SLIDER("RY", mCameraRotation.y, 0.0f, 2 * 3.14);
     PARAMETER_CHANGE_SLIDER("RZ", mCameraRotation.z, 0.0f, 2 * 3.14);
+    mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Light"));
+    PARAMETER_CHANGE_SLIDER("LX", mLightPosition.x, -range, range);
+    PARAMETER_CHANGE_SLIDER("LY", mLightPosition.y, -range, range);
+    PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
 #pragma warning(pop)
 
     updateCameraMatrices();
