@@ -65,7 +65,9 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
     float4 color = float4(0, 0, 0, 1);
     color.rgb += lambert.rgb;
     color.rgb += g_sceneCB.lightAmbient.rgb;
+    color.rgb *= l_material.color.rgb;
     color.a = 1.0;
+
     payload.color = color;
 }
 
@@ -91,8 +93,28 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
         ray,
         shadowPayload);
 
+    uint indexSizeInBytes = 2;
+    uint indicesPerTriangle = 3;
+    uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
+    uint baseIndex = PrimitiveIndex() * triangleIndexStride;
+    const uint3 indices = load3x16BitIndices(baseIndex, Indices);
+    float3 normals[3] =
+    {
+        Vertices[indices[0]].normal,
+        Vertices[indices[1]].normal,
+        Vertices[indices[2]].normal,
+    };
+    float3 N = getHitAttribute(normals, attr);
+    float3 L = normalize(g_sceneCB.lightPosition.xyz - hitWorldPosition());
+    float dotNL = max(0.0, dot(N, L));
+
+    float4 lambert = g_sceneCB.lightDiffuse * dotNL;
+
     float factor = shadowPayload.hit ? 0.1 : 1.0;
-    float4 color = float4(l_material.color) * factor;
+    float4 color = lambert;
+    color.rgb += g_sceneCB.lightAmbient.rgb;
+    color.rgb *= factor;
+    color.a = 1.0;
 
     payload.color = color;
 }

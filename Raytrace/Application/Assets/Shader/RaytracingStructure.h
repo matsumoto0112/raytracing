@@ -61,6 +61,8 @@ struct ShadowPayload {
 
 struct MaterialConstantBuffer {
     XMFLOAT4 color;
+    UINT indexOffset;
+    UINT vertexOffset;
 };
 
 /**

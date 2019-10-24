@@ -194,6 +194,8 @@ private:
 
     std::array<D3DBuffer, GeometryType::Count> mGeometryIndexBuffers;
     std::array<D3DBuffer, GeometryType::Count> mGeometryVertexBuffers;
+    std::array<UINT, GeometryType::Count> mIndexOffsets;
+    std::array<UINT, GeometryType::Count> mVertexOffsets;
 
 
      /**
@@ -766,6 +768,9 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
 
     createBufferSRV(indexBuffer, static_cast<UINT>(indices.size()) * sizeof(indices[0]) / 4, 0);
     createBufferSRV(vertexBuffer, static_cast<UINT>(vertices.size()), sizeof(vertices[0]));
+
+    mIndexOffsets[GeometryType::Cube + 1] = static_cast<UINT>(indices.size());
+    mVertexOffsets[GeometryType::Cube + 1] = static_cast<UINT>(vertices.size());
 }
 
 void MainApp::buildPlaneGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer) {
@@ -909,6 +914,9 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
 void MainApp::buildAccelerationStructures() {
     mDeviceResource->getCommandList()->Reset(mDeviceResource->getCommandAllocator(), nullptr);
 
+    mIndexOffsets[GeometryType::Cube] = 0;
+    mVertexOffsets[GeometryType::Cube] = 0;
+
     //ÉWÉIÉÅÉgÉäÇê∂ê¨
     buildCubeGeometry(&mGeometryIndexBuffers[GeometryType::Cube], &mGeometryVertexBuffers[GeometryType::Cube]);
     buildPlaneGeometry(&mGeometryIndexBuffers[GeometryType::Plane], &mGeometryVertexBuffers[GeometryType::Plane]);
@@ -979,6 +987,8 @@ void MainApp::buildShaderTables() {
         {
             LocalRootSignatureParams::AABB::RootArgument cb;
             cb.material.color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+            cb.material.indexOffset = mIndexOffsets[GeometryType::Cube];
+            cb.material.vertexOffset = mVertexOffsets[GeometryType::Cube];
             table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &cb, sizeof(cb)));
             table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize));
         }
@@ -986,6 +996,8 @@ void MainApp::buildShaderTables() {
         {
             LocalRootSignatureParams::Plane::RootArgument cb;
             cb.material.color = XMFLOAT4(0, 0, 1, 1);
+            cb.material.indexOffset = mIndexOffsets[GeometryType::Plane];
+            cb.material.vertexOffset = mVertexOffsets[GeometryType::Plane];
             table.push_back(ShaderRecord(hitGroupPlaneShaderID, shaderIDSize, &cb, sizeof(cb)));
             table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize));
         }
