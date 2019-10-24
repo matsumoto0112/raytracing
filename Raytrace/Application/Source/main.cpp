@@ -579,6 +579,7 @@ void MainApp::createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipe
     auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
     asso->SetSubobjectToAssociate(*local);
     asso->AddExport(HIT_GROUP_CUBE_NAME);
+    asso->AddExport(HIT_GROUP_TRIANGLE_NAME);
 }
 
 void MainApp::createRaytracingPipelineStateObject() {
@@ -907,13 +908,10 @@ void MainApp::buildShaderTables() {
     shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
     {
-        struct RootArguments {
-            Instance cb;
-        } rootArguments;
         UINT numShaderRecords = 1;
-        UINT shaderRecordSize = shaderIDSize + sizeof(RootArguments);
+        UINT shaderRecordSize = shaderIDSize;
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"RayGenShaderTable");
-        table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize, &rootArguments, sizeof(rootArguments)));
+        table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize));
         mRayGenShaderTable = table.getResource();
     }
 
@@ -926,11 +924,16 @@ void MainApp::buildShaderTables() {
     }
 
     {
+        struct RootArguments {
+            Instance cb;
+        } arguments;
         UINT numShaderRecords = 2;
-        UINT shaderRecordSize = shaderIDSize;
+        UINT shaderRecordSize = shaderIDSize + sizeof(arguments);
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupTable");
-        table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize));
-        table.push_back(ShaderRecord(hitGroupTriangleShaderID, shaderIDSize));
+        arguments.cb.indexOffset = 0;
+        table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &arguments, sizeof(arguments)));
+        arguments.cb.indexOffset = 1;
+        table.push_back(ShaderRecord(hitGroupTriangleShaderID, shaderIDSize, &arguments, sizeof(arguments)));
         mHitGroupShaderStrideInBytes = table.getShaderRecordSize();
         mHitGroupShaderTable = table.getResource();
     }

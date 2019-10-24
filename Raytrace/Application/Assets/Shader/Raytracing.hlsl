@@ -56,29 +56,30 @@ inline uint3 getIndex() {
 
 [shader("closesthit")]
 void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
-    //頂点を取得するためのインデックスを取得する
-    uint3 indices = getIndex();
-    //頂点のノーマルを取得する
-    float3 normals[3] =
-    {
-        Vertices[indices[0] + l_instance.vertexOffset].normal,
-        Vertices[indices[1] + l_instance.vertexOffset].normal,
-        Vertices[indices[2] + l_instance.vertexOffset].normal,
-    };
+    ////頂点を取得するためのインデックスを取得する
+    //uint3 indices = getIndex();
+    ////頂点のノーマルを取得する
+    //float3 normals[3] =
+    //{
+    //    Vertices[indices[0] + l_instance.vertexOffset].normal,
+    //    Vertices[indices[1] + l_instance.vertexOffset].normal,
+    //    Vertices[indices[2] + l_instance.vertexOffset].normal,
+    //};
 
-    float3 N = hitAttribute(normals, attr);
-    //N = rotVectorByQuat(N, l_instance.quatRot);
-    float3 lightPosition = float3(0, 10, 0);
-    float3 L = normalize(lightPosition - hitWorldPosition());
+    //float3 N = hitAttribute(normals, attr);
+    ////N = rotVectorByQuat(N, l_instance.quatRot);
+    //float3 lightPosition = float3(0, 10, 0);
+    //float3 L = normalize(lightPosition - hitWorldPosition());
 
-    float3 lightColor = float3(1, 0, 0);
-    float4 color = float4(calcLam(lightColor, L, N), 1.0f);
+    //float3 lightColor = float3(1, 0, 0);
+    //float4 color = float4(calcLam(lightColor, L, N), 1.0f);
+    float4 color = float4(l_instance.indexOffset, 0, 0, 1);
     payload.color = color;
 }
 
 [shader("closesthit")]
 void MyClosestHitShader_Triangle(inout RayPayload payload, in MyAttr attr) {
-    float4 color = float4(0, 1, 0, 1);
+    float4 color = float4(l_instance.indexOffset, 0, 0, 1);
     payload.color = color;
 }
 
