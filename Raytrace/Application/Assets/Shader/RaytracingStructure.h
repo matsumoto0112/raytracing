@@ -62,9 +62,6 @@ struct ShadowPayload {
 struct MaterialConstantBuffer {
     XMFLOAT4 color;
 };
-struct PowerConstantBuffer {
-    float power;
-};
 
 /**
 * @brief ローカルのルートシグネチャパラメータ
@@ -82,12 +79,10 @@ namespace LocalRootSignatureParams {
     namespace AABB {
         enum MyEnum {
             Material = 0,
-            Power,
             Count
         };
         struct RootArgument {
             MaterialConstantBuffer material;
-            PowerConstantBuffer power;
         };
     } //AABB
     namespace Plane {

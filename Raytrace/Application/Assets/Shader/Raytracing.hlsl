@@ -13,7 +13,6 @@ RWTexture2D<float4> g_renderTarget : register(u0);
 
 ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
 ConstantBuffer<MaterialConstantBuffer> l_material : register(b1);
-ConstantBuffer<PowerConstantBuffer> l_power : register(b2);
 
 //closesthitで引数として受け取る三角形の重心
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
