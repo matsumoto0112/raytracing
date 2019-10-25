@@ -149,17 +149,20 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     payload.color = color * factor;
 }
 
+//影用のレイ
 [shader("closesthit")]
 void MyClosestHitShader_Shadow(inout ShadowPayload payload, in MyAttr attr) {
     payload.hit = true;
 }
 
+//何もヒットしなかったときの処理
 [shader("miss")]
 void MyMissShader(inout RayPayload payload) {
     float4 back = float4(144.0 / 255.0, 215.0 / 255.0, 236.0 / 255.0, 1);
     payload.color = back;
 }
 
+//影用のレイの何もヒットしなかったときの処理
 [shader("miss")]
 void MyMissShader_Shadow(inout ShadowPayload payload) {
     payload.hit = false;
