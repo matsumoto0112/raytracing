@@ -71,7 +71,7 @@ namespace Framework::DX {
         ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
         if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiInfoQueue)))) {
             debugDXGI = true;
-            Utility::Utility::throwIfFailed(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&mFactory)));
+            Utility::throwIfFailed(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&mFactory)));
             dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY::DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
             dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY::DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
         }
@@ -93,7 +93,7 @@ namespace Framework::DX {
             if (FAILED(hr) || !allowTearing) {
                 MY_DEBUG_LOG(L"WARNING: Variable refresh rate displays are not supported.\n");
                 if (mOptions & REQUIER_TEARING_SUPPORT) {
-                    throwIfFalse(false, L"Error: Sample must be run on an OS with tearing support.\n");
+                   Utility::throwIfFalse(false, L"Error: Sample must be run on an OS with tearing support.\n");
                 }
                 mOptions &= ~ALLOW_TEARING;
             }

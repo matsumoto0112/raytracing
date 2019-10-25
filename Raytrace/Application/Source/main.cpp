@@ -408,7 +408,7 @@ void MainApp::recreateD3D() {
     try {
         mDeviceResource->waitForGPU();
     }
-    catch (const HrException&) {
+    catch (const Framework::Utility::HrException&) {
 
     }
     mDeviceResource->handleDeviceLost();
@@ -521,8 +521,8 @@ void MainApp::serializeAndCreateRaytracingRootSignature(D3D12_ROOT_SIGNATURE_DES
     ID3D12Device* device = mDeviceResource->getDevice();
 
     ComPtr<ID3DBlob> blob, error;
-    Utility::throwIfFailed(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION::D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error), L"ルートシグネチャ作成失敗");
-    Utility::throwIfFailed(device->CreateRootSignature(1, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&(*rootSig))));
+    Framework::Utility::throwIfFailed(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION::D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error), L"ルートシグネチャ作成失敗");
+    Framework::Utility::throwIfFailed(device->CreateRootSignature(1, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&(*rootSig))));
 }
 
 void MainApp::createRootSignatures() {
@@ -691,7 +691,7 @@ void MainApp::createRaytracingOutputResource() {
         format, mWidth, mHeight, 1, 1, 1, 0, D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
 
     CD3DX12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
-    Utility::throwIfFailed(device->CreateCommittedResource(
+    Framework::Utility::throwIfFailed(device->CreateCommittedResource(
         &heapProp,
         D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
         &uavResourceDesc,
@@ -1052,7 +1052,7 @@ UINT MainApp::allocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, UINT de
     D3D12_CPU_DESCRIPTOR_HANDLE handle = mDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
     if (descriptorIndexToUse >= mDescriptorHeap->GetDesc().NumDescriptors) {
-        throwIfFalse(mDescriptorAllocated < mDescriptorHeap->GetDesc().NumDescriptors, L"Ran out of descriptors on the heap!");
+        Framework::Utility::throwIfFalse(mDescriptorAllocated < mDescriptorHeap->GetDesc().NumDescriptors, L"Ran out of descriptors on the heap!");
         descriptorIndexToUse = mDescriptorAllocated++;
     }
     *cpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(handle, descriptorIndexToUse, mDescriptorSize);
@@ -1087,7 +1087,7 @@ ComPtr<ID3D12Resource> MainApp::createBuffer(uint64_t size, D3D12_RESOURCE_FLAGS
     CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(size, flags);
     ComPtr<ID3D12Resource> buffer;
     ID3D12Device* device = mDeviceResource->getDevice();
-    Utility::throwIfFailed(device->CreateCommittedResource(
+    Framework::Utility::throwIfFailed(device->CreateCommittedResource(
         &heapProps,
         D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
         &bufferDesc,

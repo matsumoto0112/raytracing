@@ -65,7 +65,7 @@ namespace Framework::DX {
             CD3DX12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD);
 
             CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
-            throwIfFailed(device->CreateCommittedResource(
+            Utility::throwIfFailed(device->CreateCommittedResource(
                 &heapProp,
                 D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
                 &bufferDesc,
@@ -81,7 +81,7 @@ namespace Framework::DX {
         uint8_t* mapCPUWriteOnly() {
             uint8_t* mapped;
             CD3DX12_RANGE range(0, 0);
-            throwIfFailed(mResource->Map(0, &range, reinterpret_cast<void**>(&mapped)));
+            Utility::throwIfFailed(mResource->Map(0, &range, reinterpret_cast<void**>(&mapped)));
             return mapped;
         }
     protected:

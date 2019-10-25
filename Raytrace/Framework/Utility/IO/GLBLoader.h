@@ -1,9 +1,9 @@
 #pragma once
 #include <string>
-#include <GLTFSDK/GLTF.h>
-#include <GLTFSDK/GLBResourceReader.h>
-#include <GLTFSDK/Deserialize.h>
-
+//#include <GLTFSDK/GLTF.h>
+//#include <GLTFSDK/GLBResourceReader.h>
+//#include <GLTFSDK/Deserialize.h>
+//
 namespace Framework::Utility {
     /**
 * @class GLBLoader
@@ -21,7 +21,6 @@ namespace Framework::Utility {
         */
         ~GLBLoader();
     private:
-        std::string& mFilePath;
-        std::unique_ptr<GLBResourceReader> mResourceReader;
+        //std::unique_ptr<GLBResourceReader> mResourceReader;
     };
 } //Framework::Utility 

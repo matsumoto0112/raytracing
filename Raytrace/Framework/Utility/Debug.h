@@ -32,6 +32,47 @@
 
 namespace Framework::Utility {
     /**
+    * @brief デバッグ用インターフェース
+    */
+    class Debug {
+    public:
+        /**
+        * @brief アサーション
+        * @param funcName 関数名
+        * @param line 発生した行
+        * @param condition 条件
+        * @param message エラーメッセージ
+        */
+        static void assertion(const std::string& funcName, int line,
+            bool condition, const std::wstring& message);
+        /**
+        * @brief ログ出力
+        * @param funcName 関数名
+        * @param line 発生した行
+        * @param message 出力内容
+        */
+        static void debugLog(const std::string& funcName, int line, const std::wstring& message);
+        /**
+        * @brief エラーウィンドウの表示
+        * @param funcName 関数名
+        * @param line 発生した行
+        * @param condition 条件式
+        * @param message エラーメッセージ
+        */
+        static void errorWindow(const std::string& funcName, int line,
+            bool condition, const std::wstring& message);
+        /**
+        * @brief エラーメッセージの作成
+        * @param funcName 関数名
+        * @param line 発生した行
+        * @param message 実際のエラーメッセージ
+        * @return [funcName line:message]の形式のメッセージを返す
+        */
+        static std::wstring errorMessage(const std::string& funcName, int line,
+            const std::wstring& message);
+    };
+
+    /**
     * @brief HRESULT例外クラス
     */
     class HrException : public std::runtime_error {
@@ -80,45 +121,4 @@ namespace Framework::Utility {
         throwIfFailed(value ? S_OK : E_FAIL, mes);
     }
 
-
-    /**
-    * @brief デバッグ用インターフェース
-    */
-    class Debug {
-    public:
-        /**
-        * @brief アサーション
-        * @param funcName 関数名
-        * @param line 発生した行
-        * @param condition 条件
-        * @param message エラーメッセージ
-        */
-        static void assertion(const std::string& funcName, int line,
-            bool condition, const std::wstring& message);
-        /**
-        * @brief ログ出力
-        * @param funcName 関数名
-        * @param line 発生した行
-        * @param message 出力内容
-        */
-        static void debugLog(const std::string& funcName, int line, const std::wstring& message);
-        /**
-        * @brief エラーウィンドウの表示
-        * @param funcName 関数名
-        * @param line 発生した行
-        * @param condition 条件式
-        * @param message エラーメッセージ
-        */
-        static void errorWindow(const std::string& funcName, int line,
-            bool condition, const std::wstring& message);
-        /**
-        * @brief エラーメッセージの作成
-        * @param funcName 関数名
-        * @param line 発生した行
-        * @param message 実際のエラーメッセージ
-        * @return [funcName line:message]の形式のメッセージを返す
-        */
-        static std::wstring errorMessage(const std::string& funcName, int line,
-            const std::wstring& message);
-    };
 } //Framework::Utility

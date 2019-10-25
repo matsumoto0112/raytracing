@@ -9,12 +9,12 @@ namespace Framework::DX {
     }
 
     //デストラクタ
-    DXRInterface::~DXRInterface() { 
+    DXRInterface::~DXRInterface() {
         clear();
     }
 
     void DXRInterface::createStateObject(CD3DX12_STATE_OBJECT_DESC& desc) {
-        throwIfFailed(mDXRDevice->CreateStateObject(desc, IID_PPV_ARGS(&mDXRStateObject)), L"StateObject作成失敗");
+        Utility::throwIfFailed(mDXRDevice->CreateStateObject(desc, IID_PPV_ARGS(&mDXRStateObject)), L"StateObject作成失敗");
     }
 
     void DXRInterface::clear() {
@@ -27,8 +27,8 @@ namespace Framework::DX {
         ID3D12Device* device = mDeviceResource->getDevice();
         ID3D12CommandList* list = mDeviceResource->getCommandList();
 
-        throwIfFailed(device->QueryInterface(IID_PPV_ARGS(&mDXRDevice)), L"Couldn't get DirectX Raytracing interface for the device.\n");
-        throwIfFailed(list->QueryInterface(IID_PPV_ARGS(&mDXRCommandList)), L"Couldn't get DirectX Raytracing interface for the command list.\n");
+        Utility::throwIfFailed(device->QueryInterface(IID_PPV_ARGS(&mDXRDevice)), L"Couldn't get DirectX Raytracing interface for the device.\n");
+        Utility::throwIfFailed(list->QueryInterface(IID_PPV_ARGS(&mDXRCommandList)), L"Couldn't get DirectX Raytracing interface for the command list.\n");
     }
 
 } //Framework::DX 

@@ -47,7 +47,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Time.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\IO\TextureLoader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imconfig.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.h" />
@@ -57,7 +56,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_textedit.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_truetype.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\d3dx12.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\IO\GLBLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -89,12 +87,10 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Text.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Time.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Utility\IO\TextureLoader.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_draw.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_widgets.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Utility\IO\GLBLoader.cpp" />
   </ItemGroup>
 </Project>
