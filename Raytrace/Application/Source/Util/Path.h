@@ -29,12 +29,17 @@ public:
     * @brief モデルのあるファイルへのパス
     */
     const std::wstring& model() const { return mModel; }
+    /**
+    * @brief コンパイル済みシェーダーへのパス
+    */
+    const std::wstring& compiledShader() const { return mCompiledShader; }
 private:
     std::wstring mExe; //!< 実行ファイルへのパス
     std::wstring mResource; //!< リソースフォルダへのパス
     std::wstring mTexture; //!< テクスチャのルートフォルダへのパス
     std::wstring mShader; //!< シェーダファイルへのパス
     std::wstring mModel; //!< モデルデータファイルへのパス
+    std::wstring mCompiledShader; //!<コンパイル済みシェーダーへのパス
 protected:
     Path();
     ~Path();

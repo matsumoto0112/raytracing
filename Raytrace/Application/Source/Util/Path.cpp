@@ -4,14 +4,14 @@
 #include "Framework/Utility/Debug.h"
 
 namespace {
-constexpr int MAX_SIZE = 1024;
-//実行ファイルまでのパスを取得する
-std::wstring getExePath() {
-    wchar_t path[MAX_SIZE];
-    DWORD ret = GetModuleFileName(nullptr, path, sizeof(path));
-    std::wstring res(path);
-    return res;
-}
+    constexpr int MAX_SIZE = 1024;
+    //実行ファイルまでのパスを取得する
+    std::wstring getExePath() {
+        wchar_t path[MAX_SIZE];
+        DWORD ret = GetModuleFileName(nullptr, path, sizeof(path));
+        std::wstring res(path);
+        return res;
+    }
 }
 
 Path::Path() {
@@ -31,6 +31,7 @@ Path::Path() {
     mResource = sDir + L"/Resources/";
     mModel = mResource + L"Model/";
     mTexture = mResource + L"Textures/";
+    mCompiledShader = sDir + L"/CompiledShader/";
 }
 
-Path::~Path() {}
+Path::~Path() { }
