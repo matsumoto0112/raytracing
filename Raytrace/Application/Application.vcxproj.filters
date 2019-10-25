@@ -4,6 +4,7 @@
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\stdafx.cpp" />
     <ClCompile Include="Source\FBXLoader.cpp" />
+    <ClCompile Include="Source\Util\Path.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
@@ -12,6 +13,7 @@
     <ClInclude Include="Assets\Shader\RaytracingDefine.h" />
     <ClInclude Include="Source\FBXLoader.h" />
     <ClInclude Include="Source\targetvar.h" />
+    <ClInclude Include="Source\Util\Path.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\Shader\Raytracing.hlsl" />

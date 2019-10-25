@@ -31,6 +31,9 @@
     <CustomBuildStep>
       <TreatOutputAsContent>true</TreatOutputAsContent>
     </CustomBuildStep>
+    <PostBuildEvent>
+      <Command>xcopy $(ProjectDir)\Resources $(OutDir) /I /Y /D /S</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>
