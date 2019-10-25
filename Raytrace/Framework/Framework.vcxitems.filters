@@ -13,7 +13,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Singleton.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringBuilder.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Typedef.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\d3dx12.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Window.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\IWindowProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\DestroyProc.h" />
@@ -28,14 +27,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\IDeviceState.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\RaytracingHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiInclude.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_truetype.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imconfig.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_win32.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_internal.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_rectpack.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_textedit.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDownProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\ImGuiProc.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.h" />
@@ -57,6 +48,16 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Time.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\IO\TextureLoader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imconfig.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_internal.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_textedit.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_truetype.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\d3dx12.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\IO\GLBLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -75,11 +76,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Scene\SceneBase.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\SysKeyDownProc.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_draw.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_win32.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\ImGuiProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\PaintProc.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DXRInterface.cpp" />
@@ -94,5 +90,11 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Window.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Time.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\IO\TextureLoader.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_dx12.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Utility\IO\GLBLoader.cpp" />
   </ItemGroup>
 </Project>
