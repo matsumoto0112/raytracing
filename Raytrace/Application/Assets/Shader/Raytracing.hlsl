@@ -84,7 +84,7 @@ inline uint3 getIndices() {
     uint indexSizeInBytes = 2;
     uint indicesPerTriangle = 3;
     uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
-    uint baseIndex = PrimitiveIndex() * triangleIndexStride;
+    uint baseIndex = PrimitiveIndex() * triangleIndexStride + l_material.indexOffset;
 
     return load3x16BitIndices(baseIndex, Indices);
 }
@@ -133,16 +133,18 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     Ray shadowRay = { worldPos, normalize(g_sceneCB.lightPosition.xyz - worldPos) };
     bool shadow = castShadow(shadowRay);
 
-    //float3 N = getNormal(attr);
-    //float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
+    float3 N = getNormal(attr);
+    float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
 
-    float4 color = float4(0,0,0,0);
+    float4 color = float4(0, 0, 0, 0);
     //ランバート
-    //color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse);
-    ////アンビエント
+    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse);
+    //アンビエント
     color.rgb += g_sceneCB.lightAmbient.rgb;
     ////フォグの適用
     color = applyFog(hitWorldPosition(), color);
+    //少し床の色を濃くする
+    color.rgb *= 1.5f;
 
     //影に覆われていたら黒くする
     float factor = shadow ? 0.1f : 1.0f;

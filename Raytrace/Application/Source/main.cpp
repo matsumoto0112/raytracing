@@ -19,6 +19,7 @@
 #include "Utility/IO/TextureLoader.h"
 #include "Util/Path.h"
 #include "Utility/IO/GLBLoader.h"
+#include "Math/MathUtility.h"
 #include "Utility/StringUtil.h"
 
 #ifdef _DEBUG
@@ -53,7 +54,7 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT CUBE_COUNT = 1;
+static constexpr UINT CUBE_COUNT = 3000;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 
@@ -200,6 +201,10 @@ private:
     std::array<D3DBuffer, GeometryType::Count> mGeometryVertexBuffers;
     std::array<UINT, GeometryType::Count> mIndexOffsets;
     std::array<UINT, GeometryType::Count> mVertexOffsets;
+    D3DBuffer mResourceIndexBuffer;
+    D3DBuffer mResourceVertexBuffer;
+    std::vector<Vertex> mResourceVertices;
+    std::vector<Index> mResourceIndices;
 
        /**
        * @brief カメラ行列の更新
@@ -328,7 +333,7 @@ private:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     setlocale(LC_ALL, "");
-    MainApp app(800, 600, L"Game");
+    MainApp app(1280, 720, L"Game");
     return app.run(hInstance, nCmdShow);
 }
 
@@ -383,7 +388,7 @@ void MainApp::initializeScene() {
 
 #pragma warning( push ) 
 #pragma warning (disable: 4305)
-    float range = 50.0f;
+    float range = 100.0f;
     PARAMETER_CHANGE_SLIDER("X", mCameraPosition.x, -range, range);
     PARAMETER_CHANGE_SLIDER("Y", mCameraPosition.y, -range, range);
     PARAMETER_CHANGE_SLIDER("Z", mCameraPosition.z, -range, range);
@@ -399,10 +404,17 @@ void MainApp::initializeScene() {
 
     mSceneCB->lightAmbient = { 0.3f,0.3f,0.3f,1.0f };
     mSceneCB->lightDiffuse = { 0.7f,0.2f,0.7f,1.0f };
-    mSceneCB->fogStart = 50.0f;
-    mSceneCB->fogEnd = 100.0f;
-    for (int i = 0; i < CUBE_COUNT; i++) {
-        mCubePositions[i] = { static_cast<float>(i / 3) * 5,1.25f,static_cast<float>(i % 3) * 5 };
+    mSceneCB->fogStart = 500.0f;
+    mSceneCB->fogEnd = 1000.0f;
+    int w = Framework::Math::MathUtil::sqrt(CUBE_COUNT) + 1;
+    int h = Framework::Math::MathUtil::sqrt(CUBE_COUNT) + 1;
+    for (int x = 0; x < w; x++) {
+        for (int y = 0; y < h; y++) {
+            if (y * w + x >= CUBE_COUNT)break;
+            float xpos = (x - w / 2) * 2.5f;
+            float zpos = (y - h / 2) * 2.5f;
+            mCubePositions[y * w + x] = { xpos,3.0f,zpos };
+        }
     }
 
     Framework::Utility::TextureLoader loader;
@@ -457,7 +469,9 @@ void MainApp::doRaytracing() {
     list->SetDescriptorHeaps(1, mDescriptorHeap.GetAddressOf());
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::RenderTarget, mRaytracingOutputResourceUAVGpuDescriptor);
     list->SetComputeRootShaderResourceView(GlobalRootSignatureParameter::AccelerationStructureSlot, mTopLevelAS->GetGPUVirtualAddress());
-    list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mGeometryIndexBuffers[0].gpuHandle);
+    list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mResourceIndexBuffer.gpuHandle);
+    //list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mGeometryIndexBuffers[0].gpuHandle);
+
     dispatchRays(mDXRInterface->getCommandList(), mDXRInterface->getStateObject(), &desc);
 }
 
@@ -793,11 +807,14 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
     allocateUploadBuffer(device, indices.data(), indexCount * indexStride, &indexBuffer->resource, L"IndexBuffer");
     allocateUploadBuffer(device, vertices.data(), vertexCount * vertexStride, &vertexBuffer->resource, L"VertexBuffer");
 
-    createBufferSRV(indexBuffer, indexCount * indexStride / 4, 0);
-    createBufferSRV(vertexBuffer, vertexCount, vertexStride);
+    //createBufferSRV(indexBuffer, indexCount * indexStride / 4, 0);
+    //createBufferSRV(vertexBuffer, vertexCount, vertexStride);
 
     mIndexOffsets[GeometryType::Cube + 1] = indexCount;
     mVertexOffsets[GeometryType::Cube + 1] = vertexCount;
+
+    mResourceVertices.assign(vertices.begin(), vertices.end());
+    mResourceIndices.assign(indices.begin(), indices.end());
 }
 
 void MainApp::buildPlaneGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer) {
@@ -812,6 +829,9 @@ void MainApp::buildPlaneGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer
     ID3D12Device* device = mDeviceResource->getDevice();
     allocateUploadBuffer(device, indices.data(), indices.size() * sizeof(indices[0]), &indexBuffer->resource);
     allocateUploadBuffer(device, vertices.data(), vertices.size() * sizeof(vertices[0]), &vertexBuffer->resource);
+
+    mResourceVertices.assign(vertices.begin(), vertices.end());
+    mResourceIndices.assign(indices.begin(), indices.end());
 }
 
 //ボトムレベルASを構築する
@@ -905,7 +925,7 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
         instanceDescs[offset + i].InstanceID = offset;
         instanceDescs[offset + i].InstanceContributionToHitGroupIndex = offset;
         instanceDescs[offset + i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-        XMMATRIX trans = XMMatrixTranslation(mCubePositions[i].x, mCubePositions[i].y, mCubePositions[i].z);
+        XMMATRIX trans = XMMatrixRotationRollPitchYaw(0, mRotation, 0) * XMMatrixTranslation(mCubePositions[i].x, mCubePositions[i].y, mCubePositions[i].z);
         XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[offset + i].Transform), trans);
         instanceDescs[offset + i].AccelerationStructure = bottomLevelAS[GeometryType::Cube]->GetGPUVirtualAddress();
         instanceDescs[offset + i].InstanceMask = 0xff;
@@ -964,6 +984,13 @@ void MainApp::buildAccelerationStructures() {
     mDeviceResource->getCommandList()->Reset(mDeviceResource->getCommandAllocator(), nullptr);
 
     mTopLevelAS = tlasBuffer.accelerationStructure;
+
+    ID3D12Device* device = mDeviceResource->getDevice();
+    allocateUploadBuffer(device, mResourceIndices.data(), mResourceIndices.size() * sizeof(Index), &mResourceIndexBuffer.resource);
+    allocateUploadBuffer(device, mResourceVertices.data(), mResourceVertices.size() * sizeof(Vertex), &mResourceVertexBuffer.resource);
+
+    createBufferSRV(&mResourceIndexBuffer, mResourceIndices.size() * sizeof(Index) / 4, 0);
+    createBufferSRV(&mResourceVertexBuffer, mResourceVertices.size(), sizeof(Vertex));
 }
 
 void MainApp::buildShaderTables() {
@@ -1071,6 +1098,8 @@ void MainApp::calcFrameStatus() {
     mGPUInfoText->setText(ss.str());
 
     mRotation += 0.01f;
+
+
 }
 
 UINT MainApp::allocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, UINT descriptorIndexToUse) {
