@@ -61,7 +61,7 @@ namespace Framework::DX {
         }
 
         void push_back(const ShaderRecord& record) {
-            throwIfFailed(mShaderRecords.size() < mShaderRecords.capacity());
+            Utility::throwIfFailed(mShaderRecords.size() < mShaderRecords.capacity());
             mShaderRecords.push_back(record);
             record.copyTo(mMappedShaderRecords);
             mMappedShaderRecords += mShaderRecordSize;
@@ -74,7 +74,7 @@ namespace Framework::DX {
         D3D12_RESOURCE_STATES initialResourceState = D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON, const wchar_t* resourceName = nullptr) {
         CD3DX12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT);
         CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize, D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-        throwIfFailed(device->CreateCommittedResource(
+        Utility::throwIfFailed(device->CreateCommittedResource(
             &heapProp,
             D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
             &bufferDesc,
@@ -89,7 +89,7 @@ namespace Framework::DX {
     inline void allocateUploadBuffer(ID3D12Device* device, void* data, UINT64 dataSize, ID3D12Resource** resource, const wchar_t* resourceName = nullptr) {
         CD3DX12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD);
         CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize);
-        throwIfFailed(device->CreateCommittedResource(
+        Utility::throwIfFailed(device->CreateCommittedResource(
             &heapProp,
             D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
             &bufferDesc,

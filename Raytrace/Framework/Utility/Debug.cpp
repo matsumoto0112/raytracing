@@ -11,17 +11,17 @@ namespace Framework::Utility {
         int res = MessageBoxW(GetWindow(nullptr, 0), message.c_str(), L"エラー", IDOK);
         PostQuitMessage(0);
     }
-
+    //アサーション
     void Debug::assertion(const std::string& funcName, int line,
         bool condition, const std::wstring& message) {
         if (condition)return;
         _ASSERT_EXPR(condition, errorMessage(funcName, line, message).c_str());
     }
-
+    //ログ出力
     void Debug::debugLog(const std::string& funcName, int line, const std::wstring& message) {
         _RPTW0(_CRT_WARN, errorMessage(funcName, line, message).c_str());
     }
-
+    //エラーウィンドウ
     void Debug::errorWindow(const std::string& funcName, int line,
         bool condition, const std::wstring& message) {
         if (condition)return;
@@ -36,7 +36,7 @@ namespace Framework::Utility {
         MessageBoxW(nullptr, mes.c_str(), L"エラー", MB_ICONINFORMATION);
         exit(-1);
     }
-
+    //エラーメッセージ作成
     std::wstring Debug::errorMessage(const std::string& funcName,
         int line, const std::wstring& message) {
         int size_needed = MultiByteToWideChar(CP_UTF8, 0, &funcName[0], (int)funcName.size(), NULL, 0);

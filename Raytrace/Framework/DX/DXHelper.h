@@ -6,55 +6,6 @@
 #include "Utility/Typedef.h"
 
 namespace Framework::DX {
-    /**
-    * @brief HRESULT—áŠOƒNƒ‰ƒX
-    */
-    class HrException : public std::runtime_error {
-        inline std::string HrToString(HRESULT hr) {
-            char s_str[64] = {};
-            sprintf_s(s_str, "HRESULT of 0x%08X", static_cast<UINT>(hr));
-            return std::string(s_str);
-        }
-    public:
-        HrException(HRESULT hr) : std::runtime_error(HrToString(hr)), m_hr(hr) { }
-        HRESULT Error() const { return m_hr; }
-    private:
-        const HRESULT m_hr;
-    };
-
-    /**
-    * @brief Ž¸”s‚µ‚Ä‚¢‚½‚ç—áŠO‚ð“Š‚°‚é
-    */
-    inline void throwIfFailed(HRESULT hr) {
-        if (FAILED(hr)) {
-            throw HrException(hr);
-        }
-    }
-
-    /**
-    * @brief Ž¸”s‚µ‚Ä‚¢‚½‚ç—áŠO‚ð“Š‚°‚é
-    */
-    inline void throwIfFailed(HRESULT hr, const wchar_t* mes) {
-        if (FAILED(hr)) {
-            MY_DEBUG_LOG(mes);
-            throw HrException(hr);
-        }
-    }
-
-    /**
-    * @brief Ž¸”s‚µ‚Ä‚¢‚½‚ç—áŠO‚ð“Š‚°‚é
-    */
-    inline void throwIfFalse(bool value) {
-        throwIfFailed(value ? S_OK : E_FAIL);
-    }
-
-    /**
-    * @brief Ž¸”s‚µ‚Ä‚¢‚½‚ç—áŠO‚ð“Š‚°‚é
-    */
-    inline void throwIfFalse(bool value, const wchar_t* mes) {
-        throwIfFailed(value ? S_OK : E_FAIL, mes);
-    }
-
 #ifdef _DEBUG
     inline void setName(ID3D12Object* object, LPCWSTR name) {
         object->SetName(name);

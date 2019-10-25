@@ -50,7 +50,7 @@ namespace Framework::Utility {
         //バッファからデータを読み出す
         D3D12_RANGE range{ readBackOffset ,readBackOffset + TIMER_SLOT_NUM * sizeof(UINT64) };
         UINT64* timingData;
-        DX::throwIfFailed(mBuffer->Map(0, &range, reinterpret_cast<void**>(&timingData)));
+        Utility::throwIfFailed(mBuffer->Map(0, &range, reinterpret_cast<void**>(&timingData)));
         memcpy(mTimings.data(), timingData, TIMER_SLOT_NUM * sizeof(UINT64));
         mBuffer->Unmap(0, nullptr);
 
@@ -121,7 +121,7 @@ namespace Framework::Utility {
 
         //GPUのタイムスタンプカウンターの周期を取得する
         UINT64 gpuFreq;
-        DX::throwIfFailed(commandQueue->GetTimestampFrequency(&gpuFreq));
+        Utility::throwIfFailed(commandQueue->GetTimestampFrequency(&gpuFreq));
         //ミリ秒として使う
         mGpuFreqInv = float(1000.0 / double(gpuFreq));
 
@@ -129,7 +129,7 @@ namespace Framework::Utility {
         D3D12_QUERY_HEAP_DESC desc = {};
         desc.Type = D3D12_QUERY_HEAP_TYPE::D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
         desc.Count = TIMER_SLOT_NUM;
-        DX::throwIfFailed(device->CreateQueryHeap(&desc, IID_PPV_ARGS(&mQueryHeap)));
+        Utility::throwIfFailed(device->CreateQueryHeap(&desc, IID_PPV_ARGS(&mQueryHeap)));
         mQueryHeap->SetName(L"GPUTimerQuery");
 
         //計測した時間を格納するためのバッファを確保する
@@ -137,7 +137,7 @@ namespace Framework::Utility {
         size_t perFrameInstances = mMaxFrameCount + 1;
 
         CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(perFrameInstances * TIMER_SLOT_NUM * sizeof(UINT64));
-        DX::throwIfFailed(device->CreateCommittedResource(
+        Utility::throwIfFailed(device->CreateCommittedResource(
             &prop,
             D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
             &bufferDesc,

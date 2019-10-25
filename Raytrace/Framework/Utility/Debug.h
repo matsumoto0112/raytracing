@@ -1,5 +1,5 @@
 #pragma once
-
+#include <d3d12.h>
 #include "Framework/Utility/StringBuilder.h"
 
 /**
@@ -31,6 +31,56 @@
 #define MY_DEBUG_LOG_IF(cond,mes) if((cond)) MY_DEBUG_LOG(mes)
 
 namespace Framework::Utility {
+    /**
+    * @brief HRESULT例外クラス
+    */
+    class HrException : public std::runtime_error {
+        inline std::string HrToString(HRESULT hr) {
+            char s_str[64] = {};
+            sprintf_s(s_str, "HRESULT of 0x%08X", static_cast<UINT>(hr));
+            return std::string(s_str);
+        }
+    public:
+        HrException(HRESULT hr) : std::runtime_error(HrToString(hr)), m_hr(hr) { }
+        HRESULT Error() const { return m_hr; }
+    private:
+        const HRESULT m_hr;
+    };
+
+    /**
+    * @brief 失敗していたら例外を投げる
+    */
+    inline void throwIfFailed(HRESULT hr) {
+        if (FAILED(hr)) {
+            throw HrException(hr);
+        }
+    }
+
+    /**
+    * @brief 失敗していたら例外を投げる
+    */
+    inline void throwIfFailed(HRESULT hr, const wchar_t* mes) {
+        if (FAILED(hr)) {
+            MY_DEBUG_LOG(mes);
+            throw HrException(hr);
+        }
+    }
+
+    /**
+    * @brief 失敗していたら例外を投げる
+    */
+    inline void throwIfFalse(bool value) {
+        throwIfFailed(value ? S_OK : E_FAIL);
+    }
+
+    /**
+    * @brief 失敗していたら例外を投げる
+    */
+    inline void throwIfFalse(bool value, const wchar_t* mes) {
+        throwIfFailed(value ? S_OK : E_FAIL, mes);
+    }
+
+
     /**
     * @brief デバッグ用インターフェース
     */

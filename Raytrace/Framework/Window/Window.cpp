@@ -66,13 +66,13 @@ namespace Framework::Window {
             try {
                 if (swapChain) {
                     ComPtr<IDXGIOutput> output;
-                    DX::throwIfFailed(swapChain->GetContainingOutput(&output));
+                    Utility::throwIfFailed(swapChain->GetContainingOutput(&output));
                     DXGI_OUTPUT_DESC desc;
-                    DX::throwIfFailed(output->GetDesc(&desc));
+                    Utility::throwIfFailed(output->GetDesc(&desc));
                     fullScreenWindowRect = desc.DesktopCoordinates;
                 }
                 else {
-                    throw DX::HrException(S_FALSE);
+                    throw Utility::HrException(S_FALSE);
                 }
             }
             catch (const std::exception& e) {

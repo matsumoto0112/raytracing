@@ -10,10 +10,10 @@
 namespace {
     inline DXGI_FORMAT NoSRGB(DXGI_FORMAT fmt) {
         switch (fmt) {
-            case DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
-            case DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
-            case DXGI_FORMAT::DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_B8G8R8X8_UNORM;
-            default:                                return fmt;
+        case DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+        case DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
+        case DXGI_FORMAT::DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_B8G8R8X8_UNORM;
+        default:                                return fmt;
         }
     }
 
@@ -60,7 +60,7 @@ namespace Framework::DX {
     void DeviceResource::initializeDXGIAdapter() {
         bool debugDXGI = false;
 
-#ifdef _DEBUG
+    #ifdef _DEBUG
         ComPtr<ID3D12Debug> debug;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug)))) {
             debug->EnableDebugLayer();
@@ -71,14 +71,14 @@ namespace Framework::DX {
         ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
         if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiInfoQueue)))) {
             debugDXGI = true;
-            throwIfFailed(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&mFactory)));
+            Utility::Utility::throwIfFailed(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&mFactory)));
             dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY::DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
             dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY::DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
         }
-#endif
+    #endif
 
         if (!debugDXGI) {
-            throwIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&mFactory)));
+            Utility::throwIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&mFactory)));
         }
 
         if (mOptions & (ALLOW_TEARING | REQUIER_TEARING_SUPPORT)) {
@@ -103,15 +103,15 @@ namespace Framework::DX {
     }
 
     void DeviceResource::createDeviceResource() {
-        throwIfFailed(D3D12CreateDevice(mAdapter.Get(), mMinFeatureLevel, IID_PPV_ARGS(&mDevice)));
+        Utility::throwIfFailed(D3D12CreateDevice(mAdapter.Get(), mMinFeatureLevel, IID_PPV_ARGS(&mDevice)));
 
-#ifndef NDEBUG
+    #ifndef NDEBUG
         ComPtr<ID3D12InfoQueue> infoQueue;
         if (SUCCEEDED(mDevice.As(&infoQueue))) {
-#ifdef _DEBUG
+        #ifdef _DEBUG
             infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY::D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
             infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY::D3D12_MESSAGE_SEVERITY_ERROR, true);
-#endif
+        #endif
             D3D12_MESSAGE_ID hide[] =
             {
                 D3D12_MESSAGE_ID::D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
@@ -122,7 +122,7 @@ namespace Framework::DX {
             filter.DenyList.pIDList = hide;
             infoQueue->AddStorageFilterEntries(&filter);
         }
-#endif // !NDEBUG
+    #endif // !NDEBUG
         static constexpr D3D_FEATURE_LEVEL FEATURE_LEVELS[] =
         {
             D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_12_1,
@@ -149,13 +149,13 @@ namespace Framework::DX {
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAGS::D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-        throwIfFailed(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
+        Utility::throwIfFailed(mDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&mCommandQueue)));
 
         //RTV・DSVのヒープ作成
         D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
         rtvHeapDesc.NumDescriptors = mBackBufferCount;
         rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-        throwIfFailed(mDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&mRTVHeap)));
+        Utility::throwIfFailed(mDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&mRTVHeap)));
         mRTVDesctiptorSize = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
         if (mDepthBufferFormat != DXGI_FORMAT::DXGI_FORMAT_UNKNOWN) {
@@ -163,31 +163,31 @@ namespace Framework::DX {
             dsvHeapDesc.NumDescriptors = 1;
             dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 
-            throwIfFailed(mDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&mDSVHeap)));
+            Utility::throwIfFailed(mDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&mDSVHeap)));
         }
 
         //バックバッファの数分アロケータ作成
         for (UINT n = 0; n < mBackBufferCount; n++) {
-            throwIfFailed(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocators[n])));
+            Utility::throwIfFailed(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocators[n])));
         }
 
         //コマンドリスト作成
-        throwIfFailed(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocators[0].Get(), nullptr, IID_PPV_ARGS(&mCommandList)));
-        throwIfFailed(mCommandList->Close());
+        Utility::throwIfFailed(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocators[0].Get(), nullptr, IID_PPV_ARGS(&mCommandList)));
+        Utility::throwIfFailed(mCommandList->Close());
 
         //GPUの処理用フェンス作成
-        throwIfFailed(mDevice->CreateFence(mFenceValue[mBackBufferIndex], D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));
+        Utility::throwIfFailed(mDevice->CreateFence(mFenceValue[mBackBufferIndex], D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence)));
         mFenceValue[mBackBufferIndex]++;
 
         mFenceEvent.Attach(CreateEvent(nullptr, FALSE, FALSE, nullptr));
         if (!mFenceEvent.IsValid()) {
-            throwIfFailed(E_FAIL, L"CreateEvent failed.\n");
+            Utility::throwIfFailed(E_FAIL, L"CreateEvent failed.\n");
         }
     }
 
     void DeviceResource::createWindowSizeDependentResource() {
         if (!mWindow) {
-            throwIfFailed(E_HANDLE, L"ウィンドウハンドルがセットされていません\n");
+            Utility::throwIfFailed(E_HANDLE, L"ウィンドウハンドルがセットされていません\n");
         }
 
         waitForGPU();
@@ -210,17 +210,17 @@ namespace Framework::DX {
                 (mOptions & ALLOW_TEARING) ? DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
 
             if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
-#ifdef _DEBUG
+            #ifdef _DEBUG
                 wchar_t buff[64] = {};
                 swprintf_s(buff, L"デバイスロストが発生しました:0x%08X\n", (hr == DXGI_ERROR_DEVICE_REMOVED) ? mDevice->GetDeviceRemovedReason() : hr);
                 MY_DEBUG_LOG(buff);
-#endif
+            #endif
                 //デバイスロストの通知
                 handleDeviceLost();
                 return;
             }
             else {
-                throwIfFailed(hr);
+                Utility::throwIfFailed(hr);
             }
         }
         else {
@@ -247,12 +247,12 @@ namespace Framework::DX {
                 mWindow->setWindowZOrderToTopMost(false);
             }
 
-            throwIfFailed(mFactory->CreateSwapChainForHwnd(mCommandQueue.Get(), mWindow->getHwnd(), &swapChainDesc, &fsSwapChainDesc, nullptr, &swapChain));
+            Utility::throwIfFailed(mFactory->CreateSwapChainForHwnd(mCommandQueue.Get(), mWindow->getHwnd(), &swapChainDesc, &fsSwapChainDesc, nullptr, &swapChain));
             if (prevIsFullScreen) {
                 mWindow->setWindowZOrderToTopMost(true);
             }
 
-            throwIfFailed(swapChain.As(&mSwapChain));
+            Utility::throwIfFailed(swapChain.As(&mSwapChain));
 
             if (isTearingSupported()) {
                 mFactory->MakeWindowAssociation(mWindow->getHwnd(), DXGI_MWA_NO_ALT_ENTER);
@@ -260,7 +260,7 @@ namespace Framework::DX {
         }
 
         for (UINT n = 0; n < mBackBufferCount; n++) {
-            throwIfFailed(mSwapChain->GetBuffer(n, IID_PPV_ARGS(&mRenderTargets[n])));
+            Utility::throwIfFailed(mSwapChain->GetBuffer(n, IID_PPV_ARGS(&mRenderTargets[n])));
             std::wstring name = (Utility::StringBuilder(L"Render target ") << n).getStr();
             mRenderTargets[n]->SetName(name.c_str());
 
@@ -290,7 +290,7 @@ namespace Framework::DX {
             depthClearValue.DepthStencil.Depth = 1.0f;
             depthClearValue.DepthStencil.Stencil = 0;
 
-            throwIfFailed(mDevice->CreateCommittedResource(
+            Utility::throwIfFailed(mDevice->CreateCommittedResource(
                 &dsvProp,
                 D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
                 &depthStencilDesc,
@@ -363,7 +363,7 @@ namespace Framework::DX {
         mFactory.Reset();
         mAdapter.Reset();
 
-#ifdef _DEBUG
+    #ifdef _DEBUG
         {
 
             ComPtr<IDXGIDebug> dxgiDebug;
@@ -371,7 +371,7 @@ namespace Framework::DX {
                 dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
             }
         }
-#endif
+    #endif
 
         initializeDXGIAdapter();
         createDeviceResource();
@@ -394,8 +394,8 @@ namespace Framework::DX {
     }
 
     void DeviceResource::prepare(D3D12_RESOURCE_STATES beforeState) {
-        throwIfFailed(mCommandAllocators[mBackBufferIndex]->Reset());
-        throwIfFailed(mCommandList->Reset(mCommandAllocators[mBackBufferIndex].Get(), nullptr));
+        Utility::throwIfFailed(mCommandAllocators[mBackBufferIndex]->Reset());
+        Utility::throwIfFailed(mCommandList->Reset(mCommandAllocators[mBackBufferIndex].Get(), nullptr));
 
         if (beforeState != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET) {
             D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mBackBufferIndex].Get(), beforeState, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -423,24 +423,24 @@ namespace Framework::DX {
             hr = mSwapChain->Present(1, 0);
         }
         if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
-#ifdef _DEBUG
+        #ifdef _DEBUG
             wchar_t buff[64] = {};
             swprintf_s(buff, L"プレゼント時にデバイスロスト発生: 0x%08X\n", (hr == DXGI_ERROR_DEVICE_REMOVED) ? mDevice->GetDeviceRemovedReason() : hr);
             MY_DEBUG_LOG(buff);
-#endif
+        #endif
             handleDeviceLost();
         }
         else {
-            throwIfFailed(hr);
+            Utility::throwIfFailed(hr);
             moveToNextFrame();
         }
 
-        throwIfFailed(mCommandAllocators[mBackBufferIndex]->Reset());
-        throwIfFailed(mCommandList->Reset(mCommandAllocators[mBackBufferIndex].Get(), nullptr));
+        Utility::throwIfFailed(mCommandAllocators[mBackBufferIndex]->Reset());
+        Utility::throwIfFailed(mCommandList->Reset(mCommandAllocators[mBackBufferIndex].Get(), nullptr));
     }
 
     void DeviceResource::executeCommandList() {
-        throwIfFailed(mCommandList->Close());
+        Utility::throwIfFailed(mCommandList->Close());
         ID3D12CommandList* list[] = { mCommandList.Get() };
         mCommandQueue->ExecuteCommandLists(ARRAYSIZE(list), list);
     }
@@ -459,11 +459,11 @@ namespace Framework::DX {
 
     void DeviceResource::moveToNextFrame() {
         const UINT64 currentFenceValue = mFenceValue[mBackBufferIndex];
-        throwIfFailed(mCommandQueue->Signal(mFence.Get(), currentFenceValue));
+        Utility::throwIfFailed(mCommandQueue->Signal(mFence.Get(), currentFenceValue));
 
         mBackBufferIndex = mSwapChain->GetCurrentBackBufferIndex();
         if (mFence->GetCompletedValue() < mFenceValue[mBackBufferIndex]) {
-            throwIfFailed(mFence->SetEventOnCompletion(mFenceValue[mBackBufferIndex], mFenceEvent.Get()));
+            Utility::throwIfFailed(mFence->SetEventOnCompletion(mFenceValue[mBackBufferIndex], mFenceEvent.Get()));
             WaitForSingleObjectEx(mFenceEvent.Get(), INFINITE, FALSE);
         }
         mFenceValue[mBackBufferIndex] = currentFenceValue + 1;
@@ -479,7 +479,7 @@ namespace Framework::DX {
             }
 
             DXGI_ADAPTER_DESC1 desc;
-            throwIfFailed(adapter->GetDesc1(&desc));
+            Utility::throwIfFailed(adapter->GetDesc1(&desc));
 
             if (desc.Flags & DXGI_ADAPTER_FLAG::DXGI_ADAPTER_FLAG_SOFTWARE) {
                 continue;
@@ -488,16 +488,16 @@ namespace Framework::DX {
             if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), mMinFeatureLevel, __uuidof(ID3D12Device), nullptr))) {
                 mAdapterID = adapterID;
                 mAdapterDescription = desc.Description;
-#ifdef _DEBUG
+            #ifdef _DEBUG
                 wchar_t buff[256] = {};
                 swprintf_s(buff, L"Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls\n", adapterID, desc.VendorId, desc.DeviceId, desc.Description);
                 MY_DEBUG_LOG(buff);
-#endif
+            #endif
                 break;
             }
         }
 
-#ifndef NDEBUG
+    #ifndef NDEBUG
         if (!adapter && mAdapterIDoverride == UINT_MAX) {
             if (FAILED(mFactory->EnumWarpAdapter(IID_PPV_ARGS(&adapter)))) {
                 throw std::exception("WARP12 not available. Enable the 'Graphics Tools' optional feature");
@@ -505,7 +505,7 @@ namespace Framework::DX {
 
             MY_DEBUG_LOG(L"Direct3D Adapter - WRAP12\n");
         }
-#endif
+    #endif
 
         if (!adapter) {
             if (mAdapterIDoverride != UINT_MAX) {
