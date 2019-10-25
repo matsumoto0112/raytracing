@@ -3,7 +3,7 @@
 namespace Framework::ImGUI {
     //コンストラクタ
     IntField::IntField(const std::string& text, int defaultValue)
-        :CallBackItem(text), mValue(defaultValue), mMinValue(0.0f), mMaxValue(1.0f) { }
+        :CallBackItem(text), mValue(defaultValue), mMinValue(0), mMaxValue(1) { }
     //デストラクタ
     IntField::~IntField() { }
     //描画
