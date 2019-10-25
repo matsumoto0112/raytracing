@@ -1,41 +1,128 @@
 #include "GLBLoader.h"
 #include <fstream>
-//#include <GLTFSDK/GLTF.h>
-//#include <GLTFSDK/GLBResourceReader.h>
-//#include <GLTFSDK/Deserialize.h>
-//
-//using namespace Microsoft::glTF;
+
+using namespace Microsoft::glTF;
 
 namespace {
-    ///**
-    //* @class StreamReader
-    //* @brief discription
-    //*/
-    //class StreamReader : public IStreamReader {
-    //public:
-    //    /**
-    //    * @brief コンストラクタ
-    //    */
-    //    StreamReader() { }
-    //    /**
-    //    * @brief デストラクタ
-    //    */
-    //    ~StreamReader() { }
-    //    //データを取得する
-    //    std::shared_ptr<std::istream> GetInputStream(const std::string& filepath) const override {
-    //        auto stream = std::make_shared<std::ifstream>(filepath, std::ios::binary);
-    //        return stream;
-    //    }
-    //};
+    /**
+    * @class StreamReader
+    * @brief discription
+    */
+    class StreamReader : public IStreamReader {
+    public:
+        /**
+        * @brief コンストラクタ
+        */
+        StreamReader() { }
+        /**
+        * @brief デストラクタ
+        */
+        ~StreamReader() { }
+        //データを取得する
+        std::shared_ptr<std::istream> GetInputStream(const std::string& filepath) const override {
+            auto stream = std::make_shared<std::ifstream>(filepath, std::ios::binary);
+            return stream;
+        }
+    };
 }
+
 namespace Framework::Utility {
+    GLBLoader::GLBLoader(const std::string& filepath) {
+        auto streamReader = std::make_unique<StreamReader>();
+        auto glbStream = streamReader->GetInputStream(filepath);
+        mResourceReader = std::make_unique<GLBResourceReader>(std::move(streamReader), std::move(glbStream));
+        auto manifest = mResourceReader->GetJson();
+        mDocument = Deserialize(manifest);
+    }
 
-GLBLoader::GLBLoader(const std::string& filepath) { 
-    //auto streamReader = std::make_unique<StreamReader>(path);
-    //auto glbStream = streamReader->GetInputStream(filepath);
-    //auto glbResourceReader = std::make_unique<GLBResourceReader>(std::move(streamReader), std::move(glbStream));
-    //auto manifest = glbResourceReader->GetJson();
-    //auto document = Deserialize(manifest);
-}
+    GLBLoader::~GLBLoader() { }
 
+    std::vector<std::vector<BYTE>> GLBLoader::getImageDatas() const {
+        std::vector<std::vector<BYTE>> result;
+        for (auto&& image : mDocument.images.Elements()) {
+            result.emplace_back(mResourceReader->ReadBinaryData(mDocument, image));
+        }
+        return result;
+    }
+
+    std::vector<Material> GLBLoader::getMaterialDatas() const {
+        std::vector<Material> result;
+        for (auto&& mat : mDocument.materials.Elements()) {
+            Material material;
+            material.name = mat.name;
+            //マップが存在しなければ-1にしておく
+            material.normalMapID = (mat.normalTexture.textureId != "") ? std::stoi(mat.normalTexture.textureId) : -1;
+            //gltfのアルファモードによる切り替え
+            switch (mat.alphaMode) {
+                case ALPHA_UNKNOWN:
+                case ALPHA_OPAQUE:
+                    material.alphaMode = AlphaMode::Opaque;
+                    break;
+                case ALPHA_BLEND:
+                    material.alphaMode = AlphaMode::Blend;
+                    break;
+                default:
+                    material.alphaMode = AlphaMode::Mask;
+                    break;
+            }
+            result.emplace_back(material);
+        }
+        return result;
+    }
+    std::vector<std::vector<uint16_t>> GLBLoader::getIndicesPerSubMeshes() const {
+        std::vector<std::vector<uint16_t>> result;
+        for (auto&& mesh : mDocument.meshes.Elements()) {
+            for (auto&& prim : mesh.primitives) {
+                auto&& index_accesor = mDocument.accessors.Get(prim.indicesAccessorId);
+                auto data_uint8 = mResourceReader->ReadBinaryData<uint16_t>(mDocument, index_accesor);
+                std::vector<uint16_t> data(data_uint8.size());
+                const size_t size = data.size() / 3;
+                for (int i = 0; i < size; i++) {
+                    data[i * 3 + 2] = static_cast<uint16_t>(data_uint8[i * 3 + 2]);
+                    data[i * 3 + 1] = static_cast<uint16_t>(data_uint8[i * 3 + 1]);
+                    data[i * 3 + 0] = static_cast<uint16_t>(data_uint8[i * 3 + 0]);
+                }
+                result.emplace_back(data);
+            }
+        }
+        return result;
+    }
+    std::vector<std::vector<Vector3>> GLBLoader::getPositionsPerSubMeshes() const {
+        std::vector<std::vector<Vector3>> result;
+        for (auto&& mesh : mDocument.meshes.Elements()) {
+            for (auto&& prim : mesh.primitives) {
+                std::string accessorID;
+                if (!prim.TryGetAttributeAccessorId(ACCESSOR_POSITION, accessorID))continue;
+                auto&& accessor = mDocument.accessors.Get(accessorID);
+                std::vector<float> data = mResourceReader->ReadBinaryData<float>(mDocument, accessor);
+                const int elemCount = 3;
+                const int vertexSize = static_cast<int>(data.size()) / elemCount;
+                std::vector<Vector3> positions(vertexSize);
+                for (int i = 0; i < vertexSize; i++) {
+                    positions[i] = Vector3(data[i * elemCount], data[i * elemCount + 1], data[i * elemCount + 2]);
+                }
+                result.emplace_back(positions);
+            }
+        }
+        return result;
+    }
+    std::vector<std::vector<Vector3>> GLBLoader::getNormalsPerSubMeshes() const {
+        std::vector<std::vector<Vector3>> result;
+        for (auto&& mesh : mDocument.meshes.Elements()) {
+            for (auto&& prim : mesh.primitives) {
+                std::string accessorID;
+                if (!prim.TryGetAttributeAccessorId(ACCESSOR_NORMAL, accessorID))continue;
+                auto&& accessor = mDocument.accessors.Get(accessorID);
+                std::vector<float> data = mResourceReader->ReadBinaryData<float>(mDocument, accessor);
+                const int elemCount = 3;
+                const int vertexSize = static_cast<int>(data.size()) / elemCount;
+                std::vector<Vector3> normals(vertexSize);
+                for (int i = 0; i < vertexSize; i++) {
+                    normals[i] = Vector3(data[i * elemCount], data[i * elemCount + 1], data[i * elemCount + 2]);
+                }
+                result.emplace_back(normals);
+            }
+        }
+        return result;
+    }
 } //Framework::Utility 

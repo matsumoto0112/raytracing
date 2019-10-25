@@ -33,7 +33,7 @@ Path::Path() {
 
     mShader = sDir + L"/cso/Resources/Shader/";
     mResource = sDir + L"/Resources/";
-    mModel = mResource + L"Model/";
+    mModel = mResource + L"Models/";
     mTexture = mResource + L"Textures/";
     mCompiledShader = sDir + L"/CompiledShader/";
 }

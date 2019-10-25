@@ -18,6 +18,8 @@
 #include "Utility/Time.h"
 #include "Utility/IO/TextureLoader.h"
 #include "Util/Path.h"
+#include "Utility/IO/GLBLoader.h"
+#include "Utility/StringUtil.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -51,7 +53,7 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT CUBE_COUNT = 9;
+static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 
@@ -717,69 +719,85 @@ void MainApp::createRaytracingOutputResource() {
 
 //キューブのジオメトリを生成する
 void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer) {
-    std::vector<Index> indices =
-    {
-        3,1,0,
-        2,1,3,
+    //std::vector<Index> indices =
+    //{
+    //    3,1,0,
+    //    2,1,3,
 
-        6,4,5,
-        7,4,6,
+    //    6,4,5,
+    //    7,4,6,
 
-        11,9,8,
-        10,9,11,
+    //    11,9,8,
+    //    10,9,11,
 
-        14,12,13,
-        15,12,14,
+    //    14,12,13,
+    //    15,12,14,
 
-        19,17,16,
-        18,17,19,
+    //    19,17,16,
+    //    18,17,19,
 
-        22,20,21,
-        23,20,22
-    };
+    //    22,20,21,
+    //    23,20,22
+    //};
 
-    std::vector<Vertex> vertices =
-    {
-        { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-        { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-        { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-        { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    //std::vector<Vertex> vertices =
+    //{
+    //    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    //    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    //    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+    //    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
 
-        { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-        { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-        { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
-        { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    //    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    //    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    //    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
+    //    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, -1.0f, 0.0f) },
 
-        { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-        { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-        { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
-        { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    //    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    //    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    //    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
+    //    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(-1.0f, 0.0f, 0.0f) },
 
-        { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-        { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-        { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-        { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    //    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    //    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    //    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+    //    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
 
-        { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-        { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-        { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
-        { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    //    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    //    { XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    //    { XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
+    //    { XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, -1.0f) },
 
-        { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-        { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-        { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-        { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-    };
+    //    { XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    //    { XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    //    { XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    //    { XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+    //};
+
+    Framework::Utility::GLBLoader glbLoader(
+        Framework::Utility::toString(Path::getInstance()->model() + L"cube.glb"));
+    auto positions = glbLoader.getPositionsPerSubMeshes()[0];
+    auto normals = glbLoader.getNormalsPerSubMeshes()[0];
+    std::vector<Index> indices = glbLoader.getIndicesPerSubMeshes()[0];
+    std::vector<Vertex> vertices(positions.size());
+    for (size_t i = 0; i < vertices.size(); i++) {
+        vertices[i].position = XMFLOAT3{ positions[i].x,positions[i].y,positions[i].z };
+        vertices[i].normal = XMFLOAT3{ normals[i].x,normals[i].y,normals[i].z };
+    }
+
+    const UINT indexCount = indices.size();
+    const UINT vertexCount = vertices.size();
+    const UINT indexStride = sizeof(Index);
+    const UINT vertexStride = sizeof(Vertex);
 
     ID3D12Device* device = mDeviceResource->getDevice();
-    allocateUploadBuffer(device, indices.data(), indices.size() * sizeof(indices[0]), &indexBuffer->resource, L"IndexBuffer");
-    allocateUploadBuffer(device, vertices.data(), vertices.size() * sizeof(vertices[0]), &vertexBuffer->resource, L"VertexBuffer");
+    allocateUploadBuffer(device, indices.data(), indexCount * indexStride, &indexBuffer->resource, L"IndexBuffer");
+    allocateUploadBuffer(device, vertices.data(), vertexCount * vertexStride, &vertexBuffer->resource, L"VertexBuffer");
 
-    createBufferSRV(indexBuffer, static_cast<UINT>(indices.size()) * sizeof(indices[0]) / 4, 0);
-    createBufferSRV(vertexBuffer, static_cast<UINT>(vertices.size()), sizeof(vertices[0]));
+    createBufferSRV(indexBuffer, indexCount * indexStride / 4, 0);
+    createBufferSRV(vertexBuffer, vertexCount, vertexStride);
 
-    mIndexOffsets[GeometryType::Cube + 1] = static_cast<UINT>(indices.size());
-    mVertexOffsets[GeometryType::Cube + 1] = static_cast<UINT>(vertices.size());
+    mIndexOffsets[GeometryType::Cube + 1] = indexCount;
+    mVertexOffsets[GeometryType::Cube + 1] = vertexCount;
 }
 
 void MainApp::buildPlaneGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer) {

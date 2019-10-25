@@ -20,5 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shader\RaytracingHelper.hlsli" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

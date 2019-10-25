@@ -56,6 +56,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Debug.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DXHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\IO\GLBLoader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\IO\TextureLoader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Singleton.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\StringBuilder.h" />
@@ -98,6 +99,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Scene\SceneBase.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Debug.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Utility\IO\GLBLoader.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\IO\TextureLoader.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Time.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Window\Procedure\CreateProc.cpp" />

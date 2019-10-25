@@ -133,15 +133,15 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     Ray shadowRay = { worldPos, normalize(g_sceneCB.lightPosition.xyz - worldPos) };
     bool shadow = castShadow(shadowRay);
 
-    float3 N = getNormal(attr);
-    float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
+    //float3 N = getNormal(attr);
+    //float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
 
-    float4 color = float4(0, 0, 0, 0);
+    float4 color = float4(0,0,0,0);
     //ランバート
-    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse);
-    //アンビエント
+    //color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse);
+    ////アンビエント
     color.rgb += g_sceneCB.lightAmbient.rgb;
-    //フォグの適用
+    ////フォグの適用
     color = applyFog(hitWorldPosition(), color);
 
     //影に覆われていたら黒くする
