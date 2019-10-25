@@ -32,7 +32,7 @@
       <TreatOutputAsContent>true</TreatOutputAsContent>
     </CustomBuildStep>
     <PostBuildEvent>
-      <Command>xcopy $(ProjectDir)\Resources $(OutDir) /I /Y /D /S</Command>
+      <Command>xcopy $(ProjectDir)\Resources $(OutDir)\Resources /I /Y /D /S</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup />

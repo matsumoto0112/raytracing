@@ -16,12 +16,16 @@ namespace {
 
 Path::Path() {
     mExe = getExePath();
-    wchar_t dir[MAX_SIZE];
-    wchar_t drive[MAX_SIZE];
-    wchar_t name[MAX_SIZE];
-    wchar_t ext[MAX_SIZE];
+    wchar_t dir[MAX_SIZE] = {};
+    wchar_t drive[MAX_SIZE] = {};
+    wchar_t name[MAX_SIZE] = {};
+    wchar_t ext[MAX_SIZE] = {};
 
-    _wsplitpath_s(&mExe[0], drive, sizeof(drive), dir, sizeof(dir), name, sizeof(name), ext, sizeof(ext));
+    _wsplitpath_s(&mExe[0],
+        drive, sizeof(drive) / sizeof(drive[0]),
+        dir, sizeof(dir) / sizeof(dir[0]),
+        name, sizeof(name) / sizeof(name[0]),
+        ext, sizeof(ext) / sizeof(ext[0]));
     std::wstring sDir(drive);
     sDir += dir;
     std::wstring::size_type pos = sDir.find_last_of(L"\\/");

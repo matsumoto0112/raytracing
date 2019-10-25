@@ -16,6 +16,8 @@
 #include "ImGui/Item/Text.h"
 #include "ImGui/Item/FloatField.h"
 #include "Utility/Time.h"
+#include "Utility/IO/TextureLoader.h"
+#include "Util/Path.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -197,10 +199,9 @@ private:
     std::array<UINT, GeometryType::Count> mIndexOffsets;
     std::array<UINT, GeometryType::Count> mVertexOffsets;
 
-
-     /**
-     * @brief カメラ行列の更新
-     */
+       /**
+       * @brief カメラ行列の更新
+       */
     void updateCameraMatrices();
     /**
     * @brief シーンの初期化
@@ -401,6 +402,12 @@ void MainApp::initializeScene() {
     for (int i = 0; i < CUBE_COUNT; i++) {
         mCubePositions[i] = { static_cast<float>(i / 3) * 5,1.25f,static_cast<float>(i % 3) * 5 };
     }
+
+    Framework::Utility::TextureLoader loader;
+    UINT width, height;
+    std::vector<BYTE> texture = loader.load(Path::getInstance()->texture() + L"texture.png", &width, &height);
+
+
     updateCameraMatrices();
 }
 

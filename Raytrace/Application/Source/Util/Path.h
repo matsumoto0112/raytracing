@@ -9,6 +9,9 @@
 */
 class Path : public Framework::Utility::Singleton<Path> {
 public:
+    Path();
+    ~Path();
+public:
     /**
     * @brief 実行ファイルのフォルダパスを取得する
     */
@@ -40,7 +43,4 @@ private:
     std::wstring mShader; //!< シェーダファイルへのパス
     std::wstring mModel; //!< モデルデータファイルへのパス
     std::wstring mCompiledShader; //!<コンパイル済みシェーダーへのパス
-protected:
-    Path();
-    ~Path();
 };
