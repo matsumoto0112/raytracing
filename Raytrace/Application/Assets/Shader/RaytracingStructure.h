@@ -44,6 +44,12 @@ struct Vertex {
     XMFLOAT3 normal;
 };
 
+struct TextureVertex {
+    XMFLOAT3 position;
+    XMFLOAT3 normal;
+    XMFLOAT2 uv;
+};
+
 
 /**
 * @brief レイの当たった時につかうデータ

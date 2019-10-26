@@ -206,6 +206,9 @@ private:
     std::vector<Vertex> mResourceVertices;
     std::vector<Index> mResourceIndices;
 
+    ComPtr<ID3D12Resource> mTextureResource;
+
+
        /**
        * @brief カメラ行列の更新
        */

@@ -87,8 +87,8 @@ namespace Framework::Utility {
         }
         return result;
     }
-    std::vector<std::vector<Vector3>> GLBLoader::getPositionsPerSubMeshes() const {
-        std::vector<std::vector<Vector3>> result;
+    std::vector<std::vector<Math::Vector3>> GLBLoader::getPositionsPerSubMeshes() const {
+        std::vector<std::vector<Math::Vector3>> result;
         for (auto&& mesh : mDocument.meshes.Elements()) {
             for (auto&& prim : mesh.primitives) {
                 std::string accessorID;
@@ -97,17 +97,17 @@ namespace Framework::Utility {
                 std::vector<float> data = mResourceReader->ReadBinaryData<float>(mDocument, accessor);
                 const int elemCount = 3;
                 const int vertexSize = static_cast<int>(data.size()) / elemCount;
-                std::vector<Vector3> positions(vertexSize);
+                std::vector<Math::Vector3> positions(vertexSize);
                 for (int i = 0; i < vertexSize; i++) {
-                    positions[i] = Vector3(data[i * elemCount], data[i * elemCount + 1], data[i * elemCount + 2]);
+                    positions[i] = Math::Vector3(data[i * elemCount], data[i * elemCount + 1], data[i * elemCount + 2]);
                 }
                 result.emplace_back(positions);
             }
         }
         return result;
     }
-    std::vector<std::vector<Vector3>> GLBLoader::getNormalsPerSubMeshes() const {
-        std::vector<std::vector<Vector3>> result;
+    std::vector<std::vector<Math::Vector3>> GLBLoader::getNormalsPerSubMeshes() const {
+        std::vector<std::vector<Math::Vector3>> result;
         for (auto&& mesh : mDocument.meshes.Elements()) {
             for (auto&& prim : mesh.primitives) {
                 std::string accessorID;
@@ -116,11 +116,30 @@ namespace Framework::Utility {
                 std::vector<float> data = mResourceReader->ReadBinaryData<float>(mDocument, accessor);
                 const int elemCount = 3;
                 const int vertexSize = static_cast<int>(data.size()) / elemCount;
-                std::vector<Vector3> normals(vertexSize);
+                std::vector<Math::Vector3> normals(vertexSize);
                 for (int i = 0; i < vertexSize; i++) {
-                    normals[i] = Vector3(data[i * elemCount], data[i * elemCount + 1], data[i * elemCount + 2]);
+                    normals[i] = Math::Vector3(data[i * elemCount], data[i * elemCount + 1], data[i * elemCount + 2]);
                 }
                 result.emplace_back(normals);
+            }
+        }
+        return result;
+    }
+    std::vector<std::vector<Math::Vector2>> GLBLoader::getUVsPerSubMeshes() const {
+        std::vector<std::vector<Math::Vector2>> result;
+        for (auto&& mesh : mDocument.meshes.Elements()) {
+            for (auto&& prim : mesh.primitives) {
+                std::string accessorID;
+                if (!prim.TryGetAttributeAccessorId(ACCESSOR_TEXCOORD_0, accessorID))continue;
+                auto&& accessor = mDocument.accessors.Get(accessorID);
+                std::vector<float> data = mResourceReader->ReadBinaryData<float>(mDocument, accessor);
+                const int elemCount = 2;
+                const int vertexSize = static_cast<int>(data.size()) / elemCount;
+                std::vector<Math::Vector2> uvs(vertexSize);
+                for (int i = 0; i < vertexSize; i++) {
+                    uvs[i] = Math::Vector2(data[i * elemCount], data[i * elemCount + 1]);
+                }
+                result.emplace_back(uvs);
             }
         }
         return result;

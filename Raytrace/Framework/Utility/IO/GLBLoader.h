@@ -1,9 +1,11 @@
 #pragma once
 #include <string>
-#include <Windows.h>
-#include <GLTFSDK/GLTF.h>
-#include <GLTFSDK/GLBResourceReader.h>
-#include <GLTFSDK/Deserialize.h>
+//#include <Windows.h>
+//#include <GLTFSDK/GLTF.h>
+//#include <GLTFSDK/GLBResourceReader.h>
+//#include <GLTFSDK/Deserialize.h>
+#include "Framework/Math/Vector2.h"
+#include "Framework/Math/Vector3.h"
 
 namespace Framework::Utility {
     enum class AlphaMode {
@@ -16,15 +18,6 @@ namespace Framework::Utility {
         std::string name;
         int normalMapID;
         AlphaMode alphaMode;
-    };
-
-    struct Vector3 {
-        float x;
-        float y;
-        float z;
-        Vector3() { }
-        Vector3(float x, float y, float z)
-            :x(x), y(y), z(z) { }
     };
 
     /**
@@ -56,8 +49,15 @@ namespace Framework::Utility {
         /**
         * @brief サブメッシュごとの頂点座標を取得する
         */
-        std::vector<std::vector<Vector3>> getPositionsPerSubMeshes() const;
-        std::vector<std::vector<Vector3>> getNormalsPerSubMeshes() const;
+        std::vector<std::vector<Math::Vector3>> getPositionsPerSubMeshes() const;
+        /**
+        * @brief サブメッシュごとの法線を取得する
+        */
+        std::vector<std::vector<Math::Vector3>> getNormalsPerSubMeshes() const;
+        /**
+        * @brief サブメッシュごとのUV座標を取得する
+        */
+        std::vector<std::vector<Math::Vector2>> getUVsPerSubMeshes() const;
     private:
         std::unique_ptr<Microsoft::glTF::GLBResourceReader> mResourceReader;
         Microsoft::glTF::Document mDocument;

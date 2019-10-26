@@ -17,6 +17,7 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\Shader\Raytracing.hlsl" />
+    <FxCompile Include="Assets\Shader\Raytracing_Sample.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shader\RaytracingHelper.hlsli" />
