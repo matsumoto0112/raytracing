@@ -107,20 +107,21 @@ inline float3 getNormal(in MyAttr attr) {
         Vertices[indices.y].normal,
         Vertices[indices.z].normal,
     };
-    return normal[0] +
-        (attr.barycentrics.x * (normal[1] - normal[0])) +
-        (attr.barycentrics.y * (normal[2] - normal[0]));
+    return normals[0] +
+        (attr.barycentrics.x * (normals[1] - normals[0])) +
+        (attr.barycentrics.y * (normals[2] - normals[0]));
 }
 
-inline float2 getUV(int MyAttr attr){
+//UVÇéÊìæÇ∑ÇÈ
+inline float2 getUV(in MyAttr attr) {
     const uint3 indices = getIndices();
-    float3 uvs[3] =
-        {
-            Vertices[indices.x].uv,
-            Vertices[indices.y].uv,
-            Vertices[indices.z].uv,
+    float2 uvs[3] =
+    {
+        Vertices[indices.x].uv,
+        Vertices[indices.y].uv,
+        Vertices[indices.z].uv,
     };
-    return uvs[0] + 
+    return uvs[0] +
         (attr.barycentrics.x * (uvs[1] - uvs[0])) +
         (attr.barycentrics.y * (uvs[2] - uvs[0]));
 }
@@ -139,9 +140,9 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
     //color = applyFog(hitWorldPosition(), color);
     //payload.color = color;
     float2 uv = getUV(attr);
-    float4 color = tex.SampleLevel(samLinear, uv,0.0);
-        return color;
-    }
+    float4 color = tex.SampleLevel(samLinear, uv, 0.0);
+    payload.color = color;
+}
 
 //è∞Ç…ìñÇΩÇ¡ÇΩéû
 [shader("closesthit")]

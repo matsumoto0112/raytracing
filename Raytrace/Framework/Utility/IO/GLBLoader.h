@@ -1,9 +1,9 @@
 #pragma once
 #include <string>
-//#include <Windows.h>
-//#include <GLTFSDK/GLTF.h>
-//#include <GLTFSDK/GLBResourceReader.h>
-//#include <GLTFSDK/Deserialize.h>
+#include <Windows.h>
+#include <GLTFSDK/GLTF.h>
+#include <GLTFSDK/GLBResourceReader.h>
+#include <GLTFSDK/Deserialize.h>
 #include "Framework/Math/Vector2.h"
 #include "Framework/Math/Vector3.h"
 
