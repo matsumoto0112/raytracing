@@ -63,6 +63,7 @@ static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 static const std::wstring MODEL_NAME = L"Bee.glb";
+static const std::wstring MODEL_PLANE_NAME = L"pyramid.glb";
 
 /**
 * @class MainApp
@@ -524,7 +525,7 @@ void MainApp::createDeviceDependentResources() {
         //auto pixels = stbi_loadf_from_memory(reinterpret_cast<const stbi_uc*>(texRowData.data()), texRowData.size(), &w, &h, &bpp, 0);
 
         CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-            DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, texRowData.width, texRowData.height);
+            DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, texRowData.width, texRowData.height, 2);
 
         D3D12_HEAP_PROPERTIES heapProp = {};
         heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
@@ -543,12 +544,6 @@ void MainApp::createDeviceDependentResources() {
             IID_PPV_ARGS(&mTextureResource.resource)));
 
         D3D12_BOX box = { 0,0,0,(UINT)texRowData.width ,(UINT)texRowData.height,1 };
-        //static constexpr UINT TEXTURE_PIXEL_SIZE = 4;
-
-        //std::vector<BYTE> texData(w*h*TEXTURE_PIXEL_SIZE);
-        //for (int i = 0; i < w * h * TEXTURE_PIXEL_SIZE; i++) {
-        //    texData[i] = static_cast<BYTE>(pixels[i] * 255.0f);
-        //}
 
         UINT row = texRowData.width * texRowData.textureSizePerPixel;
         UINT slice = row * texRowData.height;
@@ -887,50 +882,39 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
     allocateUploadBuffer(device, indices.data(), indexCount * indexStride, &indexBuffer->resource, L"IndexBuffer");
     allocateUploadBuffer(device, vertices.data(), vertexCount * vertexStride, &vertexBuffer->resource, L"VertexBuffer");
 
-    //createBufferSRV(indexBuffer, indexCount * indexStride / 4, 0);
-    //createBufferSRV(vertexBuffer, vertexCount, vertexStride);
-
     mIndexOffsets[GeometryType::Cube + 1] = indexCount * sizeof(Index);
-    mVertexOffsets[GeometryType::Cube + 1] = vertexCount/* * sizeof(Vertex)*/;
+    mVertexOffsets[GeometryType::Cube + 1] = vertexCount;
 
-    mResourceVertices.assign(vertices.begin(), vertices.end());
-    mResourceIndices.assign(indices.begin(), indices.end());
+    mResourceVertices.insert(mResourceVertices.end(), vertices.begin(), vertices.end());
+    mResourceIndices.insert(mResourceIndices.end(), indices.begin(), indices.end());
 }
 
 void MainApp::buildPlaneGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer) {
-    std::vector<Index> indices = { 0,1,2 ,0,2,3 };
-    std::vector<Vertex> vertices = {
-        {XMFLOAT3(-0.5f,0,0.5f),XMFLOAT3(0,1,0),XMFLOAT2(0,0) },
-    {XMFLOAT3(0.5f,0,0.5f),XMFLOAT3(0,1,0) ,XMFLOAT2(1,0) },
-    {XMFLOAT3(0.5f,0,-0.5f),XMFLOAT3(0,1,0),XMFLOAT2(1,1)  },
-    {XMFLOAT3(-0.5f,0,-0.5f),XMFLOAT3(0,1,0),XMFLOAT2(0,1)  },
-    };
+    Framework::Utility::GLBLoader glbLoader(
+        Framework::Utility::toString(Path::getInstance()->model() + MODEL_PLANE_NAME));
+    auto positions = glbLoader.getPositionsPerSubMeshes()[0];
+    auto normals = glbLoader.getNormalsPerSubMeshes()[0];
+    auto uvs = glbLoader.getUVsPerSubMeshes()[0];
+    std::vector<Index> indices = glbLoader.getIndicesPerSubMeshes()[0];
+    std::vector<Vertex> vertices(positions.size());
+    for (size_t i = 0; i < vertices.size(); i++) {
+        const float scale = 0.01f;
+        vertices[i].position = XMFLOAT3{ positions[i].x * scale,positions[i].y* scale,positions[i].z * scale };
+        vertices[i].normal = XMFLOAT3{ normals[i].x,normals[i].y,normals[i].z };
+        vertices[i].uv = XMFLOAT2{ uvs[i].x,uvs[i].y };
+    }
 
-    //std::vector<Vertex> vertices = {
-    //    {XMFLOAT3(-0.5f,0,0.5f),XMFLOAT3(0,1,0) },
-    //    {XMFLOAT3(0.5f,0,0.5f),XMFLOAT3(0,1,0)},
-    //    {XMFLOAT3(0.5f,0,-0.5f),XMFLOAT3(0,1,0)  },
-    //    {XMFLOAT3(-0.5f,0,-0.5f),XMFLOAT3(0,1,0)  },
-    //};
+    const UINT indexCount = indices.size();
+    const UINT vertexCount = vertices.size();
+    const UINT indexStride = sizeof(Index);
+    const UINT vertexStride = sizeof(Vertex);
 
     ID3D12Device* device = mDeviceResource->getDevice();
     allocateUploadBuffer(device, indices.data(), indices.size() * sizeof(indices[0]), &indexBuffer->resource);
     allocateUploadBuffer(device, vertices.data(), vertices.size() * sizeof(vertices[0]), &vertexBuffer->resource);
 
-    {
-        const int vertSize = vertices.size();
-        for (int i = 0; i < vertSize; i++) {
-            mResourceVertices.emplace_back(vertices[i]);
-        }
-    }
-    {
-        const int indSize = indices.size();
-        for (int i = 0; i < indSize; i++) {
-            mResourceIndices.emplace_back(indices[i]);
-        }
-    }
-    //mResourceVertices.assign(vertices.begin(), vertices.end());
-    //mResourceIndices.assign(indices.begin(), indices.end());
+    mResourceVertices.insert(mResourceVertices.end(), vertices.begin(), vertices.end());
+    mResourceIndices.insert(mResourceIndices.end(), indices.begin(), indices.end());
 }
 
 //ボトムレベルASを構築する
@@ -1036,7 +1020,7 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
     instanceDescs[offset].InstanceID = instanceID;
     instanceDescs[offset].InstanceContributionToHitGroupIndex = instanceID * 2;
     instanceDescs[offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-    XMMATRIX trans = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -0, 0);
+    XMMATRIX trans = XMMatrixScaling(1, 1, 1) * XMMatrixTranslation(0, -0, 0);
     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[offset].Transform), trans);
     instanceDescs[offset].AccelerationStructure = bottomLevelAS[GeometryType::Plane]->GetGPUVirtualAddress();
     instanceDescs[offset].InstanceMask = 0xff;

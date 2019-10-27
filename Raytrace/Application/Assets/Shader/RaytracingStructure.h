@@ -21,6 +21,7 @@
 using namespace DirectX;
 //インデックスは16bitにする
 typedef UINT16 Index;
+typedef std::vector<BYTE> Texture2D;
 #endif
 
 /**

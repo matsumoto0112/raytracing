@@ -58,6 +58,8 @@ namespace Framework::Utility {
             tex.width = width;
             tex.height = height;
             result.emplace_back(tex);
+
+            stbi_image_free(texByte);
         }
         return result;
     }
