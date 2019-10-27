@@ -48,11 +48,26 @@ namespace Framework::Utility {
 
             BYTE* texByte = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(texRowData.data()), texRowData.size(), &width, &height, &bpp, 0);
             const int size = width * height * tex.textureSizePerPixel;
+            std::vector<BYTE> textureByte;
+            int src, dst;
+            if (bpp == 3) {
+                textureByte.resize(size);
+                for (src = 0, dst = 0; src < width * height * bpp; src++, dst++) {
+                    textureByte[dst] = texByte[src];
+                    if (src % 3 == 2) {
+                        dst++;
+                        textureByte[dst] = 0xff;
+                    }
+                }
+            }
+            else {
+                textureByte = std::vector<BYTE>(texByte, texByte + size);
+            }
+
             //std::vector<BYTE> textureByte(size);
             //for (int i = 0; i < size; i++) {
             //    textureByte[i] = static_cast<BYTE>(pixels[i] * 255.0f);
             //}
-            std::vector<BYTE> textureByte(texByte, texByte + size);
 
             tex.data = textureByte;
             tex.width = width;

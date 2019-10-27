@@ -62,8 +62,8 @@ namespace GeometryType {
 static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
-static const std::wstring MODEL_NAME = L"Bee.glb";
-static const std::wstring MODEL_PLANE_NAME = L"pyramid.glb";
+static const std::wstring MODEL_NAME = L"checker.glb";
+static const std::wstring MODEL_PLANE_NAME = L"Bee.glb";
 
 /**
 * @class MainApp
@@ -563,7 +563,7 @@ void MainApp::createDeviceDependentResources() {
                 Framework::Utility::toString(Path::getInstance()->model() + MODEL_PLANE_NAME));
             Framework::Utility::TextureData texRowData = glbLoader.getImageDatas()[0];
             CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-                DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, texRowData.width, texRowData.height, 2);
+                DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, texRowData.width, texRowData.height, 1);
 
             D3D12_HEAP_PROPERTIES heapProp = {};
             heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
@@ -866,7 +866,7 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
     std::vector<Index> indices = glbLoader.getIndicesPerSubMeshes()[0];
     std::vector<Vertex> vertices(positions.size());
     for (size_t i = 0; i < vertices.size(); i++) {
-        const float scale = 0.01f;
+        const float scale = 1;
         vertices[i].position = XMFLOAT3{ positions[i].x * scale,positions[i].y* scale,positions[i].z * scale };
         vertices[i].normal = XMFLOAT3{ normals[i].x,normals[i].y,normals[i].z };
         vertices[i].uv = XMFLOAT2{ uvs[i].x,uvs[i].y };
