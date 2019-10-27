@@ -62,6 +62,7 @@ namespace GeometryType {
 static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
+static const std::wstring MODEL_NAME = L"Bee.glb";
 
 /**
 * @class MainApp
@@ -517,7 +518,7 @@ void MainApp::createDeviceDependentResources() {
         //Framework::Utility::TextureLoader loader;
         ////std::vector<BYTE> texData = loader.load(Path::getInstance()->texture() + L"dice.png", &w, &h);
         Framework::Utility::GLBLoader glbLoader(
-            Framework::Utility::toString(Path::getInstance()->model() + L"pyramid.glb"));
+            Framework::Utility::toString(Path::getInstance()->model() + MODEL_NAME));
         int w, h;
         std::vector<BYTE> texRowData = glbLoader.getImageDatas()[0];
         int bpp;
@@ -862,14 +863,15 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
     //};
 
     Framework::Utility::GLBLoader glbLoader(
-        Framework::Utility::toString(Path::getInstance()->model() + L"pyramid.glb"));
+        Framework::Utility::toString(Path::getInstance()->model() + L"Bee.glb"));
     auto positions = glbLoader.getPositionsPerSubMeshes()[0];
     auto normals = glbLoader.getNormalsPerSubMeshes()[0];
     auto uvs = glbLoader.getUVsPerSubMeshes()[0];
     std::vector<Index> indices = glbLoader.getIndicesPerSubMeshes()[0];
     std::vector<Vertex> vertices(positions.size());
     for (size_t i = 0; i < vertices.size(); i++) {
-        vertices[i].position = XMFLOAT3{ positions[i].x,positions[i].y,positions[i].z };
+        const float scale = 0.01f;
+        vertices[i].position = XMFLOAT3{ positions[i].x * scale,positions[i].y* scale,positions[i].z * scale} ;
         vertices[i].normal = XMFLOAT3{ normals[i].x,normals[i].y,normals[i].z };
         vertices[i].uv = XMFLOAT2{ uvs[i].x,uvs[i].y };
     }
