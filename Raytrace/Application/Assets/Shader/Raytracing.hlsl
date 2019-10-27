@@ -52,7 +52,7 @@ void MyRaygenShader() {
 //ランバート反射の色を求める
 inline float3 lambertColor(float3 N, float3 L, float4 diffuse) {
     float dotNL = max(0.0, dot(N, L));
-    return diffuse.rgb * dotNL;
+    return diffuse.rgb * dotNL * (1.0 / PI);
 }
 
 //フォグを適用する
@@ -121,19 +121,37 @@ inline float2 getUV(in MyAttr attr, uint vertexOffset, uint indexOffset) {
 //キューブに当たった時
 [shader("closesthit")]
 void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
+    //再帰回数を制限する
+    if (payload.recursion > 0) {
+        payload.color = float4(0, 0, 0, 0);
+        return;
+    }
+
+    float3 worldPos = hitWorldPosition();
+
+    //影用のレイキャスト
+    RayDesc ray;
+    ray.Origin = worldPos;
+    Ray shadowRay = { worldPos, normalize(g_sceneCB.lightPosition.xyz - worldPos) };
+    bool shadow = castShadow(shadowRay);
+
     float3 N = getNormal(attr, l_material.vertexOffset, l_material.indexOffset);
-    float3 L = normalize(g_sceneCB.lightPosition.xyz - hitWorldPosition());
+    float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
+
     float4 color = float4(0, 0, 0, 0);
+    float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
+    float4 texColor = tex.SampleLevel(samLinear, uv, 0.0);
+
     //ランバート
-    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse);
+    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse * texColor);
     //アンビエント
     color.rgb += g_sceneCB.lightAmbient.rgb;
-
+    ////フォグの適用
     color = applyFog(hitWorldPosition(), color);
 
-    float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
-    color = float4(uv.xy, 0.0, 1.0);
-    payload.color = tex.SampleLevel(samLinear, uv, 0.0);
+    //影に覆われていたら黒くする
+    float factor = shadow ? 0.1f : 1.0f;
+    payload.color = color * factor;
 }
 
 //床に当たった時
@@ -157,22 +175,19 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
 
     float4 color = float4(0, 0, 0, 0);
-    //ランバート
-    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse);
+    float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
+    float4 texColor = tex.SampleLevel(samLinear, uv, 0.0);
+
+     //ランバート
+    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse * texColor);
     //アンビエント
     color.rgb += g_sceneCB.lightAmbient.rgb;
     ////フォグの適用
     color = applyFog(hitWorldPosition(), color);
-    //少し床の色を濃くする
 
     //影に覆われていたら黒くする
     float factor = shadow ? 0.1f : 1.0f;
     payload.color = color * factor;
-
-    float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
-    color = float4(uv.xy, 0.0, 1.0);
-    payload.color = tex.SampleLevel(samLinear, uv, 0.0);
-
 }
 
 //影用のレイ

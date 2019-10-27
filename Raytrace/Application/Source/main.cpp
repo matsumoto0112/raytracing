@@ -59,7 +59,7 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT CUBE_COUNT = 1;
+static constexpr UINT CUBE_COUNT = 300;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 static const std::wstring MODEL_NAME = L"sphere.glb";
@@ -1019,7 +1019,7 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
     instanceDescs[offset].InstanceID = instanceID;
     instanceDescs[offset].InstanceContributionToHitGroupIndex = instanceID * 2;
     instanceDescs[offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
-    XMMATRIX trans = XMMatrixScaling(1, 1, 1) * XMMatrixTranslation(10, 0, 0);
+    XMMATRIX trans = XMMatrixScaling(50, 1, 50) * XMMatrixTranslation(0, 0, 0);
     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[offset].Transform), trans);
     instanceDescs[offset].AccelerationStructure = bottomLevelAS[GeometryType::Plane]->GetGPUVirtualAddress();
     instanceDescs[offset].InstanceMask = 0xff;
@@ -1119,7 +1119,7 @@ void MainApp::buildShaderTables() {
     {
         UINT numShaderRecords = 4; //AABB + Plane
         UINT shaderRecordSize = shaderIDSize +
-            std::max({ sizeof(LocalRootSignatureParams::AABB::RootArgument)+ sizeof(D3D12_GPU_DESCRIPTOR_HANDLE),sizeof(LocalRootSignatureParams::Plane::RootArgument) + sizeof(D3D12_GPU_DESCRIPTOR_HANDLE) });
+            std::max({ sizeof(LocalRootSignatureParams::AABB::RootArgument) + sizeof(D3D12_GPU_DESCRIPTOR_HANDLE),sizeof(LocalRootSignatureParams::Plane::RootArgument) + sizeof(D3D12_GPU_DESCRIPTOR_HANDLE) });
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupTable");
         //AABB
         {
