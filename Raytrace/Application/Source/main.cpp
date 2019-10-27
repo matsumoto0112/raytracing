@@ -21,6 +21,8 @@
 #include "Utility/IO/GLBLoader.h"
 #include "Math/MathUtility.h"
 #include "Utility/StringUtil.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "Libs/stb/stb_image.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -396,13 +398,14 @@ void MainApp::initializeScene() {
 #pragma warning( push ) 
 #pragma warning (disable: 4305)
     float range = 100.0f;
+    float anbleRange = (Framework::Math::PI2);
     PARAMETER_CHANGE_SLIDER("X", mCameraPosition.x, -range, range);
     PARAMETER_CHANGE_SLIDER("Y", mCameraPosition.y, -range, range);
     PARAMETER_CHANGE_SLIDER("Z", mCameraPosition.z, -range, range);
     mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Rotation"));
-    PARAMETER_CHANGE_SLIDER("RX", mCameraRotation.x, 0.0f, 2 * 3.14);
-    PARAMETER_CHANGE_SLIDER("RY", mCameraRotation.y, 0.0f, 2 * 3.14);
-    PARAMETER_CHANGE_SLIDER("RZ", mCameraRotation.z, 0.0f, 2 * 3.14);
+    PARAMETER_CHANGE_SLIDER("RX", mCameraRotation.x, -anbleRange, anbleRange);
+    PARAMETER_CHANGE_SLIDER("RY", mCameraRotation.y, -anbleRange, anbleRange);
+    PARAMETER_CHANGE_SLIDER("RZ", mCameraRotation.z, -anbleRange, anbleRange);
     mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Light"));
     PARAMETER_CHANGE_SLIDER("LX", mLightPosition.x, -range, range);
     PARAMETER_CHANGE_SLIDER("LY", mLightPosition.y, -range, range);
@@ -511,9 +514,15 @@ void MainApp::createDeviceDependentResources() {
 
     //テクスチャの作成
     {
-        Framework::Utility::TextureLoader loader;
-        UINT w, h;
-        std::vector<BYTE> texData = loader.load(Path::getInstance()->texture() + L"dice.png", &w, &h);
+        //Framework::Utility::TextureLoader loader;
+        ////std::vector<BYTE> texData = loader.load(Path::getInstance()->texture() + L"dice.png", &w, &h);
+        Framework::Utility::GLBLoader glbLoader(
+            Framework::Utility::toString(Path::getInstance()->model() + L"pyramid.glb"));
+        int w, h;
+        std::vector<BYTE> texRowData = glbLoader.getImageDatas()[0];
+        int bpp;
+        auto pixels = stbi_loadf_from_memory(reinterpret_cast<const stbi_uc*>(texRowData.data()), texRowData.size(), &w, &h, &bpp, 0);
+
         CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, w, h);
 
         D3D12_HEAP_PROPERTIES heapProp = {};
@@ -532,16 +541,14 @@ void MainApp::createDeviceDependentResources() {
             nullptr,
             IID_PPV_ARGS(&mTextureResource.resource)));
 
-        Framework::Utility::throwIfFailed(device->CreateCommittedResource(
-            &heapProp,
-            D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-            &texDesc,
-            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
-            nullptr,
-            IID_PPV_ARGS(&mTextureResource.resource)));
-
         D3D12_BOX box = { 0,0,0,(UINT)w,(UINT)h,1 };
         static constexpr UINT TEXTURE_PIXEL_SIZE = 4;
+
+        std::vector<BYTE> texData(w*h*TEXTURE_PIXEL_SIZE);
+        for (int i = 0; i < w * h * TEXTURE_PIXEL_SIZE; i++) {
+            texData[i] = static_cast<BYTE>(pixels[i] * 255.0f);
+        }
+
         Framework::Utility::throwIfFailed(mTextureResource.resource->WriteToSubresource(
             0,
             &box,
@@ -559,6 +566,8 @@ void MainApp::createDeviceDependentResources() {
         UINT index = allocateDescriptor(&mTextureResource.cpuHandle);
         device->CreateShaderResourceView(mTextureResource.resource.Get(), &srvDesc, mTextureResource.cpuHandle);
         mTextureResource.gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+
+        //stbi_image_free(texData);
     }
 }
 
@@ -853,7 +862,7 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
     //};
 
     Framework::Utility::GLBLoader glbLoader(
-        Framework::Utility::toString(Path::getInstance()->model() + L"cube.glb"));
+        Framework::Utility::toString(Path::getInstance()->model() + L"pyramid.glb"));
     auto positions = glbLoader.getPositionsPerSubMeshes()[0];
     auto normals = glbLoader.getNormalsPerSubMeshes()[0];
     auto uvs = glbLoader.getUVsPerSubMeshes()[0];

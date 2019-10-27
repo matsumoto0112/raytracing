@@ -1,5 +1,6 @@
 #include "GLBLoader.h"
 #include <fstream>
+#include "Libs/stb/stb_image.h"
 
 using namespace Microsoft::glTF;
 
@@ -39,7 +40,7 @@ namespace Framework::Utility {
 
     std::vector<std::vector<BYTE>> GLBLoader::getImageDatas() const {
         std::vector<std::vector<BYTE>> result;
-        for (auto&& image : mDocument.images.Elements()) {
+        for (auto&& image : mDocument.images.Elements()) {            
             result.emplace_back(mResourceReader->ReadBinaryData(mDocument, image));
         }
         return result;

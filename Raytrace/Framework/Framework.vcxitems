@@ -45,6 +45,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\ImGui\imstb_truetype.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Input\Input.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\d3dx12.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\stb\stb_image.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\MathUtility.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Matrix3x3.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Matrix4x4.h" />

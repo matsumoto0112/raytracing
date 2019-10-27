@@ -133,7 +133,7 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
 
     float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
     color = float4(uv.xy, 0.0, 1.0);
-    payload.color = color;
+    payload.color = tex.SampleLevel(samLinear, uv, 0.0);
 }
 
 //è∞Ç…ìñÇΩÇ¡ÇΩéû

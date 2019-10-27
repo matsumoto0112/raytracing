@@ -58,6 +58,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\d3dx12.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\IO\TextureLoader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\IO\GLBLoader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Libs\stb\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
