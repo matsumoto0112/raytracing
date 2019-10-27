@@ -91,6 +91,7 @@ namespace LocalRootSignatureParams {
     namespace AABB {
         enum MyEnum {
             Material = 0,
+            Texture,
             Count
         };
         struct RootArgument {
@@ -100,6 +101,7 @@ namespace LocalRootSignatureParams {
     namespace Plane {
         enum MyEnum {
             Material = 0,
+            Texture,
             Count
         };
         struct RootArgument {
