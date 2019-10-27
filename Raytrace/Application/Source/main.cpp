@@ -24,8 +24,10 @@
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
+//#include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing_Sample.hlsl.h"
 #else
 #include "Temp/bin/x64/Release/Application/CompiledShaders/Raytracing.hlsl.h"
+//#include "Temp/bin/x64/Release/Application/CompiledShaders/Raytracing_Sample.hlsl.h"
 #endif
 
 using namespace DirectX;
@@ -42,6 +44,7 @@ namespace GlobalRootSignatureParameter {
         AccelerationStructureSlot,
         VertexBuffers,
         ConstantBuffer,
+        Texture,
         Count
     };
 } //GlobalRootSignatureParameter 
@@ -54,7 +57,7 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT CUBE_COUNT = 3000;
+static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 
@@ -206,12 +209,13 @@ private:
     std::vector<Vertex> mResourceVertices;
     std::vector<Index> mResourceIndices;
 
-    ComPtr<ID3D12Resource> mTextureResource;
+    D3DBuffer mTextureResource;
+    D3D12_GPU_DESCRIPTOR_HANDLE mTextureResourceGpuDescriptor;
+    UINT mTextureResourceHeapIndex;
 
-
-       /**
-       * @brief カメラ行列の更新
-       */
+    /**
+    * @brief カメラ行列の更新
+    */
     void updateCameraMatrices();
     /**
     * @brief シーンの初期化
@@ -473,6 +477,7 @@ void MainApp::doRaytracing() {
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::RenderTarget, mRaytracingOutputResourceUAVGpuDescriptor);
     list->SetComputeRootShaderResourceView(GlobalRootSignatureParameter::AccelerationStructureSlot, mTopLevelAS->GetGPUVirtualAddress());
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mResourceIndexBuffer.gpuHandle);
+    list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::Texture, mTextureResource.gpuHandle);
     //list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mGeometryIndexBuffers[0].gpuHandle);
 
     dispatchRays(mDXRInterface->getCommandList(), mDXRInterface->getStateObject(), &desc);
@@ -503,6 +508,58 @@ void MainApp::createDeviceDependentResources() {
     buildShaderTables();
     //レイトレーシング出力先を作成
     createRaytracingOutputResource();
+
+    //テクスチャの作成
+    {
+        Framework::Utility::TextureLoader loader;
+        UINT w, h;
+        std::vector<BYTE> texData = loader.load(Path::getInstance()->texture() + L"dice.png", &w, &h);
+        CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, w, h);
+
+        D3D12_HEAP_PROPERTIES heapProp = {};
+        heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
+        heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+        heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
+        heapProp.VisibleNodeMask = 1;
+        heapProp.CreationNodeMask = 1;
+
+        ID3D12Device* device = mDeviceResource->getDevice();
+        Framework::Utility::throwIfFailed(device->CreateCommittedResource(
+            &heapProp,
+            D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+            &texDesc,
+            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&mTextureResource.resource)));
+
+        Framework::Utility::throwIfFailed(device->CreateCommittedResource(
+            &heapProp,
+            D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+            &texDesc,
+            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&mTextureResource.resource)));
+
+        D3D12_BOX box = { 0,0,0,(UINT)w,(UINT)h,1 };
+        static constexpr UINT TEXTURE_PIXEL_SIZE = 4;
+        Framework::Utility::throwIfFailed(mTextureResource.resource->WriteToSubresource(
+            0,
+            &box,
+            texData.data(), w * TEXTURE_PIXEL_SIZE, w * h * TEXTURE_PIXEL_SIZE));
+
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.Format = texDesc.Format;
+        srvDesc.Texture2D.MipLevels = 1;
+        srvDesc.Texture2D.MostDetailedMip = 0;
+        srvDesc.Texture2D.PlaneSlice = 0;
+        srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+        UINT index = allocateDescriptor(&mTextureResource.cpuHandle);
+        device->CreateShaderResourceView(mTextureResource.resource.Get(), &srvDesc, mTextureResource.cpuHandle);
+        mTextureResource.gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+    }
 }
 
 void MainApp::createWindowSizeDependentResources() {
@@ -556,17 +613,22 @@ void MainApp::createRootSignatures() {
 
     //まずはグローバルルートシグネチャを作成する
     {
-        CD3DX12_DESCRIPTOR_RANGE ranges[2];
+        CD3DX12_DESCRIPTOR_RANGE ranges[3];
         ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //レンダーターゲット
         ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 1); //頂点バッファ
+        ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); //頂点バッファ
 
         CD3DX12_ROOT_PARAMETER param[GlobalRootSignatureParameter::Count];
         param[GlobalRootSignatureParameter::RenderTarget].InitAsDescriptorTable(1, &ranges[0]);
         param[GlobalRootSignatureParameter::AccelerationStructureSlot].InitAsShaderResourceView(0);
         param[GlobalRootSignatureParameter::VertexBuffers].InitAsDescriptorTable(1, &ranges[1]);
         param[GlobalRootSignatureParameter::ConstantBuffer].InitAsConstantBufferView(0);
+        param[GlobalRootSignatureParameter::Texture].InitAsDescriptorTable(1, &ranges[2]);
 
-        CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(param), param);
+        CD3DX12_STATIC_SAMPLER_DESC samplerDesc(0);
+        samplerDesc.Filter = D3D12_FILTER::D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+        CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(param), param, 1, &samplerDesc);
+
         serializeAndCreateRaytracingRootSignature(desc, &mRaytracingGlobalRootSignature);
         mRaytracingGlobalRootSignature->SetName(L"GlobalRootSignature");
     }
@@ -702,7 +764,7 @@ void MainApp::createDescriptorHeap() {
     ID3D12Device* device = mDeviceResource->getDevice();
 
     D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-    heapDesc.NumDescriptors = 3; //1つはレンダーターゲット、２つは頂点バッファ
+    heapDesc.NumDescriptors = 4; //1つはレンダーターゲット、２つは頂点バッファ、一つはテクスチャ
     heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     heapDesc.NodeMask = 0;
@@ -794,11 +856,13 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
         Framework::Utility::toString(Path::getInstance()->model() + L"cube.glb"));
     auto positions = glbLoader.getPositionsPerSubMeshes()[0];
     auto normals = glbLoader.getNormalsPerSubMeshes()[0];
+    auto uvs = glbLoader.getUVsPerSubMeshes()[0];
     std::vector<Index> indices = glbLoader.getIndicesPerSubMeshes()[0];
     std::vector<Vertex> vertices(positions.size());
     for (size_t i = 0; i < vertices.size(); i++) {
         vertices[i].position = XMFLOAT3{ positions[i].x,positions[i].y,positions[i].z };
         vertices[i].normal = XMFLOAT3{ normals[i].x,normals[i].y,normals[i].z };
+        //vertices[i].uv = XMFLOAT3{ uvs[i].x,uvs[i].y ,0.0f };
     }
 
     const UINT indexCount = indices.size();
@@ -813,8 +877,8 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
     //createBufferSRV(indexBuffer, indexCount * indexStride / 4, 0);
     //createBufferSRV(vertexBuffer, vertexCount, vertexStride);
 
-    mIndexOffsets[GeometryType::Cube + 1] = indexCount;
-    mVertexOffsets[GeometryType::Cube + 1] = vertexCount;
+    mIndexOffsets[GeometryType::Cube + 1] = indexCount * sizeof(Index);
+    mVertexOffsets[GeometryType::Cube + 1] = vertexCount/* * sizeof(Vertex)*/;
 
     mResourceVertices.assign(vertices.begin(), vertices.end());
     mResourceIndices.assign(indices.begin(), indices.end());
@@ -822,19 +886,38 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
 
 void MainApp::buildPlaneGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer) {
     std::vector<Index> indices = { 0,1,2 ,0,2,3 };
+    //std::vector<Vertex> vertices = {
+    //    {XMFLOAT3(-0.5f,0,0.5f),XMFLOAT3(0,1,0),XMFLOAT3(0,0,0) },
+    //{XMFLOAT3(0.5f,0,0.5f),XMFLOAT3(0,1,0) ,XMFLOAT3(1,0,0) },
+    //{XMFLOAT3(0.5f,0,-0.5f),XMFLOAT3(0,1,0),XMFLOAT3(1,1,0)  },
+    //{XMFLOAT3(-0.5f,0,-0.5f),XMFLOAT3(0,1,0),XMFLOAT3(0,1,0)  },
+    //};  
+
     std::vector<Vertex> vertices = {
-         {XMFLOAT3(-0.5f,0,0.5f),XMFLOAT3(0,1,0) },
-         {XMFLOAT3(0.5f,0,0.5f),XMFLOAT3(0,1,0) },
-         {XMFLOAT3(0.5f,0,-0.5f),XMFLOAT3(0,1,0) },
-         {XMFLOAT3(-0.5f,0,-0.5f),XMFLOAT3(0,1,0) },
+        {XMFLOAT3(-0.5f,0,0.5f),XMFLOAT3(0,1,0) },
+        {XMFLOAT3(0.5f,0,0.5f),XMFLOAT3(0,1,0)},
+        {XMFLOAT3(0.5f,0,-0.5f),XMFLOAT3(0,1,0)  },
+        {XMFLOAT3(-0.5f,0,-0.5f),XMFLOAT3(0,1,0)  },
     };
 
     ID3D12Device* device = mDeviceResource->getDevice();
     allocateUploadBuffer(device, indices.data(), indices.size() * sizeof(indices[0]), &indexBuffer->resource);
     allocateUploadBuffer(device, vertices.data(), vertices.size() * sizeof(vertices[0]), &vertexBuffer->resource);
 
-    mResourceVertices.assign(vertices.begin(), vertices.end());
-    mResourceIndices.assign(indices.begin(), indices.end());
+    {
+        const int vertSize = vertices.size();
+        for (int i = 0; i < vertSize; i++) {
+            mResourceVertices.emplace_back(vertices[i]);
+        }
+    }
+    {
+        const int indSize = indices.size();
+        for (int i = 0; i < indSize; i++) {
+            mResourceIndices.emplace_back(indices[i]);
+        }
+    }
+    //mResourceVertices.assign(vertices.begin(), vertices.end());
+    //mResourceIndices.assign(indices.begin(), indices.end());
 }
 
 //ボトムレベルASを構築する
@@ -921,12 +1004,13 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
         CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD));
     D3D12_RAYTRACING_INSTANCE_DESC* instanceDescs;
     buffers.instanceDesc->Map(0, nullptr, (void**)&instanceDescs);
-    ZeroMemory(instanceDescs, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) *TLAS_NUM);
+    ZeroMemory(instanceDescs, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * TLAS_NUM);
 
+    UINT instanceID = 0;
     UINT offset = 0;
     for (int i = 0; i < CUBE_COUNT; i++) {
-        instanceDescs[offset + i].InstanceID = offset;
-        instanceDescs[offset + i].InstanceContributionToHitGroupIndex = offset;
+        instanceDescs[offset + i].InstanceID = instanceID;
+        instanceDescs[offset + i].InstanceContributionToHitGroupIndex = instanceID;
         instanceDescs[offset + i].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
         XMMATRIX trans = XMMatrixRotationRollPitchYaw(0, mRotation, 0) * XMMatrixTranslation(mCubePositions[i].x, mCubePositions[i].y, mCubePositions[i].z);
         XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[offset + i].Transform), trans);
@@ -934,9 +1018,10 @@ Framework::DX::AccelerationStructureBuffers MainApp::buildTLAS(
         instanceDescs[offset + i].InstanceMask = 0xff;
     }
 
+    instanceID++;
     offset = CUBE_COUNT;
-    instanceDescs[offset].InstanceID = CUBE_COUNT;
-    instanceDescs[offset].InstanceContributionToHitGroupIndex = 2;
+    instanceDescs[offset].InstanceID = instanceID;
+    instanceDescs[offset].InstanceContributionToHitGroupIndex = instanceID * 2;
     instanceDescs[offset].Flags = D3D12_RAYTRACING_INSTANCE_FLAGS::D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
     XMMATRIX trans = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -0, 0);
     XMStoreFloat3x4(reinterpret_cast<XMFLOAT3X4*>(instanceDescs[offset].Transform), trans);
@@ -1043,7 +1128,7 @@ void MainApp::buildShaderTables() {
         //AABB
         {
             LocalRootSignatureParams::AABB::RootArgument cb;
-            cb.material.color = XMFLOAT4(1, 1, 1, 1);
+            cb.material.color = XMFLOAT4(1, 1, 0, 1);
             cb.material.indexOffset = mIndexOffsets[GeometryType::Cube];
             cb.material.vertexOffset = mVertexOffsets[GeometryType::Cube];
             table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &cb, sizeof(cb)));
@@ -1052,7 +1137,7 @@ void MainApp::buildShaderTables() {
         //Plane
         {
             LocalRootSignatureParams::Plane::RootArgument cb;
-            cb.material.color = XMFLOAT4(1, 1, 1, 1);
+            cb.material.color = XMFLOAT4(1, 0, 1, 1);
             cb.material.indexOffset = mIndexOffsets[GeometryType::Plane];
             cb.material.vertexOffset = mVertexOffsets[GeometryType::Plane];
             table.push_back(ShaderRecord(hitGroupPlaneShaderID, shaderIDSize, &cb, sizeof(cb)));
@@ -1162,5 +1247,5 @@ void MainApp::updateTLAS() {
     mDeviceResource->executeCommandList();
     mDeviceResource->waitForGPU();
 
-    mTopLevelAS = tlasBuffer.accelerationStructure;
+    //mTopLevelAS = tlasBuffer.accelerationStructure;
 }

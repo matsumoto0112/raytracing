@@ -9,7 +9,7 @@ RaytracingAccelerationStructure g_scene : register(t0, space0);
 //頂点インデックス
 ByteAddressBuffer Indices : register(t1, space0);
 //受け取る頂点情報
-StructuredBuffer<TextureVertex> Vertices : register(t2, space0);
+StructuredBuffer<Vertex> Vertices : register(t2, space0);
 //描画対象
 RWTexture2D<float4> g_renderTarget : register(u0);
 
@@ -22,6 +22,8 @@ ConstantBuffer<MaterialConstantBuffer> l_material : register(b1);
 SamplerState samLinear : register(s0);
 //使用するテクスチャ
 Texture2D tex : register(t3);
+
+StructuredBuffer<float3> normals : register(t4);
 
 //closesthitで引数として受け取る三角形の重心
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
@@ -117,9 +119,9 @@ inline float2 getUV(in MyAttr attr) {
     const uint3 indices = getIndices();
     float2 uvs[3] =
     {
-        Vertices[indices.x].uv,
-        Vertices[indices.y].uv,
-        Vertices[indices.z].uv,
+        Vertices[indices.x].uv.xy,
+        Vertices[indices.y].uv.xy,
+        Vertices[indices.z].uv.xy,
     };
     return uvs[0] +
         (attr.barycentrics.x * (uvs[1] - uvs[0])) +
@@ -129,19 +131,25 @@ inline float2 getUV(in MyAttr attr) {
 //キューブに当たった時
 [shader("closesthit")]
 void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
-    //float3 N = getNormal(attr);
-    //float3 L = normalize(g_sceneCB.lightPosition.xyz - hitWorldPosition());
-    //float4 color = float4(0, 0, 0, 0);
-    ////ランバート
-    //color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse);
-    ////アンビエント
-    //color.rgb += g_sceneCB.lightAmbient.rgb;
+    float3 N = getNormal(attr);
+    float3 L = normalize(g_sceneCB.lightPosition.xyz - hitWorldPosition());
+    float4 color = float4(0, 0, 0, 0);
+    //ランバート
+    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse);
+    //アンビエント
+    color.rgb += g_sceneCB.lightAmbient.rgb;
 
-    //color = applyFog(hitWorldPosition(), color);
-    //payload.color = color;
-    float2 uv = getUV(attr);
-    float4 color = tex.SampleLevel(samLinear, uv, 0.0);
+    color = applyFog(hitWorldPosition(), color);
     payload.color = color;
+    //float2 uv = getUV(attr);
+    ////float4 color = tex.SampleLevel(samLinear, uv, 0.0);
+    //float4 color = float4(uv.x, uv.y, 0.0f, 1.0f);
+    ////float4 color = float4(1, 1, 1, 1);
+    //payload.color = color;
+
+    //float3 N = getNormal(attr) * 0.5 + 0.5f;
+    //float4 color = float4(N.x, 0, 0, 1.0f);
+    //payload.color = color;
 }
 
 //床に当たった時
@@ -177,6 +185,9 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     //影に覆われていたら黒くする
     float factor = shadow ? 0.1f : 1.0f;
     payload.color = color * factor;
+
+    N = N * 0.5 + 0.5;
+    payload.color = float4(N.x, 0.0, N.z, 1.0);
 }
 
 //影用のレイ

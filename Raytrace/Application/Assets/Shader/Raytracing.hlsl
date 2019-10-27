@@ -80,31 +80,31 @@ inline bool castShadow(Ray ray) {
 }
 
 //頂点インデックスを取得する
-inline uint3 getIndices() {
+inline uint3 getIndices(uint indexOffset) {
     uint indexSizeInBytes = 2;
     uint indicesPerTriangle = 3;
     uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
-    uint baseIndex = PrimitiveIndex() * triangleIndexStride + l_material.indexOffset;
-
+    uint baseIndex = PrimitiveIndex() * triangleIndexStride + indexOffset;
     return load3x16BitIndices(baseIndex, Indices);
 }
 
 //衝突した三角形の法線を取得する
-inline float3 getNormal(in MyAttr attr) {
-    const uint3 indices = getIndices();
+inline float3 getNormal(in MyAttr attr, uint vertexOffset, uint indexOffset) {
+    const uint3 indices = getIndices(indexOffset) + vertexOffset;
     float3 normals[3] =
     {
         Vertices[indices.x].normal,
         Vertices[indices.y].normal,
         Vertices[indices.z].normal,
     };
+
     return getHitAttribute(normals, attr);
 }
 
 //キューブに当たった時
 [shader("closesthit")]
 void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
-    float3 N = getNormal(attr);
+    float3 N = getNormal(attr, l_material.vertexOffset, l_material.indexOffset);
     float3 L = normalize(g_sceneCB.lightPosition.xyz - hitWorldPosition());
     float4 color = float4(0, 0, 0, 0);
     //ランバート
@@ -113,6 +113,7 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
     color.rgb += g_sceneCB.lightAmbient.rgb;
 
     color = applyFog(hitWorldPosition(), color);
+
     payload.color = color;
 }
 
@@ -133,7 +134,7 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     Ray shadowRay = { worldPos, normalize(g_sceneCB.lightPosition.xyz - worldPos) };
     bool shadow = castShadow(shadowRay);
 
-    float3 N = getNormal(attr);
+    float3 N = getNormal(attr, l_material.vertexOffset, l_material.indexOffset);
     float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
 
     float4 color = float4(0, 0, 0, 0);
@@ -144,7 +145,6 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     ////フォグの適用
     color = applyFog(hitWorldPosition(), color);
     //少し床の色を濃くする
-    color.rgb *= 1.5f;
 
     //影に覆われていたら黒くする
     float factor = shadow ? 0.1f : 1.0f;
