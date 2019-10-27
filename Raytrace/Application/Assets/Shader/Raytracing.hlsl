@@ -55,6 +55,11 @@ inline float3 lambertColor(float3 N, float3 L, float4 diffuse) {
     return diffuse.rgb * dotNL * (1.0 / PI);
 }
 
+inline float3 specular(float3 N, float3 L, float4 spec) {
+    float dotNL = max(0.0, dot(N, L));
+    return spec.rgb *pow(dotNL, 10);
+}
+
 //フォグを適用する
 inline float4 applyFog(in float3 worldPos, in float4 color) {
     float len = distance(g_sceneCB.cameraPosition.xyz, worldPos);
@@ -69,7 +74,7 @@ inline bool castShadow(Ray ray) {
     RayDesc rayDesc;
     rayDesc.Origin = ray.origin;
     rayDesc.Direction = ray.direction;
-    rayDesc.TMin = 0.01;
+    rayDesc.TMin = 0.1f;
     rayDesc.TMax = 10000.0;
     ShadowPayload shadowPayload = { true };
 
@@ -141,9 +146,12 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
     float4 color = float4(0, 0, 0, 0);
     float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
     float4 texColor = tex.SampleLevel(samLinear, uv, 0.0);
-
+    texColor = float4(1, 0, 0, 1);
     //ランバート
     color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse * texColor);
+
+    color.rgb += specular(N, L, float4(1, 1, 1, 1));
+
     //アンビエント
     color.rgb += g_sceneCB.lightAmbient.rgb;
     ////フォグの適用
@@ -151,6 +159,7 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
 
     //影に覆われていたら黒くする
     float factor = shadow ? 0.1f : 1.0f;
+    //float factor = 1.0f;
     payload.color = color * factor;
 }
 
@@ -166,8 +175,6 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     float3 worldPos = hitWorldPosition();
 
     //影用のレイキャスト
-    RayDesc ray;
-    ray.Origin = worldPos;
     Ray shadowRay = { worldPos, normalize(g_sceneCB.lightPosition.xyz - worldPos) };
     bool shadow = castShadow(shadowRay);
 

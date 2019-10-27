@@ -23,6 +23,7 @@
 #include "Utility/StringUtil.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "Libs/stb/stb_image.h"
+#include "Math/Quaternion.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -59,7 +60,7 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT CUBE_COUNT = 300;
+static constexpr UINT CUBE_COUNT = 10000;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 static const std::wstring MODEL_NAME = L"sphere.glb";
@@ -383,9 +384,12 @@ void MainApp::updateCameraMatrices() {
 }
 
 void MainApp::initializeScene() {
-    mCameraPosition = { 0,3.0f,-30.0f };
-    mCameraRotation = { 0,0,0 };
-    mLightPosition = { 20,20,-20 };
+    //mCameraPosition = { 0,3.0f,-30.0f };
+    //mCameraRotation = { 0,0,0 };
+    mCameraPosition = { 0,100,-200 };
+    //mCameraRotation = 
+    mCameraRotation = { 0.61f,0,0 };
+    mLightPosition = { 20,40,-70 };
 
     mCameraParameterWindow = std::make_unique<Framework::ImGUI::Window>("Camera");
 #define PARAMETER_CHANGE_SLIDER(name,type,min,max){\
@@ -416,7 +420,7 @@ void MainApp::initializeScene() {
 #pragma warning(pop)
 
     mSceneCB->lightAmbient = { 0.3f,0.3f,0.3f,1.0f };
-    mSceneCB->lightDiffuse = { 0.7f,0.2f,0.7f,1.0f };
+    mSceneCB->lightDiffuse = { 1.0f,1.0f,1.0f,1.0f };
     mSceneCB->fogStart = 500.0f;
     mSceneCB->fogEnd = 1000.0f;
     int w = Framework::Math::MathUtil::sqrt(CUBE_COUNT) + 1;
@@ -1190,9 +1194,15 @@ void MainApp::calcFrameStatus() {
 
     mGPUInfoText->setText(ss.str());
 
-    mRotation += 0.01f;
+    SetWindowText(mWindow->getHwnd(), Framework::Utility::StringBuilder(L"FPS:") << mTimer.getFPS());
 
+    mRotation += 0.1;
 
+    static constexpr float RANGE = 100.0f;
+    float x = Framework::Math::MathUtil::sin(mRotation) * RANGE;
+    float z = Framework::Math::MathUtil::cos(mRotation) * RANGE;
+    mLightPosition.x = x;
+    mLightPosition.z = z;
 }
 
 UINT MainApp::allocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, UINT descriptorIndexToUse) {
