@@ -62,7 +62,7 @@ namespace GeometryType {
 static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
-static const std::wstring MODEL_NAME = L"pyramid.glb";
+static const std::wstring MODEL_NAME = L"Bee.glb";
 
 /**
 * @class MainApp

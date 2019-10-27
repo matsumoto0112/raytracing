@@ -46,12 +46,14 @@ namespace Framework::Utility {
             std::vector<BYTE> texRowData = mResourceReader->ReadBinaryData(mDocument, image);
             int width, height, bpp;
 
-            float* pixels = stbi_loadf_from_memory(reinterpret_cast<const stbi_uc*>(texRowData.data()), texRowData.size(), &width, &height, &bpp, 0);
+            BYTE* texByte = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(texRowData.data()), texRowData.size(), &width, &height, &bpp, 0);
             const int size = width * height * tex.textureSizePerPixel;
-            std::vector<BYTE> textureByte(size);
-            for (int i = 0; i < size; i++) {
-                textureByte[i] = static_cast<BYTE>(pixels[i] * 255.0f);
-            }
+            //std::vector<BYTE> textureByte(size);
+            //for (int i = 0; i < size; i++) {
+            //    textureByte[i] = static_cast<BYTE>(pixels[i] * 255.0f);
+            //}
+            std::vector<BYTE> textureByte(texByte, texByte + size);
+
             tex.data = textureByte;
             tex.width = width;
             tex.height = height;
