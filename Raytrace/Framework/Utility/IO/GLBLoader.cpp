@@ -64,11 +64,6 @@ namespace Framework::Utility {
                 textureByte = std::vector<BYTE>(texByte, texByte + size);
             }
 
-            //std::vector<BYTE> textureByte(size);
-            //for (int i = 0; i < size; i++) {
-            //    textureByte[i] = static_cast<BYTE>(pixels[i] * 255.0f);
-            //}
-
             tex.data = textureByte;
             tex.width = width;
             tex.height = height;

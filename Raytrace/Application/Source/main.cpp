@@ -511,7 +511,7 @@ void MainApp::createDeviceDependentResources() {
     //コンスタントバッファ作成
     createConstantBuffers();
 
-    //テクスチャの作成
+    //テクスチャの作成 
     {
         {
             Framework::Utility::GLBLoader glbLoader(
