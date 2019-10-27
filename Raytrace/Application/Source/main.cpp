@@ -862,7 +862,7 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
     for (size_t i = 0; i < vertices.size(); i++) {
         vertices[i].position = XMFLOAT3{ positions[i].x,positions[i].y,positions[i].z };
         vertices[i].normal = XMFLOAT3{ normals[i].x,normals[i].y,normals[i].z };
-        //vertices[i].uv = XMFLOAT3{ uvs[i].x,uvs[i].y ,0.0f };
+        vertices[i].uv = XMFLOAT2{ uvs[i].x,uvs[i].y };
     }
 
     const UINT indexCount = indices.size();
@@ -886,19 +886,19 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
 
 void MainApp::buildPlaneGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer) {
     std::vector<Index> indices = { 0,1,2 ,0,2,3 };
-    //std::vector<Vertex> vertices = {
-    //    {XMFLOAT3(-0.5f,0,0.5f),XMFLOAT3(0,1,0),XMFLOAT3(0,0,0) },
-    //{XMFLOAT3(0.5f,0,0.5f),XMFLOAT3(0,1,0) ,XMFLOAT3(1,0,0) },
-    //{XMFLOAT3(0.5f,0,-0.5f),XMFLOAT3(0,1,0),XMFLOAT3(1,1,0)  },
-    //{XMFLOAT3(-0.5f,0,-0.5f),XMFLOAT3(0,1,0),XMFLOAT3(0,1,0)  },
-    //};  
-
     std::vector<Vertex> vertices = {
-        {XMFLOAT3(-0.5f,0,0.5f),XMFLOAT3(0,1,0) },
-        {XMFLOAT3(0.5f,0,0.5f),XMFLOAT3(0,1,0)},
-        {XMFLOAT3(0.5f,0,-0.5f),XMFLOAT3(0,1,0)  },
-        {XMFLOAT3(-0.5f,0,-0.5f),XMFLOAT3(0,1,0)  },
+        {XMFLOAT3(-0.5f,0,0.5f),XMFLOAT3(0,1,0),XMFLOAT2(0,0) },
+    {XMFLOAT3(0.5f,0,0.5f),XMFLOAT3(0,1,0) ,XMFLOAT2(1,0) },
+    {XMFLOAT3(0.5f,0,-0.5f),XMFLOAT3(0,1,0),XMFLOAT2(1,1)  },
+    {XMFLOAT3(-0.5f,0,-0.5f),XMFLOAT3(0,1,0),XMFLOAT2(0,1)  },
     };
+
+    //std::vector<Vertex> vertices = {
+    //    {XMFLOAT3(-0.5f,0,0.5f),XMFLOAT3(0,1,0) },
+    //    {XMFLOAT3(0.5f,0,0.5f),XMFLOAT3(0,1,0)},
+    //    {XMFLOAT3(0.5f,0,-0.5f),XMFLOAT3(0,1,0)  },
+    //    {XMFLOAT3(-0.5f,0,-0.5f),XMFLOAT3(0,1,0)  },
+    //};
 
     ID3D12Device* device = mDeviceResource->getDevice();
     allocateUploadBuffer(device, indices.data(), indices.size() * sizeof(indices[0]), &indexBuffer->resource);

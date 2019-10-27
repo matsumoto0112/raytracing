@@ -18,6 +18,12 @@ ConstantBuffer<MaterialConstantBuffer> l_material : register(b1);
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 static const float A = 0.2f;
 
+//テクスチャのサンプラー
+SamplerState samLinear : register(s0);
+//使用するテクスチャ
+Texture2D tex : register(t3);
+
+
 //レイ生成
 [shader("raygeneration")]
 void MyRaygenShader() {
@@ -101,6 +107,17 @@ inline float3 getNormal(in MyAttr attr, uint vertexOffset, uint indexOffset) {
     return getHitAttribute(normals, attr);
 }
 
+inline float2 getUV(in MyAttr attr, uint vertexOffset, uint indexOffset) {
+    const uint3 indices = getIndices(indexOffset) + vertexOffset;
+    float2 uvs[3] =
+    {
+        Vertices[indices.x].uv,
+        Vertices[indices.y].uv,
+        Vertices[indices.z].uv,
+    };
+    return getUVHitAttribute(uvs, attr);
+}
+
 //キューブに当たった時
 [shader("closesthit")]
 void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
@@ -114,6 +131,8 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
 
     color = applyFog(hitWorldPosition(), color);
 
+    float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
+    color = float4(uv.xy, 0.0, 1.0);
     payload.color = color;
 }
 
@@ -149,6 +168,11 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     //影に覆われていたら黒くする
     float factor = shadow ? 0.1f : 1.0f;
     payload.color = color * factor;
+
+    float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
+    color = float4(uv.xy, 0.0, 1.0);
+    payload.color = tex.SampleLevel(samLinear, uv, 0.0);
+
 }
 
 //影用のレイ

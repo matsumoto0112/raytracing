@@ -42,7 +42,7 @@ struct SceneConstantBuffer {
 struct Vertex {
     XMFLOAT3 position;
     XMFLOAT3 normal;
-    //XMFLOAT3 uv;
+    XMFLOAT2 uv;
 };
 
 //struct TextureVertex {

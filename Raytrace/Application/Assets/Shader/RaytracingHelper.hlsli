@@ -58,4 +58,10 @@ inline float3 getHitAttribute(in float3 normal[3], in BuiltInTriangleIntersectio
         (attr.barycentrics.y * (normal[2] - normal[0]));
 }
 
+inline float2 getUVHitAttribute(in float2 uv[3], in BuiltInTriangleIntersectionAttributes attr) {
+    return uv[0] +
+        (attr.barycentrics.x * (uv[1] - uv[0])) +
+        (attr.barycentrics.y * (uv[2] - uv[0]));
+}
+
 #endif //! INCLUDE_SHADER_RAYTRACINGHELPER_HLSLI
