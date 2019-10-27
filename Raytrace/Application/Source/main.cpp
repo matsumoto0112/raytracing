@@ -62,7 +62,7 @@ namespace GeometryType {
 static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
-static const std::wstring MODEL_NAME = L"Bee.glb";
+static const std::wstring MODEL_NAME = L"pyramid.glb";
 
 /**
 * @class MainApp
@@ -519,12 +519,12 @@ void MainApp::createDeviceDependentResources() {
         ////std::vector<BYTE> texData = loader.load(Path::getInstance()->texture() + L"dice.png", &w, &h);
         Framework::Utility::GLBLoader glbLoader(
             Framework::Utility::toString(Path::getInstance()->model() + MODEL_NAME));
-        int w, h;
-        std::vector<BYTE> texRowData = glbLoader.getImageDatas()[0];
-        int bpp;
-        auto pixels = stbi_loadf_from_memory(reinterpret_cast<const stbi_uc*>(texRowData.data()), texRowData.size(), &w, &h, &bpp, 0);
+        Framework::Utility::TextureData texRowData = glbLoader.getImageDatas()[0];
+        //int bpp;
+        //auto pixels = stbi_loadf_from_memory(reinterpret_cast<const stbi_uc*>(texRowData.data()), texRowData.size(), &w, &h, &bpp, 0);
 
-        CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, w, h);
+        CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+            DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, texRowData.width, texRowData.height);
 
         D3D12_HEAP_PROPERTIES heapProp = {};
         heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
@@ -542,18 +542,20 @@ void MainApp::createDeviceDependentResources() {
             nullptr,
             IID_PPV_ARGS(&mTextureResource.resource)));
 
-        D3D12_BOX box = { 0,0,0,(UINT)w,(UINT)h,1 };
-        static constexpr UINT TEXTURE_PIXEL_SIZE = 4;
+        D3D12_BOX box = { 0,0,0,(UINT)texRowData.width ,(UINT)texRowData.height,1 };
+        //static constexpr UINT TEXTURE_PIXEL_SIZE = 4;
 
-        std::vector<BYTE> texData(w*h*TEXTURE_PIXEL_SIZE);
-        for (int i = 0; i < w * h * TEXTURE_PIXEL_SIZE; i++) {
-            texData[i] = static_cast<BYTE>(pixels[i] * 255.0f);
-        }
+        //std::vector<BYTE> texData(w*h*TEXTURE_PIXEL_SIZE);
+        //for (int i = 0; i < w * h * TEXTURE_PIXEL_SIZE; i++) {
+        //    texData[i] = static_cast<BYTE>(pixels[i] * 255.0f);
+        //}
 
+        UINT row = texRowData.width * texRowData.textureSizePerPixel;
+        UINT slice = row * texRowData.height;
         Framework::Utility::throwIfFailed(mTextureResource.resource->WriteToSubresource(
             0,
             &box,
-            texData.data(), w * TEXTURE_PIXEL_SIZE, w * h * TEXTURE_PIXEL_SIZE));
+            texRowData.data.data(), row, slice));
 
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -863,7 +865,7 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
     //};
 
     Framework::Utility::GLBLoader glbLoader(
-        Framework::Utility::toString(Path::getInstance()->model() + L"Bee.glb"));
+        Framework::Utility::toString(Path::getInstance()->model() + MODEL_NAME));
     auto positions = glbLoader.getPositionsPerSubMeshes()[0];
     auto normals = glbLoader.getNormalsPerSubMeshes()[0];
     auto uvs = glbLoader.getUVsPerSubMeshes()[0];
@@ -871,7 +873,7 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
     std::vector<Vertex> vertices(positions.size());
     for (size_t i = 0; i < vertices.size(); i++) {
         const float scale = 0.01f;
-        vertices[i].position = XMFLOAT3{ positions[i].x * scale,positions[i].y* scale,positions[i].z * scale} ;
+        vertices[i].position = XMFLOAT3{ positions[i].x * scale,positions[i].y* scale,positions[i].z * scale };
         vertices[i].normal = XMFLOAT3{ normals[i].x,normals[i].y,normals[i].z };
         vertices[i].uv = XMFLOAT2{ uvs[i].x,uvs[i].y };
     }

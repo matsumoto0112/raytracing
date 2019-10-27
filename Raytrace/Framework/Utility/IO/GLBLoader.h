@@ -14,6 +14,13 @@ namespace Framework::Utility {
         Mask,
     };
 
+    struct TextureData {
+        std::vector<BYTE> data;
+        UINT width;
+        UINT height;
+        UINT textureSizePerPixel;
+    };
+
     struct Material {
         std::string name;
         int normalMapID;
@@ -37,7 +44,7 @@ namespace Framework::Utility {
         /**
         * @brief 画像データを取得する
         */
-        std::vector<std::vector<BYTE>> getImageDatas() const;
+        std::vector<TextureData> getImageDatas() const;
         /**
         * @brief マテリアルデータを取得する
         */

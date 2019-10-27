@@ -38,10 +38,24 @@ namespace Framework::Utility {
 
     GLBLoader::~GLBLoader() { }
 
-    std::vector<std::vector<BYTE>> GLBLoader::getImageDatas() const {
-        std::vector<std::vector<BYTE>> result;
-        for (auto&& image : mDocument.images.Elements()) {            
-            result.emplace_back(mResourceReader->ReadBinaryData(mDocument, image));
+    std::vector<TextureData> GLBLoader::getImageDatas() const {
+        std::vector<TextureData> result;
+        for (auto&& image : mDocument.images.Elements()) {
+            TextureData tex;
+            tex.textureSizePerPixel = 4;
+            std::vector<BYTE> texRowData = mResourceReader->ReadBinaryData(mDocument, image);
+            int width, height, bpp;
+
+            float* pixels = stbi_loadf_from_memory(reinterpret_cast<const stbi_uc*>(texRowData.data()), texRowData.size(), &width, &height, &bpp, 0);
+            const int size = width * height * tex.textureSizePerPixel;
+            std::vector<BYTE> textureByte(size);
+            for (int i = 0; i < size; i++) {
+                textureByte[i] = static_cast<BYTE>(pixels[i] * 255.0f);
+            }
+            tex.data = textureByte;
+            tex.width = width;
+            tex.height = height;
+            result.emplace_back(tex);
         }
         return result;
     }
