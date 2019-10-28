@@ -13,7 +13,7 @@
 * @param cond 条件式
 * @param mes condがfalseの時に表示するメッセージ
 */
-#define MY_ASSERTION(cond,mes) Framework::Utility::Debug::assertion(__FUNCTION__, __LINE__, cond, mes);
+#define MY_ASSERTION(cond,mes) Framework::Utility::Debug::assertion(__FUNCTION__, __LINE__, cond, mes)
 
 /**
 * @def エラーウィンドウの表示
@@ -21,7 +21,7 @@
 * @param mes condがfalseの時に表示するメッセージ
 * @details デバッグ時にはメッセージとともに発生した関数名、行番号が表示される
 */
-#define MY_ERROR_WINDOW(cond,mes) Framework::Utility::Debug::errorWindow(__FUNCTION__, __LINE__, cond, mes);
+#define MY_ERROR_WINDOW(cond,mes) Framework::Utility::Debug::errorWindow(__FUNCTION__, __LINE__, cond, mes)
 
 /**
 * @def 条件を満たしていたらVisualStudioの出力にログ出力
@@ -29,6 +29,10 @@
 * @param mes 表示するメッセージ
 */
 #define MY_DEBUG_LOG_IF(cond,mes) if((cond)) MY_DEBUG_LOG(mes)
+
+#define MY_THROW_IF_FAILED(hr,mes) Framework::Utility::throwIfFailed(hr,mes)
+
+#define MY_THROW_IF_FALSE(cond,mes) Framework::Utility::throwIfFalse(cond,mes)
 
 namespace Framework::Utility {
     /**

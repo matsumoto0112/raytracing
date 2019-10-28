@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Device\ISystemEventNotify.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DXRInterface.h" />
@@ -76,6 +77,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DXRInterface.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\RootSignature.cpp" />

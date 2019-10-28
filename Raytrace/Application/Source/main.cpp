@@ -25,6 +25,7 @@
 #include "Libs/stb/stb_image.h"
 #include "Math/Quaternion.h"
 #include "DX/RootSignature.h"
+#include "DX/DescriptorTable.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -61,7 +62,7 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT CUBE_COUNT = 10000;
+static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 static const std::wstring MODEL_NAME = L"sphere.glb";
@@ -78,8 +79,8 @@ public:
     */
     MainApp(UINT width, UINT height, const std::wstring& title)
         :Game(width, height, title),
-        mRaytracingOutputResourceUAVDescriptorHeapIndex(UINT_MAX),
-        mDescriptorSize(0),
+        //mRaytracingOutputResourceUAVDescriptorHeapIndex(UINT_MAX),
+        //mDescriptorSize(0),
         mRotation(0.0f),
         mImGUIWindow(std::make_unique<Framework::ImGUI::Window>("GPU")) {
         mGPUInfoText = std::make_shared<Framework::ImGUI::Text>("");
@@ -158,10 +159,10 @@ private:
     std::unique_ptr<Framework::DX::RootSignature> mGlobalRootSignature; //!< グローバルルートシグネチャ
     std::unique_ptr<Framework::DX::RootSignature> mLocalRootSignatures[LocalRootSignatureParams::Type::Count]; //!< ローカルルートシグネチャ
 
-    //ディスクリプタヒープ
-    ComPtr<ID3D12DescriptorHeap> mDescriptorHeap;
-    UINT mDescriptorAllocated;
-    UINT mDescriptorSize;
+    ////ディスクリプタヒープ
+    //ComPtr<ID3D12DescriptorHeap> mDescriptorHeap;
+    //UINT mDescriptorAllocated;
+    //UINT mDescriptorSize;
 
     ConstantBuffer<SceneConstantBuffer> mSceneCB;
     XMFLOAT3 mCameraPosition;
@@ -180,7 +181,7 @@ private:
     //レイトレーシング出力先
     ComPtr<ID3D12Resource> mRaytracingOutput;
     D3D12_GPU_DESCRIPTOR_HANDLE mRaytracingOutputResourceUAVGpuDescriptor;
-    UINT mRaytracingOutputResourceUAVDescriptorHeapIndex;
+    //UINT mRaytracingOutputResourceUAVDescriptorHeapIndex;
 
     //シェーダーテーブル
     static const wchar_t* HIT_GROUP_CUBE_NAME;
@@ -214,6 +215,8 @@ private:
     D3DBuffer mResourceVertexBuffer;
     std::vector<Vertex> mResourceVertices;
     std::vector<Index> mResourceIndices;
+
+    std::unique_ptr<DescriptorTable> mDescriptoaTable;
 
     D3DBuffer mTextureResource;
     //D3D12_GPU_DESCRIPTOR_HANDLE mTextureResourceGpuDescriptor;
@@ -485,7 +488,8 @@ void MainApp::doRaytracing() {
     list->SetComputeRootConstantBufferView(GlobalRootSignatureParameter::ConstantBuffer, mSceneCB.gpuVirtualAddress(frameCount));
 
     D3D12_DISPATCH_RAYS_DESC desc = {};
-    list->SetDescriptorHeaps(1, mDescriptorHeap.GetAddressOf());
+    ID3D12DescriptorHeap* heaps[] = { mDescriptoaTable->getHeap() };
+    list->SetDescriptorHeaps(_countof(heaps), heaps);
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::RenderTarget, mRaytracingOutputResourceUAVGpuDescriptor);
     list->SetComputeRootShaderResourceView(GlobalRootSignatureParameter::AccelerationStructureSlot, mTopLevelAS->GetGPUVirtualAddress());
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mResourceIndexBuffer.gpuHandle);
@@ -560,9 +564,10 @@ void MainApp::createDeviceDependentResources() {
             srvDesc.Texture2D.PlaneSlice = 0;
             srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-            UINT index = allocateDescriptor(&mTextureResource.cpuHandle);
+            UINT index = mDescriptoaTable->allocateWithGPU(&mTextureResource.cpuHandle, &mTextureResource.gpuHandle);
             device->CreateShaderResourceView(mTextureResource.resource.Get(), &srvDesc, mTextureResource.cpuHandle);
-            mTextureResource.gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+            //UINT index = allocateDescriptor(&mTextureResource.cpuHandle);
+            //mTextureResource.gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
         }
         {
             Framework::Utility::GLBLoader glbLoader(
@@ -605,9 +610,12 @@ void MainApp::createDeviceDependentResources() {
             srvDesc.Texture2D.PlaneSlice = 0;
             srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-            UINT index = allocateDescriptor(&mPlaneTextureResource.cpuHandle);
+            UINT index = mDescriptoaTable->allocateWithGPU(&mPlaneTextureResource.cpuHandle, &mPlaneTextureResource.gpuHandle);
             device->CreateShaderResourceView(mPlaneTextureResource.resource.Get(), &srvDesc, mPlaneTextureResource.cpuHandle);
-            mPlaneTextureResource.gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+
+            //UINT index = allocateDescriptor(&mPlaneTextureResource.cpuHandle);
+            //device->CreateShaderResourceView(mPlaneTextureResource.resource.Get(), &srvDesc, mPlaneTextureResource.cpuHandle);
+            //mPlaneTextureResource.gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
         }
 
         //シェーダーテーブル作成
@@ -629,9 +637,12 @@ void MainApp::releaseDeviceDependentResources() {
     mGlobalRootSignature->reset();
     mDXRInterface->clear();
 
-    mDescriptorHeap.Reset();
-    mDescriptorAllocated = 0;
-    mRaytracingOutputResourceUAVDescriptorHeapIndex = UINT_MAX;
+    //mDescriptorHeap.Reset();
+    //mDescriptorAllocated = 0;
+    //mRaytracingOutputResourceUAVDescriptorHeapIndex = UINT_MAX;
+
+    mDescriptoaTable->reset();
+
     for (auto&& index : mGeometryIndexBuffers) {
         index.resource.Reset();
     }
@@ -834,13 +845,19 @@ void MainApp::createAuxillaryDeviceResources() {
 void MainApp::createDescriptorHeap() {
     ID3D12Device* device = mDeviceResource->getDevice();
 
-    D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-    heapDesc.NumDescriptors = 5; //1つはレンダーターゲット、２つは頂点バッファ、残る２つはテクスチャ
-    heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    heapDesc.NodeMask = 0;
-    device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mDescriptorHeap));
-    mDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    //D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
+    //heapDesc.NumDescriptors = 3; //1つはレンダーターゲット、２つは頂点バッファ
+    //heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    //heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    //heapDesc.NodeMask = 0;
+    //device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mDescriptorHeap));
+    //mDescriptorSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+    {
+        using namespace Framework::DX;
+        mDescriptoaTable = std::make_unique<DescriptorTable>(
+            device, HeapType::CBV_SRV_UAV, HeapFlag::ShaderVisible, 10000);
+    }
 }
 
 void MainApp::createRaytracingOutputResource() {
@@ -859,12 +876,13 @@ void MainApp::createRaytracingOutputResource() {
         IID_PPV_ARGS(&mRaytracingOutput)));
 
     D3D12_CPU_DESCRIPTOR_HANDLE uavHandle;
-    mRaytracingOutputResourceUAVDescriptorHeapIndex = allocateDescriptor(&uavHandle, mRaytracingOutputResourceUAVDescriptorHeapIndex);
+    mDescriptoaTable->allocateWithGPU(&uavHandle, &mRaytracingOutputResourceUAVGpuDescriptor);
+    //mRaytracingOutputResourceUAVDescriptorHeapIndex = allocateDescriptor(&uavHandle, mRaytracingOutputResourceUAVDescriptorHeapIndex);
+    //mRaytracingOutputResourceUAVGpuDescriptor = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), mRaytracingOutputResourceUAVDescriptorHeapIndex, mDescriptorSize);
 
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION::D3D12_UAV_DIMENSION_TEXTURE2D;
     device->CreateUnorderedAccessView(mRaytracingOutput.Get(), nullptr, &uavDesc, uavHandle);
-    mRaytracingOutputResourceUAVGpuDescriptor = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), mRaytracingOutputResourceUAVDescriptorHeapIndex, mDescriptorSize);
 }
 
 //キューブのジオメトリを生成する
@@ -1212,13 +1230,13 @@ void MainApp::calcFrameStatus() {
 }
 
 UINT MainApp::allocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, UINT descriptorIndexToUse) {
-    D3D12_CPU_DESCRIPTOR_HANDLE handle = mDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+    //D3D12_CPU_DESCRIPTOR_HANDLE handle = mDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
-    if (descriptorIndexToUse >= mDescriptorHeap->GetDesc().NumDescriptors) {
-        Framework::Utility::throwIfFalse(mDescriptorAllocated < mDescriptorHeap->GetDesc().NumDescriptors, L"Ran out of descriptors on the heap!");
-        descriptorIndexToUse = mDescriptorAllocated++;
-    }
-    *cpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(handle, descriptorIndexToUse, mDescriptorSize);
+    //if (descriptorIndexToUse >= mDescriptorHeap->GetDesc().NumDescriptors) {
+    //    Framework::Utility::throwIfFalse(mDescriptorAllocated < mDescriptorHeap->GetDesc().NumDescriptors, L"Ran out of descriptors on the heap!");
+    //    descriptorIndexToUse = mDescriptorAllocated++;
+    //}
+    //*cpuHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(handle, descriptorIndexToUse, mDescriptorSize);
     return descriptorIndexToUse;
 }
 
@@ -1240,10 +1258,12 @@ UINT MainApp::createBufferSRV(D3DBuffer* buffer, UINT numElements, UINT elementS
         srvDesc.Buffer.StructureByteStride = elementSize;
     }
 
-    UINT index = allocateDescriptor(&buffer->cpuHandle);
+    mDescriptoaTable->allocateWithGPU(&buffer->cpuHandle, &buffer->gpuHandle);
+    //UINT index = allocateDescriptor(&buffer->cpuHandle);
     device->CreateShaderResourceView(buffer->resource.Get(), &srvDesc, buffer->cpuHandle);
-    buffer->gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
-    return index;
+    //buffer->gpuHandle = CD3DX12_GPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), index, mDescriptorSize);
+    //return index;
+    return 0;
 }
 
 ComPtr<ID3D12Resource> MainApp::createBuffer(uint64_t size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES & heapProps) {
