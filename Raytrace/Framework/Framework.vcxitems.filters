@@ -59,6 +59,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\IO\TextureLoader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\IO\GLBLoader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\stb\stb_image.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\RootSignature.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -97,5 +98,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Libs\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\IO\TextureLoader.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\IO\GLBLoader.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\RootSignature.cpp" />
   </ItemGroup>
 </Project>

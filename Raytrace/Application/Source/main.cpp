@@ -24,6 +24,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "Libs/stb/stb_image.h"
 #include "Math/Quaternion.h"
+#include "DX/RootSignature.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -60,7 +61,7 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT CUBE_COUNT = 10000;
+static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 static const std::wstring MODEL_NAME = L"sphere.glb";
@@ -154,7 +155,8 @@ private:
     //DXRオブジェクト
     std::unique_ptr<Framework::DX::DXRInterface> mDXRInterface;
 
-    ComPtr<ID3D12RootSignature> mRaytracingGlobalRootSignature; //!< グローバルルートシグネチャ
+    //ComPtr<ID3D12RootSignature> mRaytracingGlobalRootSignature; //!< グローバルルートシグネチャ
+    std::unique_ptr<Framework::DX::RootSignature> mGlobalRootSignature; //!< グローバルルートシグネチャ
     ComPtr<ID3D12RootSignature> mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Count]; //!< ローカルルートシグネチャ
 
     //ディスクリプタヒープ
@@ -478,7 +480,8 @@ void MainApp::doRaytracing() {
         mGPUTimer.stop(list);
     };
 
-    list->SetComputeRootSignature(mRaytracingGlobalRootSignature.Get());
+    mGlobalRootSignature->setComputeRootSignature(list);
+    //list->SetComputeRootSignature(mRaytracingGlobalRootSignature.Get());
     mSceneCB.copyStagingToGPU(frameCount);
     list->SetComputeRootConstantBufferView(GlobalRootSignatureParameter::ConstantBuffer, mSceneCB.gpuVirtualAddress(frameCount));
 
@@ -624,7 +627,7 @@ void MainApp::createWindowSizeDependentResources() {
 
 void MainApp::releaseDeviceDependentResources() {
     mGPUTimer.releaseDevice();
-    mRaytracingGlobalRootSignature.Reset();
+    ///mRaytracingGlobalRootSignature.Reset();
     mDXRInterface->clear();
 
     mDescriptorHeap.Reset();
@@ -667,24 +670,51 @@ void MainApp::createRootSignatures() {
 
     //まずはグローバルルートシグネチャを作成する
     {
-        CD3DX12_DESCRIPTOR_RANGE ranges[2];
-        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //レンダーターゲット
-        ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 1); //頂点バッファ
-        //ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); //テクスチャ
+        //CD3DX12_DESCRIPTOR_RANGE ranges[2];
+        //ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //レンダーターゲット
+        //ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 1); //頂点バッファ
+        ////ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); //テクスチャ
 
-        CD3DX12_ROOT_PARAMETER param[GlobalRootSignatureParameter::Count];
-        param[GlobalRootSignatureParameter::RenderTarget].InitAsDescriptorTable(1, &ranges[0]);
-        param[GlobalRootSignatureParameter::AccelerationStructureSlot].InitAsShaderResourceView(0);
-        param[GlobalRootSignatureParameter::VertexBuffers].InitAsDescriptorTable(1, &ranges[1]);
-        param[GlobalRootSignatureParameter::ConstantBuffer].InitAsConstantBufferView(0);
-        //param[GlobalRootSignatureParameter::Texture].InitAsDescriptorTable(1, &ranges[2]);
+        //CD3DX12_ROOT_PARAMETER param[GlobalRootSignatureParameter::Count];
+        //param[GlobalRootSignatureParameter::RenderTarget].InitAsDescriptorTable(1, &ranges[0]);
+        //param[GlobalRootSignatureParameter::AccelerationStructureSlot].InitAsShaderResourceView(0);
+        //param[GlobalRootSignatureParameter::VertexBuffers].InitAsDescriptorTable(1, &ranges[1]);
+        //param[GlobalRootSignatureParameter::ConstantBuffer].InitAsConstantBufferView(0);
+        ////param[GlobalRootSignatureParameter::Texture].InitAsDescriptorTable(1, &ranges[2]);
 
-        CD3DX12_STATIC_SAMPLER_DESC samplerDesc(0);
-        samplerDesc.Filter = D3D12_FILTER::D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-        CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(param), param, 1, &samplerDesc);
+        //CD3DX12_STATIC_SAMPLER_DESC samplerDesc(0);
+        //samplerDesc.Filter = D3D12_FILTER::D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+        //CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(param), param, 1, &samplerDesc);
 
-        serializeAndCreateRaytracingRootSignature(desc, &mRaytracingGlobalRootSignature);
-        mRaytracingGlobalRootSignature->SetName(L"GlobalRootSignature");
+        //serializeAndCreateRaytracingRootSignature(desc, &mRaytracingGlobalRootSignature);
+        //mRaytracingGlobalRootSignature->SetName(L"GlobalRootSignature");
+
+        using namespace Framework::DX;
+        RootSignatureDesc desc;
+        desc.name = L"GlobalRootSignature";
+        DescriptorRange ranges[2];
+        ranges[0].init(DescriptorRangeType::UAV, 1, 0);
+        ranges[1].init(DescriptorRangeType::SRV, 2, 1);
+        desc.rangeNum = 2;
+        desc.ranges = ranges;
+
+        RootParameterDesc params[GlobalRootSignatureParameter::Count];
+        params[GlobalRootSignatureParameter::RenderTarget].init(RootParameterType::DescriptorTable);
+        params[GlobalRootSignatureParameter::AccelerationStructureSlot].init(RootParameterType::SRV, 0);
+        params[GlobalRootSignatureParameter::VertexBuffers].init(RootParameterType::DescriptorTable);
+        params[GlobalRootSignatureParameter::ConstantBuffer].init(RootParameterType::CBV, 0);
+        desc.paramNum = GlobalRootSignatureParameter::Count;
+        desc.params = params;
+        desc.constantsNum = 0;
+
+        StaticSampler sampler[1];
+        sampler[0].filter = D3D12_FILTER::D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+
+        desc.staticSamplerNum = 1;
+        desc.staticSamplers = sampler;
+
+        mGlobalRootSignature = std::make_unique<RootSignature>(device, desc);
+
     }
     //ローカルルートシグネチャを作成する
     {
@@ -807,7 +837,8 @@ void MainApp::createRaytracingPipelineStateObject() {
 
     //グローバルルートシグネチャを設定する
     auto* global = raytracingPipeline.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
-    global->SetRootSignature(mRaytracingGlobalRootSignature.Get());
+    //global->SetRootSignature(mRaytracingGlobalRootSignature.Get());
+    mGlobalRootSignature->setGlobalRootSignature(global);
 
     auto* pipelineConfig = raytracingPipeline.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
     UINT maxDepth = 2;
@@ -1197,12 +1228,6 @@ void MainApp::calcFrameStatus() {
     SetWindowText(mWindow->getHwnd(), Framework::Utility::StringBuilder(L"FPS:") << mTimer.getFPS());
 
     mRotation += 0.1;
-
-    static constexpr float RANGE = 100.0f;
-    float x = Framework::Math::MathUtil::sin(mRotation) * RANGE;
-    float z = Framework::Math::MathUtil::cos(mRotation) * RANGE;
-    mLightPosition.x = x;
-    mLightPosition.z = z;
 }
 
 UINT MainApp::allocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, UINT descriptorIndexToUse) {
