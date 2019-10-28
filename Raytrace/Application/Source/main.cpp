@@ -462,28 +462,28 @@ void MainApp::recreateD3D() {
 void MainApp::doRaytracing() {
     ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
     UINT frameCount = mDeviceResource->getCurrentFrameIndex();
-    auto dispatchRays = [&](ID3D12GraphicsCommandList5* list, ID3D12StateObject* state, D3D12_DISPATCH_RAYS_DESC* desc) {
-        desc->HitGroupTable.StartAddress = mHitGroupShaderTable->GetGPUVirtualAddress();
-        desc->HitGroupTable.SizeInBytes = mHitGroupShaderTable->GetDesc().Width;
-        desc->HitGroupTable.StrideInBytes = mHitGroupShaderStrideInBytes;
+    //auto dispatchRays = [&](ID3D12GraphicsCommandList5* list, ID3D12StateObject* state, D3D12_DISPATCH_RAYS_DESC* desc) {
+    //    desc->HitGroupTable.StartAddress = mHitGroupShaderTable->GetGPUVirtualAddress();
+    //    desc->HitGroupTable.SizeInBytes = mHitGroupShaderTable->GetDesc().Width;
+    //    desc->HitGroupTable.StrideInBytes = mHitGroupShaderStrideInBytes;
 
-        desc->MissShaderTable.StartAddress = mMissShaderTable->GetGPUVirtualAddress();
-        desc->MissShaderTable.SizeInBytes = mMissShaderTable->GetDesc().Width;
-        desc->MissShaderTable.StrideInBytes = mMissShaderStrideInBytes;
+    //    desc->MissShaderTable.StartAddress = mMissShaderTable->GetGPUVirtualAddress();
+    //    desc->MissShaderTable.SizeInBytes = mMissShaderTable->GetDesc().Width;
+    //    desc->MissShaderTable.StrideInBytes = mMissShaderStrideInBytes;
 
-        desc->RayGenerationShaderRecord.StartAddress = mRayGenShaderTable->GetGPUVirtualAddress();
-        desc->RayGenerationShaderRecord.SizeInBytes = mRayGenShaderTable->GetDesc().Width;
+    //    desc->RayGenerationShaderRecord.StartAddress = mRayGenShaderTable->GetGPUVirtualAddress();
+    //    desc->RayGenerationShaderRecord.SizeInBytes = mRayGenShaderTable->GetDesc().Width;
 
-        desc->Width = mWidth;
-        desc->Height = mHeight;
-        desc->Depth = 1;
+    //    desc->Width = mWidth;
+    //    desc->Height = mHeight;
+    //    desc->Depth = 1;
 
-        list->SetPipelineState1(state);
+    //    list->SetPipelineState1(state);
 
-        mGPUTimer.start(list);
-        list->DispatchRays(desc);
-        mGPUTimer.stop(list);
-    };
+    //    mGPUTimer.start(list);
+    //    list->DispatchRays(desc);
+    //    mGPUTimer.stop(list);
+    //};
 
     mGlobalRootSignature->setComputeRootSignature(list);
     mSceneCB.copyStagingToGPU(frameCount);
@@ -495,8 +495,8 @@ void MainApp::doRaytracing() {
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::RenderTarget, mRaytracingOutput.gpuHandle);
     list->SetComputeRootShaderResourceView(GlobalRootSignatureParameter::AccelerationStructureSlot, mTopLevelAS->GetGPUVirtualAddress());
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mResourceIndexBuffer.gpuHandle);
-    //mRaytracingShader->doRaytracing(mDXRInterface->getCommandList(), mDXRInterface->getStateObject(), mWidth, mHeight);
-    dispatchRays(mDXRInterface->getCommandList(), mDXRInterface->getStateObject(), &desc);
+    mRaytracingShader->doRaytracing(mDXRInterface->getCommandList(), mDXRInterface->getStateObject(), mWidth, mHeight);
+    //dispatchRays(mDXRInterface->getCommandList(), mDXRInterface->getStateObject(), &desc);
 }
 
 void MainApp::createConstantBuffers() {
@@ -531,12 +531,12 @@ void MainApp::createDeviceDependentResources() {
 
     //レイトレース用インターフェース作成
     createRaytracinginterfaces();
+    //AS作成
+    buildAccelerationStructures();
     //ルートシグネチャを作成する
     createRootSignatures();
     //レイトレーシングに必要なパイプラインオブジェクトを生成する
     createRaytracingPipelineStateObject();
-    //AS作成
-    buildAccelerationStructures();
     //コンスタントバッファ作成
     createConstantBuffers();
 
@@ -1046,79 +1046,79 @@ void MainApp::buildAccelerationStructures() {
 }
 
 void MainApp::buildShaderTables() {
-    ID3D12Device* device = mDeviceResource->getDevice();
+    //ID3D12Device* device = mDeviceResource->getDevice();
 
-    void* rayGenShaderID;
-    void* missShaderID;
-    void* missShaderShadowID;
-    void* hitGroupCubeShaderID;
-    void* hitGroupPlaneShaderID;
-    void* hitGroupShadowShaderID;
-    UINT shaderIDSize;
+    //void* rayGenShaderID;
+    //void* missShaderID;
+    //void* missShaderShadowID;
+    //void* hitGroupCubeShaderID;
+    //void* hitGroupPlaneShaderID;
+    //void* hitGroupShadowShaderID;
+    //UINT shaderIDSize;
 
-    ComPtr<ID3D12StateObjectProperties> props;
-    mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props));
-    rayGenShaderID = props->GetShaderIdentifier(RAY_GEN_SHADER_NAME.c_str());
-    missShaderID = props->GetShaderIdentifier(MISS_SHADER_NAME.c_str());
-    missShaderShadowID = props->GetShaderIdentifier(MISS_SHADER_SHADOW_NAME.c_str());
-    hitGroupCubeShaderID = props->GetShaderIdentifier(HIT_GROUP_CUBE_NAME.c_str());
-    hitGroupPlaneShaderID = props->GetShaderIdentifier(HIT_GROUP_PLANE_NAME.c_str());
-    hitGroupShadowShaderID = props->GetShaderIdentifier(HIT_GROUP_SHADER_NAME.c_str());
-    shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+    //ComPtr<ID3D12StateObjectProperties> props;
+    //mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props));
+    //rayGenShaderID = props->GetShaderIdentifier(RAY_GEN_SHADER_NAME.c_str());
+    //missShaderID = props->GetShaderIdentifier(MISS_SHADER_NAME.c_str());
+    //missShaderShadowID = props->GetShaderIdentifier(MISS_SHADER_SHADOW_NAME.c_str());
+    //hitGroupCubeShaderID = props->GetShaderIdentifier(HIT_GROUP_CUBE_NAME.c_str());
+    //hitGroupPlaneShaderID = props->GetShaderIdentifier(HIT_GROUP_PLANE_NAME.c_str());
+    //hitGroupShadowShaderID = props->GetShaderIdentifier(HIT_GROUP_SHADER_NAME.c_str());
+    //shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
-    {
-        UINT numShaderRecords = 1;
-        UINT shaderRecordSize = shaderIDSize;
-        ShaderTable table(device, numShaderRecords, shaderRecordSize, L"RayGenShaderTable");
-        table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize));
-        mRayGenShaderTable = table.getResource();
-    }
+    //{
+    //    UINT numShaderRecords = 1;
+    //    UINT shaderRecordSize = shaderIDSize;
+    //    ShaderTable table(device, numShaderRecords, shaderRecordSize, L"RayGenShaderTable");
+    //    table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize, nullptr, 0));
+    //    mRayGenShaderTable = table.getResource();
+    //}
 
-    {
-        UINT numShaderRecords = 2;
-        UINT shaderRecordSize = shaderIDSize;
-        ShaderTable table(device, numShaderRecords, shaderRecordSize, L"MissShaderTable");
-        table.push_back(ShaderRecord(missShaderID, shaderIDSize));
-        table.push_back(ShaderRecord(missShaderShadowID, shaderIDSize));
-        mMissShaderStrideInBytes = table.getShaderRecordSize();
-        mMissShaderTable = table.getResource();
-    }
+    //{
+    //    UINT numShaderRecords = 2;
+    //    UINT shaderRecordSize = shaderIDSize;
+    //    ShaderTable table(device, numShaderRecords, shaderRecordSize, L"MissShaderTable");
+    //    table.push_back(ShaderRecord(missShaderID, shaderIDSize, nullptr, 0));
+    //    table.push_back(ShaderRecord(missShaderShadowID, shaderIDSize, nullptr, 0));
+    //    mMissShaderStrideInBytes = table.getShaderRecordSize();
+    //    mMissShaderTable = table.getResource();
+    //}
 
-    {
-        UINT numShaderRecords = 4; //AABB + Plane
-        UINT shaderRecordSize = shaderIDSize +
-            static_cast<UINT>(std::max({ sizeof(LocalRootSignatureParams::AABB::RootArgument) + sizeof(D3D12_GPU_DESCRIPTOR_HANDLE),sizeof(LocalRootSignatureParams::Plane::RootArgument) + sizeof(D3D12_GPU_DESCRIPTOR_HANDLE) }));
-        ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupTable");
-        //AABB
-        {
-            struct RootArgument {
-                LocalRootSignatureParams::Plane::RootArgument cb;
-                D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
-            } rootArgument;
-            rootArgument.cb.material.color = Color4(1, 1, 0, 1);
-            rootArgument.cb.material.indexOffset = mIndexOffsets[GeometryType::Cube];
-            rootArgument.cb.material.vertexOffset = mVertexOffsets[GeometryType::Cube];
-            rootArgument.gpuHandle = mTextures[0]->getGPUHandle();
-            table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &rootArgument, sizeof(rootArgument)));
-            table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize));
-        }
-        //Plane
-        {
-            struct RootArgument {
-                LocalRootSignatureParams::Plane::RootArgument cb;
-                D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
-            } rootArgument;
-            rootArgument.cb.material.color = Color4(1, 0, 1, 1);
-            rootArgument.cb.material.indexOffset = mIndexOffsets[GeometryType::Plane];
-            rootArgument.cb.material.vertexOffset = mVertexOffsets[GeometryType::Plane];
-            rootArgument.gpuHandle = mTextures[1]->getGPUHandle();
+    //{
+    //    UINT numShaderRecords = 4; //AABB + Plane
+    //    UINT shaderRecordSize = shaderIDSize +
+    //        static_cast<UINT>(std::max({ sizeof(LocalRootSignatureParams::AABB::RootArgument) + sizeof(D3D12_GPU_DESCRIPTOR_HANDLE),sizeof(LocalRootSignatureParams::Plane::RootArgument) + sizeof(D3D12_GPU_DESCRIPTOR_HANDLE) }));
+    //    ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupTable");
+    //    //AABB
+    //    {
+    //        struct RootArgument {
+    //            LocalRootSignatureParams::Plane::RootArgument cb;
+    //            D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+    //        } rootArgument;
+    //        rootArgument.cb.material.color = Color4(1, 1, 0, 1);
+    //        rootArgument.cb.material.indexOffset = mIndexOffsets[GeometryType::Cube];
+    //        rootArgument.cb.material.vertexOffset = mVertexOffsets[GeometryType::Cube];
+    //        rootArgument.gpuHandle = mTextures[0]->getGPUHandle();
+    //        table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &rootArgument, sizeof(rootArgument)));
+    //        table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize, nullptr, 0));
+    //    }
+    //    //Plane
+    //    {
+    //        struct RootArgument {
+    //            LocalRootSignatureParams::Plane::RootArgument cb;
+    //            D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+    //        } rootArgument;
+    //        rootArgument.cb.material.color = Color4(1, 0, 1, 1);
+    //        rootArgument.cb.material.indexOffset = mIndexOffsets[GeometryType::Plane];
+    //        rootArgument.cb.material.vertexOffset = mVertexOffsets[GeometryType::Plane];
+    //        rootArgument.gpuHandle = mTextures[1]->getGPUHandle();
 
-            table.push_back(ShaderRecord(hitGroupPlaneShaderID, shaderIDSize, &rootArgument, sizeof(rootArgument)));
-            table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize));
-        }
-        mHitGroupShaderStrideInBytes = table.getShaderRecordSize();
-        mHitGroupShaderTable = table.getResource();
-    }
+    //        table.push_back(ShaderRecord(hitGroupPlaneShaderID, shaderIDSize, &rootArgument, sizeof(rootArgument)));
+    //        table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize, nullptr, 0));
+    //    }
+    //    mHitGroupShaderStrideInBytes = table.getShaderRecordSize();
+    //    mHitGroupShaderTable = table.getResource();
+    //}
 }
 
 void MainApp::updateForSizeChange(UINT clientWidth, UINT clientHeight) { }

@@ -103,74 +103,59 @@ namespace Framework::DX {
 
         dxrInterface->createStateObject(raytracingPipeline);
 
-        //ComPtr<ID3D12StateObjectProperties> props;
-        //dxrInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props));
-        //UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-        //ID3D12Device* device = dxrInterface->getDXRDevice();
-        //{
-        //    UINT numShaderRecords = 1;
-        //    UINT shaderRecordSize = shaderIDSize;
-        //    if (shaderData.rayGenShader.local.useLocal)
-        //        shaderRecordSize += shaderData.rayGenShader.local.LocalRootSignatureDataSize;
+        ComPtr<ID3D12StateObjectProperties> props;
+        dxrInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props));
+        UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+        ID3D12Device* device = dxrInterface->getDXRDevice();
+        {
+            UINT numShaderRecords = 1;
+            UINT shaderRecordSize = shaderIDSize;
+            if (shaderData.rayGenShader.local.useLocal)
+                shaderRecordSize += shaderData.rayGenShader.local.LocalRootSignatureDataSize;
 
-        //    void* rayGenShaderID = props->GetShaderIdentifier(shaderData.rayGenShader.name.c_str());
-        //    ShaderTable table(device, numShaderRecords, shaderRecordSize, L"RayGenShaderTable");
-        //    table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize));
-        //    mRayGenShaderTable = table.getResource();
-        //}
-        //{
-        //    UINT numShaderRecords = shaderData.missShaders.size();
-        //    //シェーダーレコードの大きさは一定なので最大値に合わせる必要がある
-        //    UINT shaderRecordSize = shaderIDSize;
-        //    for (UINT i = 0; i < numShaderRecords; i++) {
-        //        if (shaderData.missShaders[i].local.useLocal) {
-        //            shaderRecordSize = Math::MathUtil::mymax(shaderIDSize + shaderData.missShaders[i].local.LocalRootSignatureDataSize, shaderRecordSize);
-        //        }
-        //    }
-        //    ShaderTable table(device, numShaderRecords, shaderRecordSize, L"MissShaderTable");
-        //    for (UINT i = 0; i < numShaderRecords; i++) {
-        //        const MissShader& miss = shaderData.missShaders[i];
-        //        void* id = props->GetShaderIdentifier(miss.name.c_str());
-        //        if (miss.local.useLocal) {
-        //            table.push_back(ShaderRecord(id, shaderIDSize, miss.local.LocalRootSignatureData, miss.local.LocalRootSignatureDataSize));
-        //        }
-        //        else {
-        //            table.push_back(ShaderRecord(id, shaderIDSize));
-        //        }
-        //    }
-        //    mMissShaderStrideInBytes = table.getShaderRecordSize();
-        //    mMissShaderTable = table.getResource();
-        //}
+            void* rayGenShaderID = props->GetShaderIdentifier(shaderData.rayGenShader.name.c_str());
+            ShaderTable table(device, numShaderRecords, shaderRecordSize, L"RayGenShaderTable");
+            table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize, shaderData.rayGenShader.local.LocalRootSignatureData, shaderData.rayGenShader.local.LocalRootSignatureDataSize));
+            mRayGenShaderTable = table.getResource();
+        }
+        {
+            UINT numShaderRecords = shaderData.missShaders.size();
+            //シェーダーレコードの大きさは一定なので最大値に合わせる必要がある
+            UINT shaderRecordSize = shaderIDSize;
+            for (UINT i = 0; i < numShaderRecords; i++) {
+                shaderRecordSize = Math::MathUtil::mymax(shaderIDSize + shaderData.missShaders[i].local.LocalRootSignatureDataSize, shaderRecordSize);
+            }
+            ShaderTable table(device, numShaderRecords, shaderRecordSize, L"MissShaderTable");
+            for (UINT i = 0; i < numShaderRecords; i++) {
+                const MissShader& miss = shaderData.missShaders[i];
+                void* id = props->GetShaderIdentifier(miss.name.c_str());
+                table.push_back(ShaderRecord(id, shaderIDSize, miss.local.LocalRootSignatureData, miss.local.LocalRootSignatureDataSize));
+            }
+            mMissShaderStrideInBytes = table.getShaderRecordSize();
+            mMissShaderTable = table.getResource();
+        }
 
-        //{
-        //    UINT numShaderRecords = shaderData.hitGroupOrder.order.size();
-        //    UINT shaderRecordSize = shaderIDSize;
-        //    for (auto&& hit : shaderData.hitGroups) {
-        //        if (hit.local.useLocal)
-        //            shaderRecordSize = Math::MathUtil::mymax(shaderIDSize + hit.local.LocalRootSignatureDataSize, shaderRecordSize);
-        //    }
+        {
+            UINT numShaderRecords = shaderData.hitGroupOrder.order.size();
+            UINT shaderRecordSize = shaderIDSize;
+            for (auto&& hit : shaderData.hitGroups) {
+                shaderRecordSize = Math::MathUtil::mymax(shaderIDSize + hit.local.LocalRootSignatureDataSize, shaderRecordSize);
+            }
+            auto getHitGroupByName = [](const std::wstring& name, const std::vector<HitGroupShader>& hitGroups) {
+                return *std::find_if(hitGroups.begin(), hitGroups.end(),
+                    [&](auto& hit) {return hit.name == name; });
+            };
 
-        //    auto getHitGroupByName = [](const std::wstring& name, const std::vector<HitGroupShader>& hitGroups) {
-        //        return *std::find_if(hitGroups.begin(), hitGroups.end(),
-        //            [&](auto& hit) {return hit.name == name; });
-        //    };
-
-        //    ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupShaderTable");
-        //    for (UINT i = 0; i < numShaderRecords; i++) {
-        //        const HitGroupShader& hit = getHitGroupByName(shaderData.hitGroupOrder.order[i], shaderData.hitGroups);
-        //        void* id = props->GetShaderIdentifier(hit.name.c_str());
-        //        if (hit.local.useLocal) {
-        //            table.push_back(ShaderRecord(id, shaderIDSize, hit.local.LocalRootSignatureData, hit.local.LocalRootSignatureDataSize));
-        //        }
-        //        else {
-        //            table.push_back(ShaderRecord(id, shaderIDSize));
-        //        }
-        //    }
-        //    mHitGroupShaderStrideInBytes = table.getShaderRecordSize();
-        //    mHitGroupShaderTable = table.getResource();
-        //}
+            ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupShaderTable");
+            for (UINT i = 0; i < numShaderRecords; i++) {
+                const HitGroupShader& hit = getHitGroupByName(shaderData.hitGroupOrder.order[i], shaderData.hitGroups);
+                void* id = props->GetShaderIdentifier(hit.name.c_str());
+                table.push_back(ShaderRecord(id, shaderIDSize, hit.local.LocalRootSignatureData, hit.local.LocalRootSignatureDataSize));
+            }
+            mHitGroupShaderStrideInBytes = table.getShaderRecordSize();
+            mHitGroupShaderTable = table.getResource();
+        }
     }
-
     RaytracingShader::~RaytracingShader() { }
 
     void RaytracingShader::doRaytracing(ID3D12GraphicsCommandList5* list, ID3D12StateObject* state, UINT width, UINT height) {
