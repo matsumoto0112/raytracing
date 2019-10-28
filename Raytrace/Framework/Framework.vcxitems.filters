@@ -63,6 +63,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Texture2D.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Color4.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\RaytracingShader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -105,5 +106,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\Texture2D.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Color4.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\RaytracingShader.cpp" />
   </ItemGroup>
 </Project>
