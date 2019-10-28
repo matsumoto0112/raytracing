@@ -73,7 +73,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\FBXLoader.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\Util\Path.cpp" />
     <ClCompile Include="Source\stdafx.cpp">
@@ -85,7 +84,6 @@
     <ClInclude Include="Assets\Shader\RaytracingDefine.h" />
     <ClInclude Include="Assets\Shader\RaytracingStructure.h" />
     <ClInclude Include="Assets\Shader\RaytracingTypedef.h" />
-    <ClInclude Include="Source\FBXLoader.h" />
     <ClInclude Include="Source\Util\Path.h" />
     <ClInclude Include="Source\stdafx.h" />
     <ClInclude Include="Source\targetvar.h" />

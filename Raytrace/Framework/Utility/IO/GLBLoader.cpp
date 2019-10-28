@@ -1,6 +1,11 @@
 #include "GLBLoader.h"
 #include <fstream>
+#ifndef STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#endif // !STB_IMAGE_IMPLEMENTATION
 #include "Libs/stb/stb_image.h"
+
+#include "Utility/StringUtil.h"
 
 using namespace Microsoft::glTF;
 
@@ -41,6 +46,7 @@ namespace Framework::Utility {
     std::vector<TextureData> GLBLoader::getImageDatas() const {
         std::vector<TextureData> result;
         for (auto&& image : mDocument.images.Elements()) {
+            MY_DEBUG_LOG(toWString(image.name) + L"\n");
             TextureData tex;
             tex.textureSizePerPixel = 4;
             std::vector<BYTE> texRowData = mResourceReader->ReadBinaryData(mDocument, image);

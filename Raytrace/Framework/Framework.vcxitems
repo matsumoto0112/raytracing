@@ -23,6 +23,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\IDeviceState.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\RaytracingHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\RootSignature.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\Texture2D.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\Button.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)ImGui\Item\CallBackItem.h" />
@@ -81,6 +82,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DXRInterface.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\RootSignature.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\Texture2D.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\Button.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\Item\FloatField.cpp" />

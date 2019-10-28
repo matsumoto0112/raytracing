@@ -6,6 +6,7 @@
 #include <GLTFSDK/Deserialize.h>
 #include "Framework/Math/Vector2.h"
 #include "Framework/Math/Vector3.h"
+#include "DX/Texture2D.h"
 
 namespace Framework::Utility {
     enum class AlphaMode {
@@ -13,13 +14,7 @@ namespace Framework::Utility {
         Blend,
         Mask,
     };
-
-    struct TextureData {
-        std::vector<BYTE> data;
-        UINT width;
-        UINT height;
-        UINT textureSizePerPixel;
-    };
+    using TextureData = DX::TextureData;
 
     struct Material {
         std::string name;

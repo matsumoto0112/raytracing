@@ -26,5 +26,3 @@
 #include <dxgi1_6.h>
 #include "Framework/Libs/d3dx12.h"
 #include <DirectXMath.h>
-
-#include <fbxsdk.h>

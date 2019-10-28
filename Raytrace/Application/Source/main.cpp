@@ -8,7 +8,6 @@
 #include "Framework/DX/DXHelper.h"
 #include "Framework/Utility/Debug.h"
 #include "Framework/ImGui/ImGuiManager.h"
-#include "FBXLoader.h"
 #include "../Assets/Shader/RaytracingStructure.h"
 #include "Utility/GPUTimer.h"
 #include "Utility/StringUtil.h"
@@ -21,11 +20,10 @@
 #include "Utility/IO/GLBLoader.h"
 #include "Math/MathUtility.h"
 #include "Utility/StringUtil.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "Libs/stb/stb_image.h"
 #include "Math/Quaternion.h"
 #include "DX/RootSignature.h"
 #include "DX/DescriptorTable.h"
+#include "DX/Texture2D.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
@@ -47,7 +45,6 @@ namespace GlobalRootSignatureParameter {
         AccelerationStructureSlot,
         VertexBuffers,
         ConstantBuffer,
-        //Texture,
         Count
     };
 } //GlobalRootSignatureParameter 
@@ -60,7 +57,7 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT CUBE_COUNT = 100;
+static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 static const std::wstring MODEL_NAME = L"sphere.glb";
@@ -207,8 +204,9 @@ private:
 
     std::unique_ptr<DescriptorTable> mDescriptoaTable;
 
-    D3DBuffer mTextureResource;
-    D3DBuffer mPlaneTextureResource;
+    std::vector<std::unique_ptr<Framework::DX::Texture2D>> mTextures;
+    //D3DBuffer mTextureResource;
+    //D3DBuffer mPlaneTextureResource;
 
     /**
     * @brief カメラ行列の更新
@@ -503,92 +501,19 @@ void MainApp::createDeviceDependentResources() {
     //テクスチャの作成 
     {
         {
+            mTextures.resize(2);
             Framework::Utility::GLBLoader glbLoader(
                 Framework::Utility::toString(Path::getInstance()->model() + MODEL_NAME));
             Framework::Utility::TextureData texRowData = glbLoader.getImageDatas()[0];
-            CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-                DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, texRowData.width, texRowData.height, 2);
-
-            D3D12_HEAP_PROPERTIES heapProp = {};
-            heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
-            heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-            heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
-            heapProp.VisibleNodeMask = 1;
-            heapProp.CreationNodeMask = 1;
-
             ID3D12Device* device = mDeviceResource->getDevice();
-            Framework::Utility::throwIfFailed(device->CreateCommittedResource(
-                &heapProp,
-                D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-                &texDesc,
-                D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
-                nullptr,
-                IID_PPV_ARGS(&mTextureResource.resource)));
-
-            D3D12_BOX box = { 0,0,0,(UINT)texRowData.width ,(UINT)texRowData.height,1 };
-
-            UINT row = texRowData.width * texRowData.textureSizePerPixel;
-            UINT slice = row * texRowData.height;
-            Framework::Utility::throwIfFailed(mTextureResource.resource->WriteToSubresource(
-                0,
-                &box,
-                texRowData.data.data(), row, slice));
-
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            srvDesc.Format = texDesc.Format;
-            srvDesc.Texture2D.MipLevels = 1;
-            srvDesc.Texture2D.MostDetailedMip = 0;
-            srvDesc.Texture2D.PlaneSlice = 0;
-            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-
-            UINT index = mDescriptoaTable->allocateWithGPU(&mTextureResource.cpuHandle, &mTextureResource.gpuHandle);
-            device->CreateShaderResourceView(mTextureResource.resource.Get(), &srvDesc, mTextureResource.cpuHandle);
+            mTextures[0] = std::make_unique<Framework::DX::Texture2D>(device, mDescriptoaTable.get(), texRowData);
         }
         {
             Framework::Utility::GLBLoader glbLoader(
                 Framework::Utility::toString(Path::getInstance()->model() + MODEL_PLANE_NAME));
             Framework::Utility::TextureData texRowData = glbLoader.getImageDatas()[0];
-            CD3DX12_RESOURCE_DESC texDesc = CD3DX12_RESOURCE_DESC::Tex2D(
-                DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, texRowData.width, texRowData.height, 1);
-
-            D3D12_HEAP_PROPERTIES heapProp = {};
-            heapProp.Type = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_CUSTOM;
-            heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
-            heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_L0;
-            heapProp.VisibleNodeMask = 1;
-            heapProp.CreationNodeMask = 1;
-
             ID3D12Device* device = mDeviceResource->getDevice();
-            Framework::Utility::throwIfFailed(device->CreateCommittedResource(
-                &heapProp,
-                D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
-                &texDesc,
-                D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
-                nullptr,
-                IID_PPV_ARGS(&mPlaneTextureResource.resource)));
-
-            D3D12_BOX box = { 0,0,0,(UINT)texRowData.width ,(UINT)texRowData.height,1 };
-
-            UINT row = texRowData.width * texRowData.textureSizePerPixel;
-            UINT slice = row * texRowData.height;
-            Framework::Utility::throwIfFailed(mPlaneTextureResource.resource->WriteToSubresource(
-                0,
-                &box,
-                texRowData.data.data(), row, slice));
-
-            D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-            srvDesc.ViewDimension = D3D12_SRV_DIMENSION::D3D12_SRV_DIMENSION_TEXTURE2D;
-            srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            srvDesc.Format = texDesc.Format;
-            srvDesc.Texture2D.MipLevels = 1;
-            srvDesc.Texture2D.MostDetailedMip = 0;
-            srvDesc.Texture2D.PlaneSlice = 0;
-            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-
-            UINT index = mDescriptoaTable->allocateWithGPU(&mPlaneTextureResource.cpuHandle, &mPlaneTextureResource.gpuHandle);
-            device->CreateShaderResourceView(mPlaneTextureResource.resource.Get(), &srvDesc, mPlaneTextureResource.cpuHandle);
+            mTextures[1] = std::make_unique<Framework::DX::Texture2D>(device, mDescriptoaTable.get(), texRowData);
         }
 
         //シェーダーテーブル作成
@@ -625,7 +550,6 @@ void MainApp::releaseDeviceDependentResources() {
 }
 
 void MainApp::releaseWindowSizeDependentResources() {
-    //mRaytracingOutput.Reset();
     mRaytracingOutput.resource.Reset();
     mRayGenShaderTable.Reset();
     mHitGroupShaderTable.Reset();
@@ -1110,7 +1034,7 @@ void MainApp::buildShaderTables() {
             rootArgument.cb.material.color = XMFLOAT4(1, 1, 0, 1);
             rootArgument.cb.material.indexOffset = mIndexOffsets[GeometryType::Cube];
             rootArgument.cb.material.vertexOffset = mVertexOffsets[GeometryType::Cube];
-            rootArgument.gpuHandle = mTextureResource.gpuHandle;
+            rootArgument.gpuHandle = mTextures[0]->getGPUHandle();
             table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &rootArgument, sizeof(rootArgument)));
             table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize));
         }
@@ -1123,7 +1047,7 @@ void MainApp::buildShaderTables() {
             rootArgument.cb.material.color = XMFLOAT4(1, 0, 1, 1);
             rootArgument.cb.material.indexOffset = mIndexOffsets[GeometryType::Plane];
             rootArgument.cb.material.vertexOffset = mVertexOffsets[GeometryType::Plane];
-            rootArgument.gpuHandle = mPlaneTextureResource.gpuHandle;
+            rootArgument.gpuHandle = mTextures[1]->getGPUHandle();
 
             table.push_back(ShaderRecord(hitGroupPlaneShaderID, shaderIDSize, &rootArgument, sizeof(rootArgument)));
             table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize));
@@ -1172,12 +1096,12 @@ void MainApp::calcFrameStatus() {
 
     //SetWindowText(mWindow->getHwnd(), Framework::Utility::StringBuilder(L"FPS:") << mTimer.getFPS());
 
-    mRotation += 0.5;
-    const float RANGE = 100.0f;
-    const float x = Framework::Math::MathUtil::sin(mRotation) * RANGE;
-    const float z = Framework::Math::MathUtil::cos(mRotation) * RANGE;
-    mLightPosition.x = x;
-    mLightPosition.z = z;
+    //mRotation += 0.05;
+    //const float RANGE = 100.0f;
+    //const float x = Framework::Math::MathUtil::sin(mRotation) * RANGE;
+    //const float z = Framework::Math::MathUtil::cos(mRotation) * RANGE;
+    //mLightPosition.x = x;
+    //mLightPosition.z = z;
 }
 
 UINT MainApp::createBufferSRV(D3DBuffer* buffer, UINT numElements, UINT elementSize) {
@@ -1225,5 +1149,5 @@ void MainApp::updateTLAS() {
     mDeviceResource->executeCommandList();
     mDeviceResource->waitForGPU();
 
-    //mTopLevelAS = tlasBuffer.accelerationStructure;
+    mTopLevelAS = tlasBuffer.accelerationStructure;
 }

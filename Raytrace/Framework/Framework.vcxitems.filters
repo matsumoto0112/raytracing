@@ -61,6 +61,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Libs\stb\stb_image.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\RootSignature.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\Texture2D.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -101,5 +102,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\IO\GLBLoader.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\RootSignature.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\Texture2D.cpp" />
   </ItemGroup>
 </Project>
