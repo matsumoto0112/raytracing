@@ -50,12 +50,12 @@ void MyRaygenShader() {
 }
 
 //ランバート反射の色を求める
-inline float3 lambertColor(float3 N, float3 L, float4 diffuse) {
+inline float3 lambertColor(float3 N, float3 L, float3 diffuse) {
     float dotNL = max(0.0, dot(N, L));
     return diffuse.rgb * dotNL * (1.0 / PI);
 }
 
-inline float3 specular(float3 N, float3 L, float4 spec) {
+inline float3 specular(float3 N, float3 L, float3 spec) {
     float dotNL = max(0.0, dot(N, L));
     return spec.rgb *pow(dotNL, 10);
 }
@@ -74,7 +74,7 @@ inline bool castShadow(Ray ray) {
     RayDesc rayDesc;
     rayDesc.Origin = ray.origin;
     rayDesc.Direction = ray.direction;
-    rayDesc.TMin = 0.1f;
+    rayDesc.TMin = 0.01f;
     rayDesc.TMax = 10000.0;
     ShadowPayload shadowPayload = { true };
 
@@ -146,11 +146,11 @@ void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
     float4 color = float4(0, 0, 0, 0);
     float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
     float4 texColor = tex.SampleLevel(samLinear, uv, 0.0);
-    texColor = float4(1, 0, 0, 1);
+    //texColor = float4(1, 1, 1, 1);
     //ランバート
-    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse * texColor);
+    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse.rgb * texColor.rgb);
 
-    color.rgb += specular(N, L, float4(1, 1, 1, 1));
+    color.rgb += specular(N, L, float3(1, 1, 1));
 
     //アンビエント
     color.rgb += g_sceneCB.lightAmbient.rgb;
@@ -175,18 +175,18 @@ void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     float3 worldPos = hitWorldPosition();
 
     //影用のレイキャスト
-    Ray shadowRay = { worldPos, normalize(g_sceneCB.lightPosition.xyz - worldPos) };
+    float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
+    Ray shadowRay = { worldPos, L };
     bool shadow = castShadow(shadowRay);
 
     float3 N = getNormal(attr, l_material.vertexOffset, l_material.indexOffset);
-    float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
 
     float4 color = float4(0, 0, 0, 0);
     float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
     float4 texColor = tex.SampleLevel(samLinear, uv, 0.0);
 
      //ランバート
-    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse * texColor);
+    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse.rgb * texColor.rgb);
     //アンビエント
     color.rgb += g_sceneCB.lightAmbient.rgb;
     ////フォグの適用

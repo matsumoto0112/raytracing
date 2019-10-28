@@ -153,9 +153,9 @@ private:
     std::unique_ptr<Framework::DX::RootSignature> mLocalRootSignatures[LocalRootSignatureParams::Type::Count]; //!< ローカルルートシグネチャ
 
     ConstantBuffer<SceneConstantBuffer> mSceneCB;
-    XMFLOAT3 mCameraPosition;
+    Vector4 mCameraPosition;
     XMFLOAT3 mCameraRotation;
-    XMFLOAT3 mLightPosition;
+    Vector4 mLightPosition;
 
     float mRotation;
 
@@ -205,8 +205,6 @@ private:
     std::unique_ptr<DescriptorTable> mDescriptoaTable;
 
     std::vector<std::unique_ptr<Framework::DX::Texture2D>> mTextures;
-    //D3DBuffer mTextureResource;
-    //D3DBuffer mPlaneTextureResource;
 
     /**
     * @brief カメラ行列の更新
@@ -350,7 +348,7 @@ const wchar_t* MainApp::HIT_GROUP_PLANE_NAME = L"MyHitGroup_Plane";
 const wchar_t* MainApp::HIT_GROUP_SHADER_NAME = L"MyHitGroup_Shadow";
 
 void MainApp::updateCameraMatrices() {
-    mSceneCB->cameraPosition = XMLoadFloat3(&mCameraPosition);
+    mSceneCB->cameraPosition = mCameraPosition;
     XMMATRIX rot = XMMatrixRotationRollPitchYaw(mCameraRotation.x, mCameraRotation.y, mCameraRotation.z);
     XMMATRIX trans = XMMatrixTranslation(mCameraPosition.x, mCameraPosition.y, mCameraPosition.z);
     XMMATRIX view = XMMatrixInverse(nullptr, rot * trans);
@@ -365,13 +363,13 @@ void MainApp::updateCameraMatrices() {
     XMMATRIX vp = view * proj;
     mSceneCB->projectionToWorld = XMMatrixInverse(nullptr, vp);
 
-    mSceneCB->lightPosition = XMLoadFloat3(&mLightPosition);
+    mSceneCB->lightPosition = mLightPosition;
 }
 
 void MainApp::initializeScene() {
     //mCameraPosition = { 0,3.0f,-30.0f };
     //mCameraRotation = { 0,0,0 };
-    mCameraPosition = { 0,100,-200 };
+    mCameraPosition = Vector4(0, 100, -200, 1);
     //mCameraRotation = 
     mCameraRotation = { 0.61f,0,0 };
     mLightPosition = { 20,40,-70 };
@@ -404,8 +402,8 @@ void MainApp::initializeScene() {
     PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
 #pragma warning(pop)
 
-    mSceneCB->lightAmbient = { 0.3f,0.3f,0.3f,1.0f };
-    mSceneCB->lightDiffuse = { 1.0f,1.0f,1.0f,1.0f };
+    mSceneCB->lightAmbient = Color4(0.3f, 0.3f, 0.3f, 1.0f);
+    mSceneCB->lightDiffuse = Color4(0, 0, 1, 1.0f);
     mSceneCB->fogStart = 500.0f;
     mSceneCB->fogEnd = 1000.0f;
     int w = Framework::Math::MathUtil::sqrt(CUBE_COUNT) + 1;
@@ -771,9 +769,9 @@ void MainApp::buildCubeGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer)
     std::vector<Vertex> vertices(positions.size());
     for (size_t i = 0; i < vertices.size(); i++) {
         const float scale = 1;
-        vertices[i].position = XMFLOAT3{ positions[i].x * scale,positions[i].y* scale,positions[i].z * scale };
-        vertices[i].normal = XMFLOAT3{ normals[i].x,normals[i].y,normals[i].z };
-        vertices[i].uv = XMFLOAT2{ uvs[i].x,uvs[i].y };
+        vertices[i].position = Vector3{ positions[i].x * scale,positions[i].y* scale,positions[i].z * scale };
+        vertices[i].normal = Vector3{ normals[i].x,normals[i].y,normals[i].z };
+        vertices[i].uv = Vector2{ uvs[i].x,uvs[i].y };
     }
 
     const UINT indexCount = indices.size();
@@ -802,9 +800,9 @@ void MainApp::buildPlaneGeometry(D3DBuffer* indexBuffer, D3DBuffer* vertexBuffer
     std::vector<Vertex> vertices(positions.size());
     for (size_t i = 0; i < vertices.size(); i++) {
         const float scale = 1;
-        vertices[i].position = XMFLOAT3{ positions[i].x * scale,positions[i].y* scale,positions[i].z * scale };
-        vertices[i].normal = XMFLOAT3{ normals[i].x,normals[i].y,normals[i].z };
-        vertices[i].uv = XMFLOAT2{ uvs[i].x,uvs[i].y };
+        vertices[i].position = Vector3{ positions[i].x * scale,positions[i].y* scale,positions[i].z * scale };
+        vertices[i].normal = Vector3{ normals[i].x,normals[i].y,normals[i].z };
+        vertices[i].uv = Vector2{ uvs[i].x,uvs[i].y };
     }
 
     const UINT indexCount = indices.size();
@@ -1031,7 +1029,7 @@ void MainApp::buildShaderTables() {
                 LocalRootSignatureParams::Plane::RootArgument cb;
                 D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
             } rootArgument;
-            rootArgument.cb.material.color = XMFLOAT4(1, 1, 0, 1);
+            rootArgument.cb.material.color = Color4(1, 1, 0, 1);
             rootArgument.cb.material.indexOffset = mIndexOffsets[GeometryType::Cube];
             rootArgument.cb.material.vertexOffset = mVertexOffsets[GeometryType::Cube];
             rootArgument.gpuHandle = mTextures[0]->getGPUHandle();
@@ -1044,7 +1042,7 @@ void MainApp::buildShaderTables() {
                 LocalRootSignatureParams::Plane::RootArgument cb;
                 D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
             } rootArgument;
-            rootArgument.cb.material.color = XMFLOAT4(1, 0, 1, 1);
+            rootArgument.cb.material.color = Color4(1, 0, 1, 1);
             rootArgument.cb.material.indexOffset = mIndexOffsets[GeometryType::Plane];
             rootArgument.cb.material.vertexOffset = mVertexOffsets[GeometryType::Plane];
             rootArgument.gpuHandle = mTextures[1]->getGPUHandle();

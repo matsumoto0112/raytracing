@@ -17,11 +17,18 @@
 #include "RaytracingTypedef.h"
 #include "RaytracingDefine.h"
 #else
+#include "Framework/Math/Vector2.h"
+#include "Framework/Math/Vector3.h"
+#include "Framework/Math/Vector4.h"
+#include "Framework/Utility/Color4.h"
 //cppファイルの方ならDirectXMathを利用する
 using namespace DirectX;
+using Framework::Math::Vector2;
+using Framework::Math::Vector3;
+using Framework::Math::Vector4;
+using Framework::Utility::Color4;
 //インデックスは16bitにする
 typedef UINT16 Index;
-typedef std::vector<BYTE> Texture2D;
 #endif
 
 /**
@@ -29,10 +36,10 @@ typedef std::vector<BYTE> Texture2D;
 */
 struct SceneConstantBuffer {
     XMMATRIX projectionToWorld;
-    XMVECTOR cameraPosition;
-    XMVECTOR lightPosition;
-    XMVECTOR lightAmbient;
-    XMVECTOR lightDiffuse;
+    Color4 lightAmbient;
+    Color4 lightDiffuse;
+    Vector4 lightPosition;
+    Vector4 cameraPosition;
     float fogStart;
     float fogEnd;
 };
@@ -41,23 +48,16 @@ struct SceneConstantBuffer {
 * @brief 頂点情報
 */
 struct Vertex {
-    XMFLOAT3 position;
-    XMFLOAT3 normal;
-    XMFLOAT2 uv;
+    Vector3 position;
+    Vector3 normal;
+    Vector2 uv;
 };
-
-//struct TextureVertex {
-//    XMFLOAT3 position;
-//    XMFLOAT3 normal;
-//    XMFLOAT2 uv;
-//};
-
 
 /**
 * @brief レイの当たった時につかうデータ
 */
 struct RayPayload {
-    XMFLOAT4 color;
+    Color4 color;
     UINT recursion;
 };
 
@@ -70,7 +70,7 @@ struct ShadowPayload {
 
 
 struct MaterialConstantBuffer {
-    XMFLOAT4 color;
+    Color4 color;
     UINT indexOffset;
     UINT vertexOffset;
 };

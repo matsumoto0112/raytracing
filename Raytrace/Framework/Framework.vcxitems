@@ -57,6 +57,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector3.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Math\Vector4.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Scene\SceneBase.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Color4.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Debug.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DXHelper.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.h" />
@@ -104,6 +105,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Math\Vector4.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Scene\SceneBase.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Color4.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Debug.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\GPUTimer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\IO\GLBLoader.cpp" />
