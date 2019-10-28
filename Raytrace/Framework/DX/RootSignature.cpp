@@ -40,6 +40,10 @@ namespace Framework::DX {
             return visibilityTypes[visibility];
         };
 
+        constexpr auto getRootSignatureFlags = [](RootSignatureFlag::Enum flags) {
+            return static_cast<D3D12_ROOT_SIGNATURE_FLAGS>(flags);
+        };
+
         //コンスタントバッファのバッファのアラインメント
         constexpr auto align = [](UINT bufferSize) -> UINT {
             return  ((bufferSize - 1) / sizeof(UINT32) + 1);
@@ -94,6 +98,7 @@ namespace Framework::DX {
         }
 
         CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(paramNum, params.data(), samplerNum, samplers.data());
+        rootSignatureDesc.Flags = getRootSignatureFlags(desc.flags);
 
         ComPtr<ID3DBlob> blob, error;
         Framework::Utility::throwIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION::D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error), L"ルートシグネチャ作成失敗");

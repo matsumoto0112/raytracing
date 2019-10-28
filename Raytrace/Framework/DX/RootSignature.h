@@ -51,6 +51,13 @@ namespace Framework::DX {
         };
     } //DescriptorRangeType 
 
+    namespace RootSignatureFlag {
+        enum Enum {
+            GlobalRootSignature = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_NONE,
+            LocalRootSignature = D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE,
+        };
+    } //RootSignatureType 
+
     /**
     * @brief ディスクリプタレンジ
     */
@@ -112,7 +119,7 @@ namespace Framework::DX {
         */
         ConstantsDesc()
             :bufferSize(0) { }
-        
+
         /**
         * @brief コンストラクタ
         * @tparam T 使用するコンスタントバッファの型
@@ -133,10 +140,16 @@ namespace Framework::DX {
     */
     struct RootSignatureDesc {
         std::wstring name = L"";
+        RootSignatureFlag::Enum flags = RootSignatureFlag::GlobalRootSignature;
         std::vector<DescriptorRange>* pRanges = nullptr;
         std::vector<ConstantsDesc>* pConstants = nullptr;
         std::vector<RootParameterDesc>* pParams = nullptr;
         std::vector<StaticSampler>* pStaticSamplers = nullptr;
+
+        RootSignatureDesc(RootSignatureFlag::Enum flags, std::vector<DescriptorRange>* ranges,
+            std::vector<ConstantsDesc>* constants, std::vector<RootParameterDesc>* params,
+            std::vector<StaticSampler>* samplers, const std::wstring& name = L"")
+            :name(name), flags(flags), pRanges(ranges), pConstants(constants), pParams(params), pStaticSamplers(samplers) { }
     };
 
 

@@ -83,7 +83,6 @@ namespace LocalRootSignatureParams {
     namespace Type {
         enum MyEnum {
             AABB,
-            Triangle,
             Plane,
             Count
         };

@@ -61,7 +61,7 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT CUBE_COUNT = 1;
+static constexpr UINT CUBE_COUNT = 10000;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 static const std::wstring MODEL_NAME = L"sphere.glb";
@@ -155,9 +155,8 @@ private:
     //DXRオブジェクト
     std::unique_ptr<Framework::DX::DXRInterface> mDXRInterface;
 
-    //ComPtr<ID3D12RootSignature> mRaytracingGlobalRootSignature; //!< グローバルルートシグネチャ
     std::unique_ptr<Framework::DX::RootSignature> mGlobalRootSignature; //!< グローバルルートシグネチャ
-    ComPtr<ID3D12RootSignature> mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Count]; //!< ローカルルートシグネチャ
+    std::unique_ptr<Framework::DX::RootSignature> mLocalRootSignatures[LocalRootSignatureParams::Type::Count]; //!< ローカルルートシグネチャ
 
     //ディスクリプタヒープ
     ComPtr<ID3D12DescriptorHeap> mDescriptorHeap;
@@ -348,7 +347,7 @@ private:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     setlocale(LC_ALL, "");
-    MainApp app(1280, 720, L"Game");
+    MainApp app(1920, 1080, L"Game");
     return app.run(hInstance, nCmdShow);
 }
 
@@ -671,58 +670,56 @@ void MainApp::createRootSignatures() {
     //まずはグローバルルートシグネチャを作成する
     {
         using namespace Framework::DX;
-        RootSignatureDesc desc;
-        desc.name = L"GlobalRootSignature";
-        std::vector<DescriptorRange> pRanges(2);
-        pRanges[0].init(DescriptorRangeType::UAV, 1, 0);
-        pRanges[1].init(DescriptorRangeType::SRV, 2, 1);
-        desc.pRanges = &pRanges;
+        std::vector<DescriptorRange> ranges(2);
+        ranges[0].init(DescriptorRangeType::UAV, 1, 0);
+        ranges[1].init(DescriptorRangeType::SRV, 2, 1);
 
-        std::vector<RootParameterDesc> pParams(GlobalRootSignatureParameter::Count);
-        pParams[GlobalRootSignatureParameter::RenderTarget].initAsDescriptor();
-        pParams[GlobalRootSignatureParameter::AccelerationStructureSlot].init(RootParameterType::SRV, 0);
-        pParams[GlobalRootSignatureParameter::VertexBuffers].initAsDescriptor();
-        pParams[GlobalRootSignatureParameter::ConstantBuffer].init(RootParameterType::CBV, 0);
-        desc.pParams = &pParams;
-        desc.pConstants = nullptr;
+        std::vector<RootParameterDesc> params(GlobalRootSignatureParameter::Count);
+        params[GlobalRootSignatureParameter::RenderTarget].initAsDescriptor();
+        params[GlobalRootSignatureParameter::AccelerationStructureSlot].init(RootParameterType::SRV, 0);
+        params[GlobalRootSignatureParameter::VertexBuffers].initAsDescriptor();
+        params[GlobalRootSignatureParameter::ConstantBuffer].init(RootParameterType::CBV, 0);
 
         std::vector<StaticSampler> sampler(1);
         sampler[0].filter = D3D12_FILTER::D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-        desc.pStaticSamplers = &sampler;
 
+        RootSignatureDesc desc(RootSignatureFlag::GlobalRootSignature, &ranges, nullptr, &params, &sampler, L"GlobalRootSignature");
         mGlobalRootSignature = std::make_unique<RootSignature>(device, desc);
 
     }
     //ローカルルートシグネチャを作成する
     {
-#define SizeOfInUint32(obj) ((sizeof(obj) - 1) / sizeof(UINT32) + 1)
         //AABB ローカルルートシグネチャ
         {
-            CD3DX12_DESCRIPTOR_RANGE range[1];
-            range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
+            using namespace Framework::DX;
+            std::vector<DescriptorRange> range(1);
+            range[0].init(DescriptorRangeType::SRV, 1, 3);
 
-            CD3DX12_ROOT_PARAMETER pParams[LocalRootSignatureParams::AABB::Count];
-            pParams[LocalRootSignatureParams::AABB::Material].InitAsConstants(SizeOfInUint32(MaterialConstantBuffer), 1);
-            pParams[LocalRootSignatureParams::AABB::Texture].InitAsDescriptorTable(1, &range[0]);
+            std::vector<RootParameterDesc> params(LocalRootSignatureParams::AABB::Count);
+            params[LocalRootSignatureParams::AABB::Material].init(RootParameterType::Constants, 1);
+            params[LocalRootSignatureParams::AABB::Texture].initAsDescriptor();
 
-            CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(pParams), pParams);
-            desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-            serializeAndCreateRaytracingRootSignature(desc, &mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::AABB]);
-            mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::AABB]->SetName(L"AABBLocalRootSignature");
+            std::vector<ConstantsDesc> constants(1);
+            constants[0].bufferSize = sizeof(MaterialConstantBuffer);
+
+            RootSignatureDesc desc(RootSignatureFlag::LocalRootSignature, &range, &constants, &params, nullptr, L"AABBLocalRootSignature");
+            mLocalRootSignatures[LocalRootSignatureParams::Type::AABB] = std::make_unique<RootSignature>(device, desc);
         }
         //Plane
         {
-            CD3DX12_DESCRIPTOR_RANGE range[1];
-            range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
+            using namespace Framework::DX;
+            std::vector<DescriptorRange> range(1);
+            range[0].init(DescriptorRangeType::SRV, 1, 3);
 
-            CD3DX12_ROOT_PARAMETER pParams[LocalRootSignatureParams::Plane::Count];
-            pParams[LocalRootSignatureParams::Plane::Material].InitAsConstants(SizeOfInUint32(MaterialConstantBuffer), 1);
-            pParams[LocalRootSignatureParams::Plane::Texture].InitAsDescriptorTable(1, &range[0]);
+            std::vector<RootParameterDesc> params(LocalRootSignatureParams::Plane::Count);
+            params[LocalRootSignatureParams::Plane::Material].init(RootParameterType::Constants, 1);
+            params[LocalRootSignatureParams::Plane::Texture].initAsDescriptor();
 
-            CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(pParams), pParams);
-            desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
-            serializeAndCreateRaytracingRootSignature(desc, &mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Plane]);
-            mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Plane]->SetName(L"PlaneLocalRootSignature");
+            std::vector<ConstantsDesc> constants(1);
+            constants[0].bufferSize = sizeof(MaterialConstantBuffer);
+
+            RootSignatureDesc desc(RootSignatureFlag::LocalRootSignature, &range, &constants, &params, nullptr, L"PlaneLocalRootSignature");
+            mLocalRootSignatures[LocalRootSignatureParams::Type::Plane] = std::make_unique<RootSignature>(device, desc);
         }
     }
 }
@@ -766,7 +763,8 @@ void MainApp::createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipe
     //AABB
     {
         auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-        local->SetRootSignature(mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::AABB].Get());
+        mLocalRootSignatures[LocalRootSignatureParams::Type::AABB]->setLocalRootSignature(local);
+        //local->SetRootSignature(mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::AABB].Get());
 
         auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
         asso->SetSubobjectToAssociate(*local);
@@ -775,7 +773,8 @@ void MainApp::createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipe
     //Plane
     {
         auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-        local->SetRootSignature(mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Plane].Get());
+        mLocalRootSignatures[LocalRootSignatureParams::Type::Plane]->setLocalRootSignature(local);
+        //local->SetRootSignature(mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Plane].Get());
 
         auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
         asso->SetSubobjectToAssociate(*local);
@@ -1204,7 +1203,12 @@ void MainApp::calcFrameStatus() {
 
     //SetWindowText(mWindow->getHwnd(), Framework::Utility::StringBuilder(L"FPS:") << mTimer.getFPS());
 
-    mRotation += 0.1;
+    mRotation += 0.5;
+    const float RANGE = 100.0f;
+    const float x = Framework::Math::MathUtil::sin(mRotation) * RANGE;
+    const float z = Framework::Math::MathUtil::cos(mRotation) * RANGE;
+    mLightPosition.x = x;
+    mLightPosition.z = z;
 }
 
 UINT MainApp::allocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, UINT descriptorIndexToUse) {
