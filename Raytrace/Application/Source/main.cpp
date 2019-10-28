@@ -627,7 +627,7 @@ void MainApp::createWindowSizeDependentResources() {
 
 void MainApp::releaseDeviceDependentResources() {
     mGPUTimer.releaseDevice();
-    ///mRaytracingGlobalRootSignature.Reset();
+    mGlobalRootSignature->reset();
     mDXRInterface->clear();
 
     mDescriptorHeap.Reset();
@@ -670,48 +670,25 @@ void MainApp::createRootSignatures() {
 
     //まずはグローバルルートシグネチャを作成する
     {
-        //CD3DX12_DESCRIPTOR_RANGE ranges[2];
-        //ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //レンダーターゲット
-        //ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 1); //頂点バッファ
-        ////ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); //テクスチャ
-
-        //CD3DX12_ROOT_PARAMETER param[GlobalRootSignatureParameter::Count];
-        //param[GlobalRootSignatureParameter::RenderTarget].InitAsDescriptorTable(1, &ranges[0]);
-        //param[GlobalRootSignatureParameter::AccelerationStructureSlot].InitAsShaderResourceView(0);
-        //param[GlobalRootSignatureParameter::VertexBuffers].InitAsDescriptorTable(1, &ranges[1]);
-        //param[GlobalRootSignatureParameter::ConstantBuffer].InitAsConstantBufferView(0);
-        ////param[GlobalRootSignatureParameter::Texture].InitAsDescriptorTable(1, &ranges[2]);
-
-        //CD3DX12_STATIC_SAMPLER_DESC samplerDesc(0);
-        //samplerDesc.Filter = D3D12_FILTER::D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
-        //CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(param), param, 1, &samplerDesc);
-
-        //serializeAndCreateRaytracingRootSignature(desc, &mRaytracingGlobalRootSignature);
-        //mRaytracingGlobalRootSignature->SetName(L"GlobalRootSignature");
-
         using namespace Framework::DX;
         RootSignatureDesc desc;
         desc.name = L"GlobalRootSignature";
-        DescriptorRange ranges[2];
-        ranges[0].init(DescriptorRangeType::UAV, 1, 0);
-        ranges[1].init(DescriptorRangeType::SRV, 2, 1);
-        desc.rangeNum = 2;
-        desc.ranges = ranges;
+        std::vector<DescriptorRange> pRanges(2);
+        pRanges[0].init(DescriptorRangeType::UAV, 1, 0);
+        pRanges[1].init(DescriptorRangeType::SRV, 2, 1);
+        desc.pRanges = &pRanges;
 
-        RootParameterDesc params[GlobalRootSignatureParameter::Count];
-        params[GlobalRootSignatureParameter::RenderTarget].init(RootParameterType::DescriptorTable);
-        params[GlobalRootSignatureParameter::AccelerationStructureSlot].init(RootParameterType::SRV, 0);
-        params[GlobalRootSignatureParameter::VertexBuffers].init(RootParameterType::DescriptorTable);
-        params[GlobalRootSignatureParameter::ConstantBuffer].init(RootParameterType::CBV, 0);
-        desc.paramNum = GlobalRootSignatureParameter::Count;
-        desc.params = params;
-        desc.constantsNum = 0;
+        std::vector<RootParameterDesc> pParams(GlobalRootSignatureParameter::Count);
+        pParams[GlobalRootSignatureParameter::RenderTarget].initAsDescriptor();
+        pParams[GlobalRootSignatureParameter::AccelerationStructureSlot].init(RootParameterType::SRV, 0);
+        pParams[GlobalRootSignatureParameter::VertexBuffers].initAsDescriptor();
+        pParams[GlobalRootSignatureParameter::ConstantBuffer].init(RootParameterType::CBV, 0);
+        desc.pParams = &pParams;
+        desc.pConstants = nullptr;
 
-        StaticSampler sampler[1];
+        std::vector<StaticSampler> sampler(1);
         sampler[0].filter = D3D12_FILTER::D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-
-        desc.staticSamplerNum = 1;
-        desc.staticSamplers = sampler;
+        desc.pStaticSamplers = &sampler;
 
         mGlobalRootSignature = std::make_unique<RootSignature>(device, desc);
 
@@ -724,11 +701,11 @@ void MainApp::createRootSignatures() {
             CD3DX12_DESCRIPTOR_RANGE range[1];
             range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
 
-            CD3DX12_ROOT_PARAMETER params[LocalRootSignatureParams::AABB::Count];
-            params[LocalRootSignatureParams::AABB::Material].InitAsConstants(SizeOfInUint32(MaterialConstantBuffer), 1);
-            params[LocalRootSignatureParams::AABB::Texture].InitAsDescriptorTable(1, &range[0]);
+            CD3DX12_ROOT_PARAMETER pParams[LocalRootSignatureParams::AABB::Count];
+            pParams[LocalRootSignatureParams::AABB::Material].InitAsConstants(SizeOfInUint32(MaterialConstantBuffer), 1);
+            pParams[LocalRootSignatureParams::AABB::Texture].InitAsDescriptorTable(1, &range[0]);
 
-            CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(params), params);
+            CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(pParams), pParams);
             desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
             serializeAndCreateRaytracingRootSignature(desc, &mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::AABB]);
             mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::AABB]->SetName(L"AABBLocalRootSignature");
@@ -738,11 +715,11 @@ void MainApp::createRootSignatures() {
             CD3DX12_DESCRIPTOR_RANGE range[1];
             range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
 
-            CD3DX12_ROOT_PARAMETER params[LocalRootSignatureParams::Plane::Count];
-            params[LocalRootSignatureParams::Plane::Material].InitAsConstants(SizeOfInUint32(MaterialConstantBuffer), 1);
-            params[LocalRootSignatureParams::Plane::Texture].InitAsDescriptorTable(1, &range[0]);
+            CD3DX12_ROOT_PARAMETER pParams[LocalRootSignatureParams::Plane::Count];
+            pParams[LocalRootSignatureParams::Plane::Material].InitAsConstants(SizeOfInUint32(MaterialConstantBuffer), 1);
+            pParams[LocalRootSignatureParams::Plane::Texture].InitAsDescriptorTable(1, &range[0]);
 
-            CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(params), params);
+            CD3DX12_ROOT_SIGNATURE_DESC desc(ARRAYSIZE(pParams), pParams);
             desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
             serializeAndCreateRaytracingRootSignature(desc, &mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Plane]);
             mRaytracingLocalRootSignature[LocalRootSignatureParams::Type::Plane]->SetName(L"PlaneLocalRootSignature");
@@ -1225,7 +1202,7 @@ void MainApp::calcFrameStatus() {
 
     mGPUInfoText->setText(ss.str());
 
-    SetWindowText(mWindow->getHwnd(), Framework::Utility::StringBuilder(L"FPS:") << mTimer.getFPS());
+    //SetWindowText(mWindow->getHwnd(), Framework::Utility::StringBuilder(L"FPS:") << mTimer.getFPS());
 
     mRotation += 0.1;
 }

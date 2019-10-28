@@ -3,8 +3,20 @@
 #include "Utility/Debug.h"
 
 namespace Framework::DX {
+    //コンストラクタ
     RootSignature::RootSignature(ID3D12Device* device, const RootSignatureDesc& desc) {
-        auto getRangeType = [](DescriptorRangeType::Enum rangeType) {
+        create(device, desc);
+    }
+
+    //デストラクタ
+    RootSignature::~RootSignature() {
+        reset();
+    }
+
+    //ルートシグネチャ作成
+    void RootSignature::create(ID3D12Device* device, const RootSignatureDesc& desc) {
+        //独自DescriptorRangeTypeをDX12用列挙型に変換する
+        constexpr auto getRangeType = [](DescriptorRangeType::Enum rangeType) {
             static constexpr D3D12_DESCRIPTOR_RANGE_TYPE rangeTypes[] = {
                 D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
                 D3D12_DESCRIPTOR_RANGE_TYPE::D3D12_DESCRIPTOR_RANGE_TYPE_UAV,
@@ -14,7 +26,8 @@ namespace Framework::DX {
             return rangeTypes[rangeType];
         };
 
-        auto getVisibilityType = [](ShaderVisibility::Enum visibility) {
+        //独自ShaderVisibilityをDX12用列挙型に変換する
+        constexpr auto getVisibilityType = [](ShaderVisibility::Enum visibility) {
             static constexpr D3D12_SHADER_VISIBILITY visibilityTypes[] =
             {
                 D3D12_SHADER_VISIBILITY::D3D12_SHADER_VISIBILITY_ALL,
@@ -27,25 +40,34 @@ namespace Framework::DX {
             return visibilityTypes[visibility];
         };
 
-        auto align = [](UINT bufferSize) {
-            return 0;
+        //コンスタントバッファのバッファのアラインメント
+        constexpr auto align = [](UINT bufferSize) -> UINT {
+            return  ((bufferSize - 1) / sizeof(UINT32) + 1);
         };
 
-        std::vector<CD3DX12_DESCRIPTOR_RANGE> ranges(desc.rangeNum);
-        for (UINT i = 0; i < desc.rangeNum; i++) {
-            ranges[i].Init(getRangeType(desc.ranges[i].rangeType), desc.ranges[i].DescriptorNum, desc.ranges[i].shaderRegister);
+        const UINT rangeNum = desc.pRanges ? static_cast<UINT>(desc.pRanges->size()) : 0;
+        const UINT constantsNum = desc.pConstants ? static_cast<UINT>(desc.pConstants->size()) : 0;
+        const UINT paramNum = desc.pParams ? static_cast<UINT>(desc.pParams->size()) : 0;
+        const UINT samplerNum = desc.pStaticSamplers ? static_cast<UINT>(desc.pStaticSamplers->size()) : 0;
+
+        //まずディスクリプタヒープのレンジを作成する
+        std::vector<CD3DX12_DESCRIPTOR_RANGE> pRanges(rangeNum);
+        for (UINT i = 0; i < rangeNum; i++) {
+            pRanges[i].Init(getRangeType(desc.pRanges->at(i).rangeType), desc.pRanges->at(i).DescriptorNum, desc.pRanges->at(i).shaderRegister);
         }
 
-        std::vector<CD3DX12_ROOT_PARAMETER> params(desc.paramNum);
-        UINT descriptorIndex = 0;
-        UINT constantsIndex = 0;
-        for (UINT i = 0; i < desc.paramNum; i++) {
-            UINT registerNum = desc.params[i].shaderRegister;
-            D3D12_SHADER_VISIBILITY visibility = getVisibilityType(desc.params[i].visibility);
-            switch (desc.params[i].type) {
+        //パラメータ定義
+        std::vector<CD3DX12_ROOT_PARAMETER> params(paramNum);
+        size_t descriptorIndex = 0;
+        size_t constantsIndex = 0;
+        for (UINT i = 0; i < paramNum; i++) {
+            UINT registerNum = desc.pParams->at(i).shaderRegister;
+            D3D12_SHADER_VISIBILITY visibility = getVisibilityType(desc.pParams->at(i).visibility);
+            switch (desc.pParams->at(i).type) {
+                //ディスクリプタヒープの時はレンジを順に割り当てていく
                 case RootParameterType::DescriptorTable:
-                    MY_ASSERTION(descriptorIndex < desc.rangeNum, L"rangeNumの値が小さすぎます");
-                    params[i].InitAsDescriptorTable(1, &ranges[descriptorIndex], visibility);
+                    MY_ASSERTION(descriptorIndex < desc.pRanges->size(), L"rangeNumの値が小さすぎます");
+                    params[i].InitAsDescriptorTable(1, &pRanges[descriptorIndex], visibility);
                     descriptorIndex++;
                     break;
                 case RootParameterType::SRV:
@@ -58,19 +80,20 @@ namespace Framework::DX {
                     params[i].InitAsConstantBufferView(registerNum, 0, visibility);
                     break;
                 case RootParameterType::Constants:
-                    MY_ASSERTION(constantsIndex < desc.constantsNum, L"constantsNumの値が小さすぎます");
-                    params[i].InitAsConstants(align(desc.constans[constantsIndex].bufferSize), registerNum, 0, visibility);
+                    MY_ASSERTION(constantsIndex < constantsNum, L"constantsNumの値が小さすぎます");
+                    params[i].InitAsConstants(align(desc.pConstants->at(constantsIndex).bufferSize), registerNum, 0, visibility);
                     constantsIndex++;
                     break;
             }
         }
 
-        std::vector<CD3DX12_STATIC_SAMPLER_DESC> samplers(desc.staticSamplerNum, CD3DX12_STATIC_SAMPLER_DESC(0));
-        for (UINT i = 0; i < desc.staticSamplerNum; i++) {
-            samplers[i].Filter = desc.staticSamplers[i].filter;
+        //スタティックサンプラーを作成する
+        std::vector<CD3DX12_STATIC_SAMPLER_DESC> samplers(samplerNum, CD3DX12_STATIC_SAMPLER_DESC(0));
+        for (UINT i = 0; i < samplerNum; i++) {
+            samplers[i].Filter = desc.pStaticSamplers->at(i).filter;
         }
 
-        CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(params.size(), params.data(), samplers.size(), samplers.data());
+        CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc(paramNum, params.data(), samplerNum, samplers.data());
 
         ComPtr<ID3DBlob> blob, error;
         Framework::Utility::throwIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION::D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error), L"ルートシグネチャ作成失敗");
@@ -78,7 +101,9 @@ namespace Framework::DX {
         mRootSignature->SetName(desc.name.c_str());
     }
 
-    RootSignature::~RootSignature() { }
+    void RootSignature::reset() {
+        mRootSignature.Reset();
+    }
 
     void RootSignature::setLocalRootSignature(CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT* local) {
         local->SetRootSignature(mRootSignature.Get());
