@@ -58,7 +58,7 @@ namespace GeometryType {
     };
 }
 
-static constexpr UINT CUBE_COUNT = 1;
+static constexpr UINT CUBE_COUNT = 300;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT TLAS_NUM = CUBE_COUNT + PLANE_COUNT;
 static const std::wstring MODEL_NAME = L"sphere.glb";
@@ -749,7 +749,7 @@ void MainApp::createRaytracingPipelineStateObject() {
     using namespace Framework::DX;
     ShaderConfig config(Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload),sizeof(ShadowPayload) }), 2 * sizeof(float));
     RaytracingShaderData data((void*)g_pRaytracing, _countof(g_pRaytracing),
-        RayGenShaderData(RAY_GEN_SHADER_NAME), mGlobalRootSignature.get(), config, 2);
+        RayGenShaderData(RAY_GEN_SHADER_NAME), mGlobalRootSignature.get(), config, 15);
     data.missShaders.emplace_back(MISS_SHADER_NAME);
     data.missShaders.emplace_back(MISS_SHADER_SHADOW_NAME);
     HitGroupShader aabbHit(HIT_GROUP_CUBE_NAME);

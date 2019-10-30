@@ -18,26 +18,23 @@ ConstantBuffer<MaterialConstantBuffer> l_material : register(b1);
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 static const float A = 0.2f;
 
+static const uint MAX_RECURSION = 2;
+
 //テクスチャのサンプラー
 SamplerState samLinear : register(s0);
 //使用するテクスチャ
 Texture2D tex : register(t3);
 
-
-//レイ生成
-[shader("raygeneration")]
-void MyRaygenShader() {
-    Ray ray = generateCameraRay(DispatchRaysIndex().xy, g_sceneCB.cameraPosition.xyz, g_sceneCB.projectionToWorld);
-
-    //レイを飛ばす
+inline float4 getColor(in Ray ray, in uint depth) {
+    if (depth >= MAX_RECURSION)return float4(0, 0, 0, 0);
     RayDesc rayDesc;
     rayDesc.Origin = ray.origin;
     rayDesc.Direction = ray.direction;
-    rayDesc.TMin = 0.001f;
-    rayDesc.TMax = 10000.0;
+    rayDesc.TMin = 0.01f;
+    rayDesc.TMax = 10000.0f;
 
-    RayPayload payload = { float4(0,0,0,0),0 };
-    TraceRay(g_scene, //AS
+    RayPayload payload = { float4(0,0,0,0),depth };
+    TraceRay(g_scene,
         RAY_FLAG_CULL_BACK_FACING_TRIANGLES,//レイのフラグ バックカリングを有効に
         ~0, //マスクなし すべてにヒットするように
         0, //ヒットグループのオフセット
@@ -46,7 +43,18 @@ void MyRaygenShader() {
         rayDesc, //レイ
         payload); //戻り値
 
-    g_renderTarget[DispatchRaysIndex().xy] = payload.color;
+    return payload.color;
+}
+
+
+//レイ生成
+[shader("raygeneration")]
+void MyRaygenShader() {
+    Ray ray = generateCameraRay(DispatchRaysIndex().xy, g_sceneCB.cameraPosition.xyz, g_sceneCB.projectionToWorld);
+
+    float4 color = getColor(ray, 0);
+
+    g_renderTarget[DispatchRaysIndex().xy] = color;
 }
 
 //ランバート反射の色を求める
@@ -127,47 +135,52 @@ inline float2 getUV(in MyAttr attr, uint vertexOffset, uint indexOffset) {
 [shader("closesthit")]
 void MyClosestHitShader_Cube(inout RayPayload payload, in MyAttr attr) {
     //再帰回数を制限する
-    if (payload.recursion > 0) {
+    if (payload.recursion > MAX_RECURSION) {
         payload.color = float4(0, 0, 0, 0);
         return;
     }
 
     float3 worldPos = hitWorldPosition();
-
-    //影用のレイキャスト
-    RayDesc ray;
-    ray.Origin = worldPos;
-    Ray shadowRay = { worldPos, normalize(g_sceneCB.lightPosition.xyz - worldPos) };
-    bool shadow = castShadow(shadowRay);
-
     float3 N = getNormal(attr, l_material.vertexOffset, l_material.indexOffset);
-    float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
+    float3 ref = reflect(WorldRayDirection(), N);
+    Ray ray = { worldPos,ref };
+    payload.color = getColor(ray, payload.recursion + 1);
+    //payload.color = float4(1, 0, 0, 1);
 
-    float4 color = float4(0, 0, 0, 0);
-    float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
-    float4 texColor = tex.SampleLevel(samLinear, uv, 0.0);
-    //texColor = float4(1, 1, 1, 1);
-    //ランバート
-    color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse.rgb * texColor.rgb);
+    ////影用のレイキャスト
+    //RayDesc ray;
+    //ray.Origin = worldPos;
+    //Ray shadowRay = { worldPos, normalize(g_sceneCB.lightPosition.xyz - worldPos) };
+    //bool shadow = castShadow(shadowRay);
 
-    color.rgb += specular(N, L, float3(1, 1, 1));
+    //float3 N = getNormal(attr, l_material.vertexOffset, l_material.indexOffset);
+    //float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
 
-    //アンビエント
-    color.rgb += g_sceneCB.lightAmbient.rgb;
-    ////フォグの適用
-    color = applyFog(hitWorldPosition(), color);
+    //float4 color = float4(0, 0, 0, 0);
+    //float2 uv = getUV(attr, l_material.vertexOffset, l_material.indexOffset);
+    //float4 texColor = tex.SampleLevel(samLinear, uv, 0.0);
+    ////texColor = float4(1, 1, 1, 1);
+    ////ランバート
+    //color.rgb += lambertColor(N, L, g_sceneCB.lightDiffuse.rgb * texColor.rgb);
 
-    //影に覆われていたら黒くする
-    float factor = shadow ? 0.1f : 1.0f;
-    //float factor = 1.0f;
-    payload.color = color * factor;
+    //color.rgb += specular(N, L, float3(1, 1, 1));
+
+    ////アンビエント
+    //color.rgb += g_sceneCB.lightAmbient.rgb;
+    //////フォグの適用
+    //color = applyFog(hitWorldPosition(), color);
+
+    ////影に覆われていたら黒くする
+    //float factor = shadow ? 0.1f : 1.0f;
+    ////float factor = 1.0f;
+    //payload.color = color * factor;
 }
 
 //床に当たった時
 [shader("closesthit")]
 void MyClosestHitShader_Plane(inout RayPayload payload, in MyAttr attr) {
     //再帰回数を制限する
-    if (payload.recursion > 0) {
+    if (payload.recursion > MAX_RECURSION) {
         payload.color = float4(0, 0, 0, 0);
         return;
     }
