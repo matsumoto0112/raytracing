@@ -169,18 +169,6 @@ private:
 
     //レイトレーシング出力先
     D3DBuffer mRaytracingOutput;
-
-    ////シェーダーテーブル
-    //static const wchar_t* HIT_GROUP_CUBE_NAME;
-    //static const wchar_t* HIT_GROUP_PLANE_NAME;
-    //static const wchar_t* HIT_GROUP_SHADER_NAME;
-
-    //static const wchar_t* RAY_GEN_SHADER_NAME;
-    //static const wchar_t* CLOSEST_HIT_SHADER_CUBE_NAME;
-    //static const wchar_t* CLOSEST_HIT_SHADER_PLANE_NAME;
-    //static const wchar_t* CLOSEST_HIT_SHADER_SHADOW_NAME;
-    //static const wchar_t* MISS_SHADER_NAME;
-    //static const wchar_t* MISS_SHADER_SHADOW_NAME;
     //シェーダーテーブル
     static const std::wstring HIT_GROUP_CUBE_NAME;
     static const std::wstring HIT_GROUP_PLANE_NAME;
@@ -261,25 +249,10 @@ private:
     */
     void createRaytracinginterfaces();
     /**
-    * @brief ルートシグネチャを作成する
-    */
-    void serializeAndCreateRaytracingRootSignature(D3D12_ROOT_SIGNATURE_DESC& desc, ComPtr<ID3D12RootSignature>* rootSig);
-    /**
     * @brief ルートシグネチャの作成
     */
     void createRootSignatures();
-    /**
-    * @brief DXILライブラリのサブオブジェクト作成
-    */
-    void createDxilLibrarySubobject(CD3DX12_STATE_OBJECT_DESC* pipeline);
-    /**
-    * @brief ヒットグループのサブオブジェクト作成
-    */
-    void createHitGroupSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline);
-    /**
-    * @brief ローカルルートシグネチャのサブオブジェクト作成
-    */
-    void createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline);
+
     /**
     * @brief レイトレーシングパイプラインオブジェクト作成
     */
@@ -315,10 +288,6 @@ private:
     */
     void buildAccelerationStructures();
     /**
-    * @brief シェーダーテーブル作成
-    */
-    void buildShaderTables();
-    /**
     * @brief ウィンドウサイズ更新
     */
     void updateForSizeChange(UINT clientWidth, UINT clientHeight);
@@ -347,15 +316,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     return app.run(hInstance, nCmdShow);
 }
 
-//これらの名前はシェーダーファイルの関数名と一致させる必要がある
-//この名前をもとにエントリポイントを探すため
-//const wchar_t* MainApp::RAY_GEN_SHADER_NAME = L"MyRaygenShader";
-//const wchar_t* MainApp::CLOSEST_HIT_SHADER_CUBE_NAME = L"MyClosestHitShader_Cube";
-//const wchar_t* MainApp::CLOSEST_HIT_SHADER_PLANE_NAME = L"MyClosestHitShader_Plane";
-//const wchar_t* MainApp::CLOSEST_HIT_SHADER_SHADOW_NAME = L"MyClosestHitShader_Shadow";
-//const wchar_t* MainApp::MISS_SHADER_NAME = L"MyMissShader";
-//const wchar_t* MainApp::MISS_SHADER_SHADOW_NAME = L"MyMissShader_Shadow";
-
 const std::wstring MainApp::RAY_GEN_SHADER_NAME = L"MyRaygenShader";
 const std::wstring MainApp::CLOSEST_HIT_SHADER_CUBE_NAME = L"MyClosestHitShader_Cube";
 const std::wstring MainApp::CLOSEST_HIT_SHADER_PLANE_NAME = L"MyClosestHitShader_Plane";
@@ -363,10 +323,6 @@ const std::wstring MainApp::CLOSEST_HIT_SHADER_SHADOW_NAME = L"MyClosestHitShade
 const std::wstring MainApp::MISS_SHADER_NAME = L"MyMissShader";
 const std::wstring MainApp::MISS_SHADER_SHADOW_NAME = L"MyMissShader_Shadow";
 
-//HitGroupは名前は何でもよい
-//const wchar_t* MainApp::HIT_GROUP_CUBE_NAME = L"MyHitGroup_Cube";
-//const wchar_t* MainApp::HIT_GROUP_PLANE_NAME = L"MyHitGroup_Plane";
-//const wchar_t* MainApp::HIT_GROUP_SHADER_NAME = L"MyHitGroup_Shadow";
 const std::wstring MainApp::HIT_GROUP_CUBE_NAME = L"MyHitGroup_Cube";
 const std::wstring MainApp::HIT_GROUP_PLANE_NAME = L"MyHitGroup_Plane";
 const std::wstring MainApp::HIT_GROUP_SHADER_NAME = L"MyHitGroup_Shadow";
@@ -409,8 +365,6 @@ void MainApp::initializeScene() {
 
     mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Position"));
 
-#pragma warning( push ) 
-#pragma warning (disable: 4305)
     float range = 100.0f;
     float anbleRange = (Framework::Math::PI2);
     PARAMETER_CHANGE_SLIDER("X", mCameraPosition.x, -range, range);
@@ -424,7 +378,6 @@ void MainApp::initializeScene() {
     PARAMETER_CHANGE_SLIDER("LX", mLightPosition.x, -range, range);
     PARAMETER_CHANGE_SLIDER("LY", mLightPosition.y, -range, range);
     PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
-#pragma warning(pop)
 
     mSceneCB->lightAmbient = Color4(0.3f, 0.3f, 0.3f, 1.0f);
     mSceneCB->lightDiffuse = Color4(0, 0, 1, 1.0f);
@@ -462,28 +415,6 @@ void MainApp::recreateD3D() {
 void MainApp::doRaytracing() {
     ID3D12GraphicsCommandList* list = mDeviceResource->getCommandList();
     UINT frameCount = mDeviceResource->getCurrentFrameIndex();
-    //auto dispatchRays = [&](ID3D12GraphicsCommandList5* list, ID3D12StateObject* state, D3D12_DISPATCH_RAYS_DESC* desc) {
-    //    desc->HitGroupTable.StartAddress = mHitGroupShaderTable->GetGPUVirtualAddress();
-    //    desc->HitGroupTable.SizeInBytes = mHitGroupShaderTable->GetDesc().Width;
-    //    desc->HitGroupTable.StrideInBytes = mHitGroupShaderStrideInBytes;
-
-    //    desc->MissShaderTable.StartAddress = mMissShaderTable->GetGPUVirtualAddress();
-    //    desc->MissShaderTable.SizeInBytes = mMissShaderTable->GetDesc().Width;
-    //    desc->MissShaderTable.StrideInBytes = mMissShaderStrideInBytes;
-
-    //    desc->RayGenerationShaderRecord.StartAddress = mRayGenShaderTable->GetGPUVirtualAddress();
-    //    desc->RayGenerationShaderRecord.SizeInBytes = mRayGenShaderTable->GetDesc().Width;
-
-    //    desc->Width = mWidth;
-    //    desc->Height = mHeight;
-    //    desc->Depth = 1;
-
-    //    list->SetPipelineState1(state);
-
-    //    mGPUTimer.start(list);
-    //    list->DispatchRays(desc);
-    //    mGPUTimer.stop(list);
-    //};
 
     mGlobalRootSignature->setComputeRootSignature(list);
     mSceneCB.copyStagingToGPU(frameCount);
@@ -496,7 +427,6 @@ void MainApp::doRaytracing() {
     list->SetComputeRootShaderResourceView(GlobalRootSignatureParameter::AccelerationStructureSlot, mTopLevelAS->GetGPUVirtualAddress());
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mResourceIndexBuffer.gpuHandle);
     mRaytracingShader->doRaytracing(mDXRInterface->getCommandList(), mDXRInterface->getStateObject(), mWidth, mHeight);
-    //dispatchRays(mDXRInterface->getCommandList(), mDXRInterface->getStateObject(), &desc);
 }
 
 void MainApp::createConstantBuffers() {
@@ -539,9 +469,6 @@ void MainApp::createDeviceDependentResources() {
     createRaytracingPipelineStateObject();
     //コンスタントバッファ作成
     createConstantBuffers();
-
-    //    //シェーダーテーブル作成
-    buildShaderTables();
     //レイトレーシング出力先を作成
     createRaytracingOutputResource();
 
@@ -549,7 +476,6 @@ void MainApp::createDeviceDependentResources() {
 
 void MainApp::createWindowSizeDependentResources() {
     createRaytracingOutputResource();
-    //buildShaderTables();
     updateCameraMatrices();
 }
 
@@ -574,21 +500,10 @@ void MainApp::releaseDeviceDependentResources() {
 
 void MainApp::releaseWindowSizeDependentResources() {
     mRaytracingOutput.resource.Reset();
-    //mRayGenShaderTable.Reset();
-    //mHitGroupShaderTable.Reset();
-    //mMissShaderTable.Reset();
 }
 
 void MainApp::createRaytracinginterfaces() {
     mDXRInterface->recreate();
-}
-
-void MainApp::serializeAndCreateRaytracingRootSignature(D3D12_ROOT_SIGNATURE_DESC& desc, ComPtr<ID3D12RootSignature>* rootSig) {
-    ID3D12Device* device = mDeviceResource->getDevice();
-
-    ComPtr<ID3DBlob> blob, error;
-    Framework::Utility::throwIfFailed(D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION::D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error), L"ルートシグネチャ作成失敗");
-    Framework::Utility::throwIfFailed(device->CreateRootSignature(1, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&(*rootSig))));
 }
 
 void MainApp::createRootSignatures() {
@@ -651,101 +566,7 @@ void MainApp::createRootSignatures() {
     }
 }
 
-void MainApp::createDxilLibrarySubobject(CD3DX12_STATE_OBJECT_DESC* pipeline) {
-    //シェーダーのエントリポイントの設定を行う
-    auto lib = pipeline->CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
-    D3D12_SHADER_BYTECODE libDxil = CD3DX12_SHADER_BYTECODE((void*)g_pRaytracing, ARRAYSIZE(g_pRaytracing));
-    lib->SetDXILLibrary(&libDxil);
-
-    ////実際に使用するシェーダーの名前を定義する
-    ////この定義された名前のエントリポイントをシェーダーコードの中から探すため、一致させる必要がある
-    lib->DefineExport(MISS_SHADER_SHADOW_NAME.c_str());
-    lib->DefineExport(CLOSEST_HIT_SHADER_CUBE_NAME.c_str());
-    lib->DefineExport(RAY_GEN_SHADER_NAME.c_str());
-    lib->DefineExport(MISS_SHADER_NAME.c_str());
-    lib->DefineExport(CLOSEST_HIT_SHADER_SHADOW_NAME.c_str());
-    lib->DefineExport(CLOSEST_HIT_SHADER_PLANE_NAME.c_str());
-}
-
-void MainApp::createHitGroupSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
-    auto hitGroup = pipeline->CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
-    //今回はClosest Hitのみ使う
-    hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_SHADER_CUBE_NAME.c_str());
-    hitGroup->SetAnyHitShaderImport(nullptr);
-    //HitGroupをエクスポートする
-    hitGroup->SetHitGroupExport(HIT_GROUP_CUBE_NAME.c_str());
-    hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
-
-    hitGroup = pipeline->CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
-    hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_SHADER_PLANE_NAME.c_str());
-    hitGroup->SetHitGroupExport(HIT_GROUP_PLANE_NAME.c_str());
-    hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
-
-    hitGroup = pipeline->CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
-    hitGroup->SetClosestHitShaderImport(CLOSEST_HIT_SHADER_SHADOW_NAME.c_str());
-    hitGroup->SetHitGroupExport(HIT_GROUP_SHADER_NAME.c_str());
-    hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE::D3D12_HIT_GROUP_TYPE_TRIANGLES);
-}
-
-void MainApp::createLocalRootSignatureSubobjects(CD3DX12_STATE_OBJECT_DESC* pipeline) {
-    //AABB
-    {
-        auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-        mLocalRootSignatures[LocalRootSignatureParams::Type::AABB]->setLocalRootSignature(local);
-
-        auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-        asso->SetSubobjectToAssociate(*local);
-        asso->AddExport(HIT_GROUP_CUBE_NAME.c_str());
-    }
-    //Plane
-    {
-        auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-        mLocalRootSignatures[LocalRootSignatureParams::Type::Plane]->setLocalRootSignature(local);
-
-        auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-        asso->SetSubobjectToAssociate(*local);
-        asso->AddExport(HIT_GROUP_PLANE_NAME.c_str());
-    }
-    //Shadow
-    {
-        //auto local = pipeline->CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-        //auto asso = pipeline->CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
-        //asso->SetSubobjectToAssociate(*local);
-        //asso->AddExport(HIT_GROUP_SHADER_NAME);
-    }
-}
-
 void MainApp::createRaytracingPipelineStateObject() {
-    ////RTPSOの作成
-    //CD3DX12_STATE_OBJECT_DESC raytracingPipeline{ D3D12_STATE_OBJECT_TYPE::D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE };
-
-    ////最初にDXILライブラリの設定を行う
-    ////Dxilライブラリ
-    //createDxilLibrarySubobject(&raytracingPipeline);
-
-    ////ヒットグループ系のサブオブジェクト
-    ////Intersection,Closest Hit,AnyHitは普通ひとまとめになっている
-    ////それをまとめる処理
-    //createHitGroupSubobjects(&raytracingPipeline);
-
-    ////シェーダー設定
-    ////サイズは使用するオブジェクトの最大値を利用する
-    //auto* config = raytracingPipeline.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
-    //UINT payloadSize = sizeof(RayPayload); //レイが当たった時の情報を格納するpayload
-    //UINT attrSize = 2 * sizeof(float); //三角形の重心情報を利用する
-    //config->Config(payloadSize, attrSize);
-
-    //createLocalRootSignatureSubobjects(&raytracingPipeline);
-
-    ////グローバルルートシグネチャを設定する
-    //auto* global = raytracingPipeline.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
-    //mGlobalRootSignature->setGlobalRootSignature(global);
-
-    //auto* pipelineConfig = raytracingPipeline.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
-    //UINT maxDepth = 2;
-    //pipelineConfig->Config(maxDepth);
-
-    //mDXRInterface->createStateObject(raytracingPipeline);
     using namespace Framework::DX;
     ShaderConfig config(Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload),sizeof(ShadowPayload) }), 2 * sizeof(float));
     RaytracingShaderData data((void*)g_pRaytracing, _countof(g_pRaytracing),
@@ -1043,82 +864,6 @@ void MainApp::buildAccelerationStructures() {
 
     createBufferSRV(&mResourceIndexBuffer, static_cast<UINT>(mResourceIndices.size()) * sizeof(Index) / 4, 0);
     createBufferSRV(&mResourceVertexBuffer, static_cast<UINT>(mResourceVertices.size()), sizeof(Vertex));
-}
-
-void MainApp::buildShaderTables() {
-    //ID3D12Device* device = mDeviceResource->getDevice();
-
-    //void* rayGenShaderID;
-    //void* missShaderID;
-    //void* missShaderShadowID;
-    //void* hitGroupCubeShaderID;
-    //void* hitGroupPlaneShaderID;
-    //void* hitGroupShadowShaderID;
-    //UINT shaderIDSize;
-
-    //ComPtr<ID3D12StateObjectProperties> props;
-    //mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props));
-    //rayGenShaderID = props->GetShaderIdentifier(RAY_GEN_SHADER_NAME.c_str());
-    //missShaderID = props->GetShaderIdentifier(MISS_SHADER_NAME.c_str());
-    //missShaderShadowID = props->GetShaderIdentifier(MISS_SHADER_SHADOW_NAME.c_str());
-    //hitGroupCubeShaderID = props->GetShaderIdentifier(HIT_GROUP_CUBE_NAME.c_str());
-    //hitGroupPlaneShaderID = props->GetShaderIdentifier(HIT_GROUP_PLANE_NAME.c_str());
-    //hitGroupShadowShaderID = props->GetShaderIdentifier(HIT_GROUP_SHADER_NAME.c_str());
-    //shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-
-    //{
-    //    UINT numShaderRecords = 1;
-    //    UINT shaderRecordSize = shaderIDSize;
-    //    ShaderTable table(device, numShaderRecords, shaderRecordSize, L"RayGenShaderTable");
-    //    table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize, nullptr, 0));
-    //    mRayGenShaderTable = table.getResource();
-    //}
-
-    //{
-    //    UINT numShaderRecords = 2;
-    //    UINT shaderRecordSize = shaderIDSize;
-    //    ShaderTable table(device, numShaderRecords, shaderRecordSize, L"MissShaderTable");
-    //    table.push_back(ShaderRecord(missShaderID, shaderIDSize, nullptr, 0));
-    //    table.push_back(ShaderRecord(missShaderShadowID, shaderIDSize, nullptr, 0));
-    //    mMissShaderStrideInBytes = table.getShaderRecordSize();
-    //    mMissShaderTable = table.getResource();
-    //}
-
-    //{
-    //    UINT numShaderRecords = 4; //AABB + Plane
-    //    UINT shaderRecordSize = shaderIDSize +
-    //        static_cast<UINT>(std::max({ sizeof(LocalRootSignatureParams::AABB::RootArgument) + sizeof(D3D12_GPU_DESCRIPTOR_HANDLE),sizeof(LocalRootSignatureParams::Plane::RootArgument) + sizeof(D3D12_GPU_DESCRIPTOR_HANDLE) }));
-    //    ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupTable");
-    //    //AABB
-    //    {
-    //        struct RootArgument {
-    //            LocalRootSignatureParams::Plane::RootArgument cb;
-    //            D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
-    //        } rootArgument;
-    //        rootArgument.cb.material.color = Color4(1, 1, 0, 1);
-    //        rootArgument.cb.material.indexOffset = mIndexOffsets[GeometryType::Cube];
-    //        rootArgument.cb.material.vertexOffset = mVertexOffsets[GeometryType::Cube];
-    //        rootArgument.gpuHandle = mTextures[0]->getGPUHandle();
-    //        table.push_back(ShaderRecord(hitGroupCubeShaderID, shaderIDSize, &rootArgument, sizeof(rootArgument)));
-    //        table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize, nullptr, 0));
-    //    }
-    //    //Plane
-    //    {
-    //        struct RootArgument {
-    //            LocalRootSignatureParams::Plane::RootArgument cb;
-    //            D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
-    //        } rootArgument;
-    //        rootArgument.cb.material.color = Color4(1, 0, 1, 1);
-    //        rootArgument.cb.material.indexOffset = mIndexOffsets[GeometryType::Plane];
-    //        rootArgument.cb.material.vertexOffset = mVertexOffsets[GeometryType::Plane];
-    //        rootArgument.gpuHandle = mTextures[1]->getGPUHandle();
-
-    //        table.push_back(ShaderRecord(hitGroupPlaneShaderID, shaderIDSize, &rootArgument, sizeof(rootArgument)));
-    //        table.push_back(ShaderRecord(hitGroupShadowShaderID, shaderIDSize, nullptr, 0));
-    //    }
-    //    mHitGroupShaderStrideInBytes = table.getShaderRecordSize();
-    //    mHitGroupShaderTable = table.getResource();
-    //}
 }
 
 void MainApp::updateForSizeChange(UINT clientWidth, UINT clientHeight) { }
