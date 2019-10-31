@@ -64,6 +64,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\Texture2D.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Utility\Color4.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\RaytracingShader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\AccelerationStructure.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ImGui\ImGuiManager.cpp" />
@@ -107,5 +108,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\Texture2D.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)Utility\Color4.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\RaytracingShader.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\AccelerationStructure.cpp" />
   </ItemGroup>
 </Project>

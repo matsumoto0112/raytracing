@@ -173,6 +173,7 @@ namespace Framework::DX {
 
         //コマンドリスト作成
         Utility::throwIfFailed(mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocators[0].Get(), nullptr, IID_PPV_ARGS(&mCommandList)));
+        mCommandList->SetName(L"CommandList");
         Utility::throwIfFailed(mCommandList->Close());
 
         //GPUの処理用フェンス作成

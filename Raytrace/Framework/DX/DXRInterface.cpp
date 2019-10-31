@@ -15,6 +15,7 @@ namespace Framework::DX {
 
     void DXRInterface::createStateObject(CD3DX12_STATE_OBJECT_DESC& desc) {
         Utility::throwIfFailed(mDXRDevice->CreateStateObject(desc, IID_PPV_ARGS(&mDXRStateObject)), L"StateObjectì¬Ž¸”s");
+        mDXRStateObject->SetName(L"DXRStateObject");
     }
 
     void DXRInterface::clear() {
@@ -29,6 +30,7 @@ namespace Framework::DX {
 
         Utility::throwIfFailed(device->QueryInterface(IID_PPV_ARGS(&mDXRDevice)), L"Couldn't get DirectX Raytracing interface for the device.\n");
         Utility::throwIfFailed(list->QueryInterface(IID_PPV_ARGS(&mDXRCommandList)), L"Couldn't get DirectX Raytracing interface for the command list.\n");
+        mDXRDevice->SetName(L"DXRDevice");
+        mDXRCommandList->SetName(L"DXRCommandList");
     }
-
 } //Framework::DX 

@@ -15,6 +15,7 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)DX\AccelerationStructure.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\ConstantBuffer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DX\DeviceResource.h" />
@@ -80,6 +81,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)DX\AccelerationStructure.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DescriptorTable.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DeviceResource.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DX\DXRInterface.cpp" />
