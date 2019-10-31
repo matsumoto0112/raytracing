@@ -324,17 +324,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     return app.run(hInstance, nCmdShow);
 }
 
-//const std::wstring MainApp::RAY_GEN_SHADER_NAME = L"MyRaygenShader";
-//const std::wstring MainApp::CLOSEST_HIT_SHADER_CUBE_NAME = L"MyClosestHitShader_Cube";
-//const std::wstring MainApp::CLOSEST_HIT_SHADER_PLANE_NAME = L"MyClosestHitShader_Plane";
-//const std::wstring MainApp::CLOSEST_HIT_SHADER_SHADOW_NAME = L"MyClosestHitShader_Shadow";
-//const std::wstring MainApp::MISS_SHADER_NAME = L"MyMissShader";
-//const std::wstring MainApp::MISS_SHADER_SHADOW_NAME = L"MyMissShader_Shadow";
-//
-//const std::wstring MainApp::HIT_GROUP_CUBE_NAME = L"MyHitGroup_Cube";
-//const std::wstring MainApp::HIT_GROUP_PLANE_NAME = L"MyHitGroup_Plane";
-//const std::wstring MainApp::HIT_GROUP_SHADER_NAME = L"MyHitGroup_Shadow";
-
 const std::wstring MainApp::RAY_GEN_SHADER_NAME = L"MyRayGenShader";
 const std::wstring MainApp::MISS_SHADER = L"MissShader";
 const std::wstring MainApp::CLOSEST_HIT_NAME = L"ClosestHit";
@@ -364,10 +353,7 @@ void MainApp::updateCameraMatrices() {
 }
 
 void MainApp::initializeScene() {
-    //mCameraPosition = { 0,3.0f,-30.0f };
-    //mCameraRotation = { 0,0,0 };
     mCameraPosition = Vector4(0, 70, -100, 1);
-    //mCameraRotation = 
     mCameraRotation = { 0.61f,0,0 };
     mLightPosition = { 20,40,-70 };
 
@@ -549,55 +535,13 @@ void MainApp::createRootSignatures() {
     }
     //ローカルルートシグネチャを作成する
     {
-        {
-
-            std::vector<RootParameterDesc> params(1);
-            params[0].init(RootParameterType::Constants, 1);
-            std::vector<ConstantsDesc> constants(1);
-            constants[0].bufferSize = sizeof(HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer);
-            RootSignatureDesc desc(RootSignatureFlag::LocalRootSignature, nullptr, &constants, &params, nullptr);
-            mLocalRootSignatures[HitGroupParams::LocalRootSignatureParams::Type::Sphere] = std::make_unique<RootSignature>(device, desc);
-        }
-        {
-            std::vector<RootParameterDesc> params(1);
-            params[0].init(RootParameterType::Constants, 1);
-            std::vector<ConstantsDesc> constants(1);
-            constants[0].bufferSize = sizeof(HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer);
-            RootSignatureDesc desc(RootSignatureFlag::LocalRootSignature, nullptr, &constants, &params, nullptr);
-            mLocalRootSignatures[HitGroupParams::LocalRootSignatureParams::Type::Plane] = std::make_unique<RootSignature>(device, desc);
-        }
-        //AABB ローカルルートシグネチャ
-        //{
-        //    using namespace Framework::DX;
-        //    std::vector<DescriptorRange> range(1);
-        //    range[0].init(DescriptorRangeType::SRV, 1, 3);
-
-        //    std::vector<RootParameterDesc> params(LocalRootSignatureParams::AABB::Count);
-        //    params[LocalRootSignatureParams::AABB::Material].init(RootParameterType::Constants, 1);
-        //    params[LocalRootSignatureParams::AABB::Texture].initAsDescriptor();
-
-        //    std::vector<ConstantsDesc> constants(1);
-        //    constants[0].bufferSize = sizeof(MaterialConstantBuffer);
-
-        //    RootSignatureDesc desc(RootSignatureFlag::LocalRootSignature, &range, &constants, &params, nullptr, L"AABBLocalRootSignature");
-        //    mLocalRootSignatures[LocalRootSignatureParams::Type::AABB] = std::make_unique<RootSignature>(device, desc);
-        //}
-        ////Plane
-        //{
-        //    using namespace Framework::DX;
-        //    std::vector<DescriptorRange> range(1);
-        //    range[0].init(DescriptorRangeType::SRV, 1, 3);
-
-        //    std::vector<RootParameterDesc> params(LocalRootSignatureParams::Plane::Count);
-        //    params[LocalRootSignatureParams::Plane::Material].init(RootParameterType::Constants, 1);
-        //    params[LocalRootSignatureParams::Plane::Texture].initAsDescriptor();
-
-        //    std::vector<ConstantsDesc> constants(1);
-        //    constants[0].bufferSize = sizeof(MaterialConstantBuffer);
-
-        //    RootSignatureDesc desc(RootSignatureFlag::LocalRootSignature, &range, &constants, &params, nullptr, L"PlaneLocalRootSignature");
-        //    mLocalRootSignatures[LocalRootSignatureParams::Type::Plane] = std::make_unique<RootSignature>(device, desc);
-        //}
+        std::vector<RootParameterDesc> params(1);
+        params[0].init(RootParameterType::Constants, 1);
+        std::vector<ConstantsDesc> constants(1);
+        constants[0].bufferSize = sizeof(HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer);
+        RootSignatureDesc desc(RootSignatureFlag::LocalRootSignature, nullptr, &constants, &params, nullptr);
+        mLocalRootSignatures[HitGroupParams::LocalRootSignatureParams::Type::Sphere] = std::make_unique<RootSignature>(device, desc);
+        mLocalRootSignatures[HitGroupParams::LocalRootSignatureParams::Type::Plane] = std::make_unique<RootSignature>(device, desc);
     }
 }
 
