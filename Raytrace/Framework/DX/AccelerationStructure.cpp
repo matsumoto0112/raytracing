@@ -11,10 +11,12 @@ namespace Framework::DX {
     //    mBuffers.emplace_back(buffer);
     //}
 
-    void AccelerationStructure::addBLASBuffer(ID3D12Device * device, void * indices, size_t indexSize, void * vertices, size_t vertexSize) {
+    void AccelerationStructure::addBLASBuffer(ID3D12Device * device, const VertexList& vertices, const IndexList& indices) {
         Buffer buffer;
-        allocateUploadBuffer(device, indices, indexSize, &buffer.indexBuffer.resource);
-        allocateUploadBuffer(device, vertices, vertexSize, &buffer.vertexBuffer.resource);
+        const UINT indexSize = indices.size() * sizeof(indices[0]);
+        const UINT vertexSize = vertices.size() * sizeof(vertices[0]);
+        allocateUploadBuffer(device, (void*)indices.data(), indexSize, &buffer.indexBuffer.resource);
+        allocateUploadBuffer(device, (void*)vertices.data(), vertexSize, &buffer.vertexBuffer.resource);
         mBuffers.emplace_back(buffer);
     }
 

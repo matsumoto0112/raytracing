@@ -878,8 +878,7 @@ void MainApp::buildAccelerationStructures() {
 
         //mAccelerationStructure->addBLASBuffer(mDeviceResource->getDevice(),
         //    vertices, indices);
-        mAccelerationStructure->addBLASBuffer(device,
-            indices.data(), indices.size() * sizeof(Index), vertices.data(), vertices.size() * sizeof(Vertex));
+        mAccelerationStructure->addBLASBuffer(device, vertices, indices);
         mAccelerationStructure->buildBLAS(mDXRInterface->getDXRDevice(), mDXRInterface->getCommandList());
 
         //blasBuffers[GeometryType::Cube] =
@@ -912,8 +911,7 @@ void MainApp::buildAccelerationStructures() {
 
         //mAccelerationStructure->addBLASBuffer(mDeviceResource->getDevice(),
         //    vertices, indices);
-        mAccelerationStructure->addBLASBuffer(device,
-            indices.data(), indices.size() * sizeof(Index), vertices.data(), vertices.size() * sizeof(Vertex));
+        mAccelerationStructure->addBLASBuffer(device, vertices, indices);
 
         mAccelerationStructure->buildBLAS(mDXRInterface->getDXRDevice(), mDXRInterface->getCommandList());
 
