@@ -39,6 +39,9 @@ struct Vertex {
 struct SceneConstantBuffer {
     XMMATRIX projectionToWorld;
     Vector4 cameraPosition;
+    Color4 lightAmbient;
+    Color4 lightDiffuse;
+    Vector4 lightPosition;
 };
 
 

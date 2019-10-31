@@ -74,7 +74,8 @@ namespace HitGroupParams {
                 Count
             };
             struct MaterialConstantBuffer {
-                Color4 color;
+                UINT indexOffset;
+                UINT vertexOffset;
             }; //MaterialConstantBuffer 
         } //Constant 
     } //LocalRootSignatureParameter 
@@ -82,7 +83,7 @@ namespace HitGroupParams {
 
 namespace GeometryType {
     enum MyEnum {
-        Cube,
+        Sphere,
         Plane,
         Count
     };
@@ -349,7 +350,7 @@ void MainApp::updateCameraMatrices() {
 
     mSceneCB->projectionToWorld = XMMatrixInverse(nullptr, vp);
 
-    //mSceneCB->lightPosition = mLightPosition;
+    mSceneCB->lightPosition = mLightPosition;
 }
 
 void MainApp::initializeScene() {
@@ -382,8 +383,9 @@ void MainApp::initializeScene() {
     PARAMETER_CHANGE_SLIDER("LY", mLightPosition.y, -range, range);
     PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
 
-    //mSceneCB->lightAmbient = Color4(0.3f, 0.3f, 0.3f, 1.0f);
-    //mSceneCB->lightDiffuse = Color4(0, 0, 1, 1.0f);
+    mSceneCB->lightPosition = mLightPosition;
+    mSceneCB->lightAmbient = Color4(0.3f, 0.3f, 0.3f, 1.0f);
+    mSceneCB->lightDiffuse = Color4(0, 0, 1, 1.0f);
     //mSceneCB->fogStart = 500.0f;
     //mSceneCB->fogEnd = 1000.0f;
     int w = (int)Framework::Math::MathUtil::sqrt(CUBE_COUNT) + 1;
@@ -596,7 +598,8 @@ void MainApp::createRaytracingPipelineStateObject() {
             struct RootArgument {
                 HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer cb;
             } rootArguments;
-            rootArguments.cb.color = Color4(1, 1, 0, 1);
+            rootArguments.cb.vertexOffset = mVertexOffsets[GeometryType::Sphere];
+            rootArguments.cb.indexOffset = mIndexOffsets[GeometryType::Sphere];
 
             local.localConstants = &rootArguments;
             local.localConstantsSize = sizeof(RootArgument);
@@ -611,7 +614,9 @@ void MainApp::createRaytracingPipelineStateObject() {
             struct RootArgument {
                 HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer cb;
             } rootArguments;
-            rootArguments.cb.color = Color4(0, 0, 1, 1);
+            rootArguments.cb.vertexOffset = mVertexOffsets[GeometryType::Plane];
+            rootArguments.cb.indexOffset = mIndexOffsets[GeometryType::Plane];
+
 
             local.localConstants = &rootArguments;
             local.localConstantsSize = sizeof(RootArgument);
@@ -676,8 +681,8 @@ void MainApp::buildAccelerationStructures() {
     mDeviceResource->getCommandList()->Reset(mDeviceResource->getCommandAllocator(), nullptr);
     mAccelerationStructure = std::make_unique<AccelerationStructure>();
 
-    mIndexOffsets[GeometryType::Cube] = 0;
-    mVertexOffsets[GeometryType::Cube] = 0;
+    mIndexOffsets[GeometryType::Sphere] = 0;
+    mVertexOffsets[GeometryType::Sphere] = 0;
 
     AccelerationStructureBuffers blasBuffers[GeometryType::Count];
 
@@ -702,8 +707,8 @@ void MainApp::buildAccelerationStructures() {
 
         mResourceIndices.insert(mResourceIndices.end(), indices.begin(), indices.end());
         mResourceVertices.insert(mResourceVertices.end(), vertices.begin(), vertices.end());
-        mIndexOffsets[GeometryType::Cube + 1] = (UINT)indices.size() * sizeof(Index);
-        mVertexOffsets[GeometryType::Cube + 1] = (INT)vertices.size();
+        mIndexOffsets[GeometryType::Sphere + 1] = (UINT)indices.size() * sizeof(Index);
+        mVertexOffsets[GeometryType::Sphere + 1] = (INT)vertices.size();
     }
 
     UINT sphereID;
