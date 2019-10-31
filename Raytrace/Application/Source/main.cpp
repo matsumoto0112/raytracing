@@ -106,6 +106,7 @@ static const std::wstring CLOSEST_HIT_SHADOW_CAST_NAME = L"ClosestHit_ShadowCast
 static const std::wstring HIT_GROUP_SPHERE_NAME = L"HitGroup_Sphere";
 static const std::wstring HIT_GROUP_PLANE_NAME = L"HitGroup_Plane";
 static const std::wstring HIT_GROUP_CUBE_NAME = L"HitGroup_Cube";
+static const std::wstring HIT_GROUP_SHADOW_NAME = L"HitGroup_Shadow";
 
 static const std::vector<Color4> MODEL_COLORS =
 {
@@ -146,6 +147,23 @@ static const std::vector<ShaderFileInfo> SHADER_FILE_INFOS =
     {SHADER_FILE_INFO_PROP(g_pClosestHit_ShadowCast,{CLOSEST_HIT_SHADOW_CAST_NAME}) },
 };
 
+struct HitGroupBatch {
+    std::wstring HitGroupName;
+    std::wstring ClosestHitName;
+};
+
+static const std::vector<HitGroupBatch> HIT_GROUP_BATCHS
+{
+    {HIT_GROUP_SPHERE_NAME,CLOSEST_HIT_NAME },
+    {HIT_GROUP_PLANE_NAME,CLOSEST_HIT_PLANE_NAME },
+    {HIT_GROUP_CUBE_NAME,CLOSEST_HIT_NAME },
+    {HIT_GROUP_SHADOW_NAME,CLOSEST_HIT_SHADOW_CAST_NAME },
+};
+
+static const std::vector<std::wstring> MISS_SHADER_NAMES =
+{
+    MISS_SHADER,MISS_SHADER_SHADOW_CAST,
+};
 
 /**
 * @class MainApp
@@ -593,9 +611,9 @@ void MainApp::createRaytracingPipelineStateObject() {
         mRaytracingShader->loadShaderFiles(file);
     }
 
-    for (int i = 0; i < GeometryType::Count; i++) {
-        HitGroup hit(GEOMETRY_INFOS[(GeometryType::MyEnum)i].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
-        hit.closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)i].CLOSEST_HIT_SHADER_NAME;
+    for (auto&& h : HIT_GROUP_BATCHS) {
+        HitGroup hit(h.HitGroupName, HitGroupType::Triangle);
+        hit.closestHit = h.ClosestHitName;
         mRaytracingShader->bindHitGroup(hit);
     }
 
@@ -615,13 +633,14 @@ void MainApp::createRaytracingPipelineStateObject() {
     RayGenShader rayGenShader(RAY_GEN_SHADER_NAME);
     mRaytracingShader->rayGenerationShader(RAY_GEN_SHADER_NAME);
 
-    std::vector<MissShader> missShaders(1);
-    missShaders[0] = MissShader(MISS_SHADER);
+    std::vector<MissShader> missShaders(MISS_SHADER_NAMES.size());
+    for (int i = 0; i < MISS_SHADER_NAMES.size(); i++) {
+        missShaders[i] = MISS_SHADER_NAMES[i];
+    }
     mRaytracingShader->missShader(missShaders);
 
 
-    std::vector<HitGroup> hitGroups(GeometryType::Count);
-    std::vector<UINT> indices;
+    std::vector<HitGroup> hitGroups(GeometryType::Count + 1);
 
     int index = 0;
     LocalRootSignature sphereLocal;
@@ -642,7 +661,6 @@ void MainApp::createRaytracingPipelineStateObject() {
     hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
     hitGroups[index].localRootSignature = sphereLocal;
 
-    indices.emplace_back(index);
 
     index++;
 
@@ -663,7 +681,6 @@ void MainApp::createRaytracingPipelineStateObject() {
     hitGroups[index] = HitGroup(GEOMETRY_INFOS[(GeometryType::MyEnum)index].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
     hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
     hitGroups[index].localRootSignature = planeLocal;
-    indices.emplace_back(index);
 
     index++;
 
@@ -685,7 +702,11 @@ void MainApp::createRaytracingPipelineStateObject() {
     hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
     hitGroups[index].localRootSignature = cubeLocal;
 
-    indices.emplace_back(index);
+    index++;
+    hitGroups[index] = HitGroup(HIT_GROUP_SHADOW_NAME, HitGroupType::Triangle);
+    hitGroups[index].closestHit = CLOSEST_HIT_SHADOW_CAST_NAME;
+
+    std::vector<UINT>  indices{ 0,3,1,3,2,3, };
 
     mRaytracingShader->hitGroup(hitGroups, indices);
 
@@ -872,7 +893,7 @@ void MainApp::updateTLAS() {
         mat = XMMatrixTranslation(5, 0, 0);
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Cube].id, 1, 0, mat);
         mat = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
-        mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Plane].id, 2, 1, mat);
+        mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Plane].id, 2, 2, mat);
     }
     mAccelerationStructure->buildTLAS(mDXRInterface->getCommandList());
 
