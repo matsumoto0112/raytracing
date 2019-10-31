@@ -32,7 +32,7 @@ namespace Framework::DX {
         ~AccelerationStructure();
 
         void addBLASBuffer(ID3D12Device* device, void* indices, size_t indexSize, void* vertices, size_t vertexSize);
-        ID buildBLAS(ID3D12Device* nDevice, ID3D12Device5* device, ID3D12GraphicsCommandList5* commandList);
+        ID buildBLAS(ID3D12Device5* device, ID3D12GraphicsCommandList5* commandList);
     //private:
         std::vector<Buffer> mBuffers;
         std::vector<Buffer> mBufferStacks;

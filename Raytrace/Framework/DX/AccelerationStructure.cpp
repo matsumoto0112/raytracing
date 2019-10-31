@@ -18,7 +18,7 @@ namespace Framework::DX {
         mBuffers.emplace_back(buffer);
     }
 
-    AccelerationStructure::ID AccelerationStructure::buildBLAS(ID3D12Device* nDevice, ID3D12Device5* device, ID3D12GraphicsCommandList5* commandList) {
+    AccelerationStructure::ID AccelerationStructure::buildBLAS(ID3D12Device5* device, ID3D12GraphicsCommandList5* commandList) {
         auto createBuffer = [](ID3D12Device* device, UINT size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps) {
             CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(size, flags);
             ComPtr<ID3D12Resource> buffer;
@@ -63,14 +63,14 @@ namespace Framework::DX {
         AccelerationStructureBuffers buffers;
 
         buffers.scratch = createBuffer(
-            nDevice, prebuild.ScratchDataSizeInBytes,
+            device, prebuild.ScratchDataSizeInBytes,
             D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON,
             CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));
         buffers.scratch->SetName(L"Scratch");
 
         buffers.accelerationStructure = createBuffer(
-            nDevice, prebuild.ResultDataMaxSizeInBytes,
+            device, prebuild.ResultDataMaxSizeInBytes,
             D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
             CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));

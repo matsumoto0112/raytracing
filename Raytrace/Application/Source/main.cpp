@@ -430,7 +430,7 @@ void MainApp::doRaytracing() {
     list->SetDescriptorHeaps(_countof(heaps), heaps);
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::RenderTarget, mRaytracingOutput.gpuHandle);
     list->SetComputeRootShaderResourceView(GlobalRootSignatureParameter::AccelerationStructureSlot, mTopLevelAS->GetGPUVirtualAddress());
-    //list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mResourceIndexBuffer.gpuHandle);
+    list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mResourceIndexBuffer.gpuHandle);
     mRaytracingShader->doRaytracing(mDXRInterface->getCommandList(), mDXRInterface->getStateObject(), mWidth, mHeight);
 }
 
@@ -865,11 +865,14 @@ void MainApp::buildAccelerationStructures() {
         Framework::Utility::GLBLoader glbLoader(
             Framework::Utility::toString(Path::getInstance()->model() + MODEL_NAME));
         auto positions = glbLoader.getPositionsPerSubMeshes()[0];
+        auto uvs = glbLoader.getUVsPerSubMeshes()[0];
+        auto normals = glbLoader.getNormalsPerSubMeshes()[0];
         std::vector<Index> indices = glbLoader.getIndicesPerSubMeshes()[0];
         std::vector<Vertex> vertices(positions.size());
         for (size_t i = 0; i < vertices.size(); i++) {
-            const float scale = 1;
-            vertices[i].position = Vector3{ positions[i].x * scale,positions[i].y* scale,positions[i].z * scale };
+            vertices[i].position = positions[i];
+            vertices[i].uv = uvs[i];
+            vertices[i].normal = normals[i];
         }
 
 
@@ -877,7 +880,7 @@ void MainApp::buildAccelerationStructures() {
         //    vertices, indices);
         mAccelerationStructure->addBLASBuffer(device,
             indices.data(), indices.size() * sizeof(Index), vertices.data(), vertices.size() * sizeof(Vertex));
-        mAccelerationStructure->buildBLAS(device, mDXRInterface->getDXRDevice(), mDXRInterface->getCommandList());
+        mAccelerationStructure->buildBLAS(mDXRInterface->getDXRDevice(), mDXRInterface->getCommandList());
 
         //blasBuffers[GeometryType::Cube] =
         //    buildBLAS({ mAccelerationStructure->mBuffers[0].indexBuffer }, { mAccelerationStructure->mBuffers[0].vertexBuffer });
@@ -887,17 +890,23 @@ void MainApp::buildAccelerationStructures() {
 
         mResourceIndices.insert(mResourceIndices.end(), indices.begin(), indices.end());
         mResourceVertices.insert(mResourceVertices.end(), vertices.begin(), vertices.end());
+        mIndexOffsets[GeometryType::Cube + 1] = indices.size() * sizeof(Index);
+        mVertexOffsets[GeometryType::Cube + 1] = vertices.size();
     }
+
     UINT sphereID;
     {
         Framework::Utility::GLBLoader glbLoader(
             Framework::Utility::toString(Path::getInstance()->model() + MODEL_PLANE_NAME));
         auto positions = glbLoader.getPositionsPerSubMeshes()[0];
+        auto uvs = glbLoader.getUVsPerSubMeshes()[0];
+        auto normals = glbLoader.getNormalsPerSubMeshes()[0];
         std::vector<Index> indices = glbLoader.getIndicesPerSubMeshes()[0];
         std::vector<Vertex> vertices(positions.size());
         for (size_t i = 0; i < vertices.size(); i++) {
-            const float scale = 1;
-            vertices[i].position = Vector3{ positions[i].x * scale,positions[i].y* scale,positions[i].z * scale };
+            vertices[i].position = positions[i];
+            vertices[i].uv = uvs[i];
+            vertices[i].normal = normals[i];
         }
 
 
@@ -906,7 +915,7 @@ void MainApp::buildAccelerationStructures() {
         mAccelerationStructure->addBLASBuffer(device,
             indices.data(), indices.size() * sizeof(Index), vertices.data(), vertices.size() * sizeof(Vertex));
 
-        mAccelerationStructure->buildBLAS(device, mDXRInterface->getDXRDevice(), mDXRInterface->getCommandList());
+        mAccelerationStructure->buildBLAS(mDXRInterface->getDXRDevice(), mDXRInterface->getCommandList());
 
         //sphereID = mAccelerationStructure->buildBLAS(mDeviceResource->getDevice(), mDXRInterface->getDXRDevice(), mDXRInterface->getCommandList());
         mResourceIndices.insert(mResourceIndices.end(), indices.begin(), indices.end());
