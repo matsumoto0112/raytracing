@@ -598,6 +598,7 @@ void MainApp::createRaytracingPipelineStateObject() {
             rootArguments.cb.vertexOffset = mVertexOffsets[GeometryType::Sphere];
             rootArguments.cb.indexOffset = mIndexOffsets[GeometryType::Sphere];
 
+            local.use = true;
             local.localConstants = &rootArguments;
             local.localConstantsSize = sizeof(RootArgument);
             local.rootSignature = mLocalRootSignatures[0].get();
@@ -614,7 +615,7 @@ void MainApp::createRaytracingPipelineStateObject() {
             rootArguments.cb.vertexOffset = mVertexOffsets[GeometryType::Plane];
             rootArguments.cb.indexOffset = mIndexOffsets[GeometryType::Plane];
 
-
+            local.use = true;
             local.localConstants = &rootArguments;
             local.localConstantsSize = sizeof(RootArgument);
             local.rootSignature = mLocalRootSignatures[1].get();

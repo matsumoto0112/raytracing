@@ -41,9 +41,9 @@ void ClosestHit(inout RayPayload payload, in MyAttr attr) {
 
     float2 uvs[3] =
     {
-        Vertices[indices[0]].uv,
-        Vertices[indices[1]].uv,
-        Vertices[indices[2]].uv,
+        Vertices[indices[0] + l_material.vertexOffset].uv,
+        Vertices[indices[1] + l_material.vertexOffset].uv,
+        Vertices[indices[2] + l_material.vertexOffset].uv,
     };
 
     float3 N = getNormal(normals, attr);
