@@ -7,7 +7,6 @@
 #include "Helper.hlsli"
 #include "Global.hlsli"
 
-
 [shader("raygeneration")]
 void MyRayGenShader() {
     Ray ray = generateCameraRay(DispatchRaysIndex().xy, g_sceneCB.cameraPosition.xyz, g_sceneCB.projectionToWorld);
@@ -28,8 +27,7 @@ void MyRayGenShader() {
         0,
         rayDesc,
         payload);
-
-    g_renderTarget[DispatchRaysIndex().xy] = payload.color;
+    //g_renderTarget[DispatchRaysIndex().xy] = float4(1, 0, 1, 1);
 }
 
 #endif //! SHADER_RAYTRACING_RAYGENSHADER_HLSL
