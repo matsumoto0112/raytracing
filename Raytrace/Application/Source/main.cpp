@@ -30,6 +30,8 @@
 #ifdef _DEBUG
 //#include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/RayGenShader.hlsl.h"
+#include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit.hlsl.h"
+#include "Temp/bin/x64/Debug/Application/CompiledShaders/MissShader.hlsl.h"
 #else
 //#include "Temp/bin/x64/Release/Application/CompiledShaders/Raytracing.hlsl.h"
 #include "Temp/bin/x64/Release/Application/CompiledShaders/RayGenShader.hlsl.h"
@@ -586,8 +588,19 @@ void MainApp::createRaytracingPipelineStateObject() {
     ShaderFile file;
     file.shaderFile = (void*)g_pRayGenShader;
     file.shaderFileSize = _countof(g_pRayGenShader);
-    file.entryPoints = { RAY_GEN_SHADER_NAME,MISS_SHADER,CLOSEST_HIT_NAME };
+    file.entryPoints = { RAY_GEN_SHADER_NAME };
     mRaytracingShader->loadShaderFiles(file);
+
+    file.shaderFile = (void*)g_pClosestHit;
+    file.shaderFileSize = _countof(g_pClosestHit);
+    file.entryPoints = { CLOSEST_HIT_NAME };
+    mRaytracingShader->loadShaderFiles(file);
+
+    file.shaderFile = (void*)g_pMissShader;
+    file.shaderFileSize = _countof(g_pMissShader);
+    file.entryPoints = { MISS_SHADER };
+    mRaytracingShader->loadShaderFiles(file);
+
 
     std::vector<HitGroup> hitGroups(1);
     hitGroups[0] = HitGroup(HIT_GROUP_NAME, HitGroupType::Triangle);

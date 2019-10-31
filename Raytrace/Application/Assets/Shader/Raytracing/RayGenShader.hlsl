@@ -2,8 +2,6 @@
 #define SHADER_RAYTRACING_RAYGENSHADER_HLSL
 
 #define HLSL
-#include "ClosestHit.hlsl"
-#include "MissShader.hlsl"
 #include "Helper.hlsli"
 #include "Global.hlsli"
 
