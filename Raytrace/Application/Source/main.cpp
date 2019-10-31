@@ -604,7 +604,7 @@ void MainApp::createRaytracingPipelineStateObject() {
 
             hitGroups[0] = HitGroup(HIT_GROUP_SPHERE_NAME, HitGroupType::Triangle);
             hitGroups[0].closestHit = CLOSEST_HIT_NAME;
-            hitGroups[0].localRootSignature = &local;
+            hitGroups[0].localRootSignature = local;
         }
         {
             LocalRootSignature local;
@@ -621,7 +621,7 @@ void MainApp::createRaytracingPipelineStateObject() {
 
             hitGroups[1] = HitGroup(HIT_GROUP_PLANE_NAME, HitGroupType::Triangle);
             hitGroups[1].closestHit = CLOSEST_HIT_NAME;
-            hitGroups[1].localRootSignature = &local;
+            hitGroups[1].localRootSignature = local;
         }
 
 
@@ -695,8 +695,8 @@ void MainApp::buildAccelerationStructures() {
         std::vector<Vertex> vertices(positions.size());
         for (size_t i = 0; i < vertices.size(); i++) {
             vertices[i].position = positions[i];
-            //vertices[i].uv = uvs[i];
-            //vertices[i].normal = normals[i];
+            vertices[i].uv = uvs[i];
+            vertices[i].normal = normals[i];
         }
 
         mAccelerationStructure->addBLASBuffer(device, vertices, indices);
@@ -719,8 +719,8 @@ void MainApp::buildAccelerationStructures() {
         std::vector<Vertex> vertices(positions.size());
         for (size_t i = 0; i < vertices.size(); i++) {
             vertices[i].position = positions[i];
-            //vertices[i].uv = uvs[i];
-            //vertices[i].normal = normals[i];
+            vertices[i].uv = uvs[i];
+            vertices[i].normal = normals[i];
         }
 
         mAccelerationStructure->addBLASBuffer(device, vertices, indices);
