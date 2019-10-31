@@ -25,7 +25,6 @@ void MyRayGenShader() {
         0,
         rayDesc,
         payload);
-    //g_renderTarget[DispatchRaysIndex().xy] = float4(1, 0, 1, 1);
 }
 
 #endif //! SHADER_RAYTRACING_RAYGENSHADER_HLSL

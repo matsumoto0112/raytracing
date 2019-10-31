@@ -54,8 +54,6 @@ void ClosestHit(inout RayPayload payload, in MyAttr attr) {
     float2 UV = getUV(uvs, attr);
 
     float4 color = l_texture.SampleLevel(samLinear, UV, 0.0);
-    g_renderTarget[DispatchRaysIndex().xy] = color;
-    //g_renderTarget[DispatchRaysIndex().xy] = g_sceneCB.lightAmbient;
-    //payload.color = float4(1, 0, 0, 1);
+    g_renderTarget[DispatchRaysIndex().xy] = float4(1, 0, 0, 1);
 }
 #endif //! SHADER_RAYTRACING_CLOSESTHIT_HLSL

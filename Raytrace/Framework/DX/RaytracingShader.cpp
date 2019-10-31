@@ -75,8 +75,8 @@ namespace Framework::DX {
     }
 
     void RaytracingShader::rayGenerationShader(const RayGenShader& rayGenShader) {
-        ComPtr<ID3D12StateObjectProperties> props;
-        mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props));
+        if (!mProps)
+            MY_THROW_IF_FAILED(mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&mProps)), L"QueryInterfaceŽ¸”s");
         UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
         ID3D12Device* device = mDXRInterface->getDXRDevice();
         {
@@ -90,7 +90,7 @@ namespace Framework::DX {
                 constantsSize = rayGenShader.localRootSignature.localConstantsSize;
             }
 
-            void* rayGenShaderID = props->GetShaderIdentifier(rayGenShader.name.c_str());
+            void* rayGenShaderID = mProps->GetShaderIdentifier(rayGenShader.name.c_str());
             ShaderTable table(device, numShaderRecords, shaderRecordSize, L"RayGenShaderTable");
             table.push_back(ShaderRecord(rayGenShaderID, shaderIDSize, constants, constantsSize));
             mRayGenShaderTable = table.getResource();
@@ -98,8 +98,8 @@ namespace Framework::DX {
     }
 
     void RaytracingShader::missShader(const MissShaderList& missShader) {
-        ComPtr<ID3D12StateObjectProperties> props;
-        mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props));
+        if (!mProps)
+            MY_THROW_IF_FAILED(mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&mProps)), L"QueryInterfaceŽ¸”s");
         UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
         ID3D12Device* device = mDXRInterface->getDXRDevice();
 
@@ -115,7 +115,7 @@ namespace Framework::DX {
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"MissShaderTable");
         for (UINT i = 0; i < numShaderRecords; i++) {
             const MissShader& miss = missShader[i];
-            void* id = props->GetShaderIdentifier(miss.name.c_str());
+            void* id = mProps->GetShaderIdentifier(miss.name.c_str());
             void* constants = nullptr;
             UINT constantsSize = 0;
             if (miss.localRootSignature.use) {
@@ -130,8 +130,8 @@ namespace Framework::DX {
     }
 
     void RaytracingShader::hitGroup(const HitGroupShaderList& hitGroupList, const HitGroupShaderIndex& indices) {
-        ComPtr<ID3D12StateObjectProperties> props;
-        MY_THROW_IF_FAILED(mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props)), L"QueryInterfaceŽ¸”s");
+        if (!mProps)
+            MY_THROW_IF_FAILED(mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&mProps)), L"QueryInterfaceŽ¸”s");
         UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
         ID3D12Device* device = mDXRInterface->getDXRDevice();
 
@@ -145,7 +145,7 @@ namespace Framework::DX {
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupShaderTable");
         for (UINT i = 0; i < numShaderRecords; i++) {
             const HitGroup& hit = hitGroupList[indices[i]];
-            void* id = props->GetShaderIdentifier(hit.name.c_str());
+            void* id = mProps->GetShaderIdentifier(hit.name.c_str());
             void* constants = nullptr;
             UINT constantsSize = 0;
             if (hit.localRootSignature.use) {

@@ -32,11 +32,13 @@
 //#include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/RayGenShader.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit.hlsl.h"
+#include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit_Plane.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/MissShader.hlsl.h"
 #else
 //#include "Temp/bin/x64/Release/Application/CompiledShaders/Raytracing.hlsl.h"
 #include "Temp/bin/x64/Release/Application/CompiledShaders/RayGenShader.hlsl.h"
 #include "Temp/bin/x64/Release/Application/CompiledShaders/ClosestHit.hlsl.h"
+#include "Temp/bin/x64/Release/Application/CompiledShaders/ClosestHit_Plane.hlsl.h"
 #include "Temp/bin/x64/Release/Application/CompiledShaders/MissShader.hlsl.h"
 
 #endif
@@ -60,7 +62,7 @@ namespace GlobalRootSignatureParameter {
 } //GlobalRootSignatureParameter 
 namespace GeometryType {
     enum MyEnum {
-        //Sphere,
+        Sphere,
         Plane,
         Cube,
 
@@ -82,8 +84,8 @@ namespace HitGroupParams {
 
 
 static constexpr UINT SPHERE_COUNT = 1;
-static constexpr UINT PLANE_COUNT = 0;
-static constexpr UINT CUBE_COUNT = 0;
+static constexpr UINT PLANE_COUNT = 1;
+static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT TLAS_NUM = SPHERE_COUNT + PLANE_COUNT + CUBE_COUNT;
 
 /**
@@ -189,10 +191,12 @@ private:
 
     static const std::wstring RAY_GEN_SHADER_NAME;
     static const std::wstring CLOSEST_HIT_NAME;
+    static const std::wstring CLOSEST_HIT_PLANE_NAME;
     static const std::wstring MISS_SHADER;
 
     static const std::vector<std::wstring> HIT_GROUP_NAMES;
     static const std::vector<std::wstring> MODEL_NAMES;
+    static const std::vector<Color4> MODEL_COLORS;
 
     ComPtr<ID3D12Resource> mMissShaderTable;
     UINT mMissShaderStrideInBytes;
@@ -319,17 +323,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
 const std::wstring MainApp::RAY_GEN_SHADER_NAME = L"MyRayGenShader";
 const std::wstring MainApp::MISS_SHADER = L"MissShader";
 const std::wstring MainApp::CLOSEST_HIT_NAME = L"ClosestHit";
+const std::wstring MainApp::CLOSEST_HIT_PLANE_NAME = L"ClosestHit_Plane";
+
 const std::vector<std::wstring> MainApp::HIT_GROUP_NAMES =
 {
-    //L"HitGroup_Sphere",
+    L"HitGroup_Sphere",
     L"HitGroup_Plane",
     L"HitGroup_Cube",
 };
+
 const std::vector<std::wstring> MainApp::MODEL_NAMES =
 {
-    //L"sphere.glb",
+    L"sphere.glb",
     L"checker.glb",
     L"cube.glb",
+};
+
+
+const std::vector<Color4> MainApp::MODEL_COLORS =
+{
+    Color4(1,0,0,1),
+    Color4(1,1,0,1),
+    Color4(1,0,1,1),
 };
 
 void MainApp::updateCameraMatrices() {
@@ -542,12 +557,6 @@ void MainApp::createRaytracingPipelineStateObject() {
     using namespace Framework::DX;
     //シェーダー作成
     mRaytracingShader = std::make_unique<RaytracingShader>(mDXRInterface.get());
-    //グローバルルートシグネチャのセット
-    mRaytracingShader->setGlobalRootSignature(mGlobalRootSignature.get());
-
-    //シェーダーの設定
-    ShaderConfig config(Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload) }), 2 * sizeof(float), 15);
-    mRaytracingShader->setConfig(config);
 
     //シェーダーファイルの読み込み
     {
@@ -562,48 +571,41 @@ void MainApp::createRaytracingPipelineStateObject() {
         file.entryPoints = { CLOSEST_HIT_NAME };
         mRaytracingShader->loadShaderFiles(file);
 
+        file.shaderFile = (void*)g_pClosestHit_Plane;
+        file.shaderFileSize = _countof(g_pClosestHit_Plane);
+        file.entryPoints = { CLOSEST_HIT_PLANE_NAME };
+        mRaytracingShader->loadShaderFiles(file);
+
         file.shaderFile = (void*)g_pMissShader;
         file.shaderFileSize = _countof(g_pMissShader);
         file.entryPoints = { MISS_SHADER };
         mRaytracingShader->loadShaderFiles(file);
     }
+
+    HitGroup hit(HIT_GROUP_NAMES[0], HitGroupType::Triangle);
+    hit.closestHit = CLOSEST_HIT_NAME;
+    mRaytracingShader->bindHitGroup(hit);
+
+    hit = HitGroup(HIT_GROUP_NAMES[1], HitGroupType::Triangle);
+    hit.closestHit = CLOSEST_HIT_PLANE_NAME;
+    mRaytracingShader->bindHitGroup(hit);
+
+    hit = HitGroup(HIT_GROUP_NAMES[2], HitGroupType::Triangle);
+    hit.closestHit = CLOSEST_HIT_NAME;
+    mRaytracingShader->bindHitGroup(hit);
+
     for (int i = 0; i < HIT_GROUP_NAMES.size(); i++) {
         mRaytracingShader->setLocalRootSignature(HIT_GROUP_NAMES[i], mLocalRootSignatures[i].get());
     }
-    for (int i = 0; i < HIT_GROUP_NAMES.size(); i++) {
-        HitGroup hit(HIT_GROUP_NAMES[i], HitGroupType::Triangle);
-        hit.closestHit = CLOSEST_HIT_NAME;
-        mRaytracingShader->bindHitGroup(hit);
-    }
+
+    //グローバルルートシグネチャのセット
+    mRaytracingShader->setGlobalRootSignature(mGlobalRootSignature.get());
+
+    //シェーダーの設定
+    ShaderConfig config(Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload) }), 2 * sizeof(float), 15);
+    mRaytracingShader->setConfig(config);
+
     mRaytracingShader->buildPipeline();
-    {
-
-        std::vector<HitGroup> hitGroups(HIT_GROUP_NAMES.size());
-        std::vector<UINT> indices;
-
-        for (int i = 0; i < MODEL_NAMES.size(); i++) {
-            LocalRootSignature local;
-            struct RootArgument {
-                HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer cb;
-            } rootArguments;
-            rootArguments.cb.vertexOffset = mVertexOffsets[i];
-            rootArguments.cb.indexOffset = mIndexOffsets[i];
-            rootArguments.cb.texture = mTextures[i]->getGPUHandle();
-
-            local.use = true;
-            local.localConstants = &rootArguments;
-            local.localConstantsSize = sizeof(RootArgument);
-            local.rootSignature = mLocalRootSignatures[i].get();
-
-            hitGroups[i] = HitGroup(HIT_GROUP_NAMES[i], HitGroupType::Triangle);
-            hitGroups[i].closestHit = CLOSEST_HIT_NAME;
-            hitGroups[i].localRootSignature = local;
-
-            indices.emplace_back(i);
-        }
-
-        mRaytracingShader->hitGroup(hitGroups, indices);
-    }
 
     RayGenShader rayGenShader(RAY_GEN_SHADER_NAME);
     mRaytracingShader->rayGenerationShader(RAY_GEN_SHADER_NAME);
@@ -611,6 +613,76 @@ void MainApp::createRaytracingPipelineStateObject() {
     std::vector<MissShader> missShaders(1);
     missShaders[0] = MissShader(MISS_SHADER);
     mRaytracingShader->missShader(missShaders);
+
+
+    std::vector<HitGroup> hitGroups(HIT_GROUP_NAMES.size());
+    std::vector<UINT> indices;
+
+    int index = 0;
+    LocalRootSignature sphereLocal;
+    struct SphereRootArgument {
+        HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer cb;
+    } sphereRootArguments;
+    sphereRootArguments.cb.vertexOffset = mVertexOffsets[index];
+    sphereRootArguments.cb.indexOffset = mIndexOffsets[index];
+    sphereRootArguments.cb.texture = mTextures[index]->getGPUHandle();
+    sphereRootArguments.cb.color = MODEL_COLORS[index];
+
+    sphereLocal.use = true;
+    sphereLocal.localConstants = &sphereRootArguments;
+    sphereLocal.localConstantsSize = sizeof(sphereRootArguments);
+    sphereLocal.rootSignature = mLocalRootSignatures[index].get();
+
+    hitGroups[index] = HitGroup(HIT_GROUP_NAMES[index], HitGroupType::Triangle);
+    hitGroups[index].closestHit = CLOSEST_HIT_NAME;
+    hitGroups[index].localRootSignature = sphereLocal;
+
+    indices.emplace_back(index);
+
+    index++;
+
+    LocalRootSignature planeLocal;
+    struct PlaneRootArgument {
+        HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer cb;
+    } planeRootArguments;
+    planeRootArguments.cb.vertexOffset = mVertexOffsets[index];
+    planeRootArguments.cb.indexOffset = mIndexOffsets[index];
+    planeRootArguments.cb.texture = mTextures[index]->getGPUHandle();
+    planeRootArguments.cb.color = MODEL_COLORS[index];
+
+    planeLocal.use = true;
+    planeLocal.localConstants = &planeRootArguments;
+    planeLocal.localConstantsSize = sizeof(planeRootArguments);
+    planeLocal.rootSignature = mLocalRootSignatures[index].get();
+
+    hitGroups[index] = HitGroup(HIT_GROUP_NAMES[index], HitGroupType::Triangle);
+    hitGroups[index].closestHit = CLOSEST_HIT_PLANE_NAME;
+    hitGroups[index].localRootSignature = planeLocal;
+    indices.emplace_back(index);
+
+    index++;
+
+    LocalRootSignature cubeLocal;
+    struct CubeRootArgument {
+        HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer cb;
+    } cubeRootArguments;
+    cubeRootArguments.cb.vertexOffset = mVertexOffsets[index];
+    cubeRootArguments.cb.indexOffset = mIndexOffsets[index];
+    cubeRootArguments.cb.texture = mTextures[index]->getGPUHandle();
+    cubeRootArguments.cb.color = MODEL_COLORS[index];
+
+    cubeLocal.use = true;
+    cubeLocal.localConstants = &cubeRootArguments;
+    cubeLocal.localConstantsSize = sizeof(cubeRootArguments);
+    cubeLocal.rootSignature = mLocalRootSignatures[index].get();
+
+    hitGroups[index] = HitGroup(HIT_GROUP_NAMES[index], HitGroupType::Triangle);
+    hitGroups[index].closestHit = CLOSEST_HIT_NAME;
+    hitGroups[index].localRootSignature = cubeLocal;
+
+    indices.emplace_back(index);
+
+    mRaytracingShader->hitGroup(hitGroups, indices);
 
     mRaytracingShader->printOut();
 }
@@ -790,16 +862,12 @@ ComPtr<ID3D12Resource> MainApp::createBuffer(uint64_t size, D3D12_RESOURCE_FLAGS
 void MainApp::updateTLAS() {
     mAccelerationStructure->tlasConfig(mDXRInterface->getDXRDevice(), TLAS_NUM);
     {
-        mAccelerationStructure->addTLASBuffer(0, 0, 0, XMMatrixIdentity());
-        //for (int i = 0; i < SPHERE_COUNT; i++) {
-        //    XMMATRIX tr = XMMatrixTranslation(mCubePositions[i].x, mCubePositions[i].y, mCubePositions[i].z);
-        //    mAccelerationStructure->addTLASBuffer(0, 0, 0, tr);
-        //}
-        //XMMATRIX tr = XMMatrixScaling(50, 1, 50);
-        ////mAccelerationStructure->addTLASBuffer(1, 2, 2, tr);
-
-        //tr = XMMatrixTranslation(5, 5, 0);
-        ////mAccelerationStructure->addTLASBuffer(2, 1, 2, tr);
+        XMMATRIX mat = XMMatrixIdentity();
+        mAccelerationStructure->addTLASBuffer(0, 0, 0, mat);
+        mat = XMMatrixTranslation(5, 0, 0);
+        mAccelerationStructure->addTLASBuffer(1, 1, 1, mat);
+        mat = XMMatrixTranslation(-5, 0, 0);
+        mAccelerationStructure->addTLASBuffer(2, 2, 0, mat);
     }
     mAccelerationStructure->buildTLAS(mDXRInterface->getCommandList());
 

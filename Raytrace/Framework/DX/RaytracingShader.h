@@ -113,6 +113,7 @@ namespace Framework::DX {
         DXRInterface* mDXRInterface;
         CD3DX12_STATE_OBJECT_DESC mRaytracingPipeline;
 
+        ComPtr<ID3D12StateObjectProperties> mProps;
         ComPtr<ID3D12Resource> mRayGenShaderTable;
         ComPtr<ID3D12Resource> mMissShaderTable;
         UINT mMissShaderStrideInBytes;
