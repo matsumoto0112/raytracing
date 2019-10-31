@@ -40,7 +40,6 @@ inline float3 Specular(in float3 N, in float3 L, in float3 V, in float3 specular
 
 [shader("closesthit")]
 void ClosestHit_Plane(inout RayPayload payload, in MyAttr attr) {
-    // Get the base index of the triangle's first 16 bit index.
     uint indexSizeInBytes = 2;
     uint indicesPerTriangle = 3;
     uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
@@ -61,7 +60,7 @@ void ClosestHit_Plane(inout RayPayload payload, in MyAttr attr) {
 
     float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
     RayDesc shadowRay;
-    shadowRay.Origin = hitWorldPosition();
+    shadowRay.Origin = worldPos;
     shadowRay.Direction = L;
     shadowRay.TMin = 0.01;
     shadowRay.TMax = 10000.0;
@@ -83,6 +82,7 @@ void ClosestHit_Plane(inout RayPayload payload, in MyAttr attr) {
     color.rgb += Specular(N, L, V, float3(1, 1, 1));
     color = color * factor;
 
+    color = float4(0.3, 0.4, 0.5, 1.0);
     g_renderTarget[DispatchRaysIndex().xy] = color;
 }
 #endif //! SHADER_RAYTRACING_CLOSESTHIT_PLANE_HLSL

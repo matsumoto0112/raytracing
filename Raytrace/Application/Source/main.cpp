@@ -891,7 +891,7 @@ void MainApp::updateTLAS() {
         XMMATRIX mat = XMMatrixIdentity();
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Sphere].id, 0, 0, mat);
         mat = XMMatrixTranslation(5, 0, 0);
-        mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Cube].id, 1, 0, mat);
+        mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Cube].id, 1, 2, mat);
         mat = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Plane].id, 2, 2, mat);
     }
