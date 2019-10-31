@@ -4,10 +4,11 @@
 #include "DX/DXHelper.h"
 #include "DX/RaytracingHelper.h"
 #include "Math/Vector3.h"
-#include "Application/Assets/Shader/RaytracingStructure.h"
+#include <DirectXMath.h>
+#include "Application/Assets/Shader/Raytracing/RaytracingCompat.h"
 
 namespace Framework::DX {
-
+    using namespace DirectX;
     struct Buffer {
         D3DBuffer vertexBuffer;
         D3DBuffer indexBuffer;

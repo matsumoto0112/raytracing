@@ -99,7 +99,7 @@ namespace Framework::DX {
         ~RaytracingShader();
 
         void doRaytracing(ID3D12GraphicsCommandList5* list, ID3D12StateObject* state, UINT width, UINT height);
-    //private:
+    private:
         ComPtr<ID3D12Resource> mRayGenShaderTable;
         ComPtr<ID3D12Resource> mMissShaderTable;
         UINT mMissShaderStrideInBytes;

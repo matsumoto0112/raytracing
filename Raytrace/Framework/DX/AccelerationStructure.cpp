@@ -1,6 +1,5 @@
 #include "AccelerationStructure.h"
 #include "Utility/Debug.h"
-
 namespace {
     inline ComPtr<ID3D12Resource> createBuffer(ID3D12Device5* device, UINT size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES initState, const D3D12_HEAP_PROPERTIES& heapProps) {
         CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(size, flags);

@@ -2,15 +2,15 @@
 #define SHADER_RAYTRACING_RAYGENSHADER_HLSL
 
 #define HLSL
+#include "ClosestHit.hlsl"
+#include "MissShader.hlsl"
 #include "Helper.hlsli"
 #include "Global.hlsli"
 
-#include "ClosestHit.hlsl"
-#include "MissShader.hlsl"
 
 [shader("raygeneration")]
 void MyRayGenShader() {
-    Ray ray = generateCameraRay(DispatchRaysIndex().xy, g_sceneCB.cameraPosition, g_sceneCB.projectionToWorld);
+    Ray ray = generateCameraRay(DispatchRaysIndex().xy, g_sceneCB.cameraPosition.xyz, g_sceneCB.projectionToWorld);
 
     RayDesc rayDesc;
     rayDesc.Origin = ray.origin;

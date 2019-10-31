@@ -7,22 +7,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h" />
-    <ClInclude Include="Assets\Shader\RaytracingStructure.h" />
-    <ClInclude Include="Assets\Shader\RaytracingTypedef.h" />
-    <ClInclude Include="Assets\Shader\RaytracingDefine.h" />
     <ClInclude Include="Source\targetvar.h" />
     <ClInclude Include="Source\Util\Path.h" />
     <ClInclude Include="Assets\Shader\Raytracing\RaytracingCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\RaytracingTypedef.h" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Assets\Shader\Raytracing.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\RayGenShader.hlsl" />
-    <FxCompile Include="Assets\Shader\Raytracing\ClosestHit.hlsl" />
-    <FxCompile Include="Assets\Shader\Raytracing\MissShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\Shader\RaytracingHelper.hlsli" />
     <None Include="packages.config" />
     <None Include="Assets\Shader\Raytracing\Helper.hlsli" />
     <None Include="Assets\Shader\Raytracing\Global.hlsli" />
