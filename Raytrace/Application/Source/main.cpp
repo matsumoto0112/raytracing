@@ -93,7 +93,7 @@ static constexpr UINT TLAS_NUM = SPHERE_COUNT + PLANE_COUNT + CUBE_COUNT;
 static const std::vector<std::wstring> MODEL_NAMES =
 {
     L"sphere.glb",
-    L"checker.glb",
+     L"checker.glb",
     L"cube.glb",
 };
 
@@ -660,8 +660,6 @@ void MainApp::createRaytracingPipelineStateObject() {
     hitGroups[index] = HitGroup(GEOMETRY_INFOS[(GeometryType::MyEnum)index].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
     hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
     hitGroups[index].localRootSignature = sphereLocal;
-
-
     index++;
 
     LocalRootSignature planeLocal;
@@ -681,7 +679,6 @@ void MainApp::createRaytracingPipelineStateObject() {
     hitGroups[index] = HitGroup(GEOMETRY_INFOS[(GeometryType::MyEnum)index].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
     hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
     hitGroups[index].localRootSignature = planeLocal;
-
     index++;
 
     LocalRootSignature cubeLocal;
@@ -706,7 +703,8 @@ void MainApp::createRaytracingPipelineStateObject() {
     hitGroups[index] = HitGroup(HIT_GROUP_SHADOW_NAME, HitGroupType::Triangle);
     hitGroups[index].closestHit = CLOSEST_HIT_SHADOW_CAST_NAME;
 
-    std::vector<UINT>  indices{ 0,3,1,3,2,3, };
+    //std::vector<UINT>  indices{ 0,3,1,3,2,3, };
+    std::vector<UINT>  indices{ 0,3,1,3, 2,3 };
 
     mRaytracingShader->hitGroup(hitGroups, indices);
 
@@ -890,10 +888,10 @@ void MainApp::updateTLAS() {
     {
         XMMATRIX mat = XMMatrixIdentity();
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Sphere].id, 0, 0, mat);
-        mat = XMMatrixTranslation(5, 0, 0);
-        mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Cube].id, 1, 2, mat);
         mat = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
-        mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Plane].id, 2, 2, mat);
+        mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Plane].id, 1, 2, mat);
+        mat = XMMatrixTranslation(5, 0, 0);
+        mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Cube].id, 2, 4, mat);
     }
     mAccelerationStructure->buildTLAS(mDXRInterface->getCommandList());
 
