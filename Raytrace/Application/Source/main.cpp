@@ -29,17 +29,19 @@
 #include "../Assets/Shader/Raytracing/RaytracingCompat.h"
 
 #ifdef _DEBUG
-//#include "Temp/bin/x64/Debug/Application/CompiledShaders/Raytracing.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/RayGenShader.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit_Plane.hlsl.h"
+#include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit_ShadowCast.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/MissShader.hlsl.h"
+#include "Temp/bin/x64/Debug/Application/CompiledShaders/MissShader_ShadowCast.hlsl.h"
 #else
-//#include "Temp/bin/x64/Release/Application/CompiledShaders/Raytracing.hlsl.h"
 #include "Temp/bin/x64/Release/Application/CompiledShaders/RayGenShader.hlsl.h"
 #include "Temp/bin/x64/Release/Application/CompiledShaders/ClosestHit.hlsl.h"
 #include "Temp/bin/x64/Release/Application/CompiledShaders/ClosestHit_Plane.hlsl.h"
+#include "Temp/bin/x64/Release/Application/CompiledShaders/ClosestHit_ShadowCast.hlsl.h"
 #include "Temp/bin/x64/Release/Application/CompiledShaders/MissShader.hlsl.h"
+#include "Temp/bin/x64/Release/Application/CompiledShaders/MissShader_ShadowCast.hlsl.h"
 
 #endif
 
@@ -87,6 +89,63 @@ static constexpr UINT SPHERE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT CUBE_COUNT = 1;
 static constexpr UINT TLAS_NUM = SPHERE_COUNT + PLANE_COUNT + CUBE_COUNT;
+
+static const std::vector<std::wstring> MODEL_NAMES =
+{
+    L"sphere.glb",
+    L"checker.glb",
+    L"cube.glb",
+};
+
+static const std::wstring RAY_GEN_SHADER_NAME = L"MyRayGenShader";
+static const std::wstring MISS_SHADER = L"MissShader";
+static const std::wstring MISS_SHADER_SHADOW_CAST = L"MissShader_ShadowCast";
+static const std::wstring CLOSEST_HIT_NAME = L"ClosestHit";
+static const std::wstring CLOSEST_HIT_PLANE_NAME = L"ClosestHit_Plane";
+static const std::wstring CLOSEST_HIT_SHADOW_CAST_NAME = L"ClosestHit_ShadowCast";
+static const std::wstring HIT_GROUP_SPHERE_NAME = L"HitGroup_Sphere";
+static const std::wstring HIT_GROUP_PLANE_NAME = L"HitGroup_Plane";
+static const std::wstring HIT_GROUP_CUBE_NAME = L"HitGroup_Cube";
+
+static const std::vector<Color4> MODEL_COLORS =
+{
+    Color4(1,0,0,1),
+    Color4(1,1,0,1),
+    Color4(1,0,1,1),
+};
+
+struct GeometryInfo {
+    UINT id;
+    std::wstring CLOSEST_HIT_SHADER_NAME;
+    std::wstring CLOSEST_HIT_SHADOW_CAST_NAME;
+    std::wstring HIT_GROUP_SHADER_NAME;
+};
+
+static std::unordered_map<GeometryType::MyEnum, GeometryInfo> GEOMETRY_INFOS
+{
+    {GeometryType::Sphere ,GeometryInfo{0,CLOSEST_HIT_NAME,CLOSEST_HIT_SHADOW_CAST_NAME, HIT_GROUP_SPHERE_NAME} },
+    {GeometryType::Plane,GeometryInfo{0,CLOSEST_HIT_PLANE_NAME,CLOSEST_HIT_SHADOW_CAST_NAME,HIT_GROUP_PLANE_NAME} },
+    {GeometryType::Cube,GeometryInfo{0,CLOSEST_HIT_PLANE_NAME,CLOSEST_HIT_SHADOW_CAST_NAME,HIT_GROUP_CUBE_NAME} },
+};
+
+struct ShaderFileInfo {
+    void* shaderFile;
+    size_t size;
+    std::vector<std::wstring> entryPoints;
+};
+
+#define SHADER_FILE_INFO_PROP(file,names) (void*)file,_countof(file),names , 
+
+static const std::vector<ShaderFileInfo> SHADER_FILE_INFOS =
+{
+    {SHADER_FILE_INFO_PROP(g_pRayGenShader,{RAY_GEN_SHADER_NAME}) },
+    {SHADER_FILE_INFO_PROP(g_pMissShader,{MISS_SHADER}) },
+    {SHADER_FILE_INFO_PROP(g_pMissShader_ShadowCast,{ MISS_SHADER_SHADOW_CAST}) },
+    {SHADER_FILE_INFO_PROP(g_pClosestHit,{CLOSEST_HIT_NAME}) },
+    {SHADER_FILE_INFO_PROP(g_pClosestHit_Plane,{CLOSEST_HIT_PLANE_NAME}) },
+    {SHADER_FILE_INFO_PROP(g_pClosestHit_ShadowCast,{CLOSEST_HIT_SHADOW_CAST_NAME}) },
+};
+
 
 /**
 * @class MainApp
@@ -189,14 +248,6 @@ private:
     D3DBuffer mRaytracingOutput;
     //シェーダーテーブル
 
-    static const std::wstring RAY_GEN_SHADER_NAME;
-    static const std::wstring CLOSEST_HIT_NAME;
-    static const std::wstring CLOSEST_HIT_PLANE_NAME;
-    static const std::wstring MISS_SHADER;
-
-    static const std::vector<std::wstring> HIT_GROUP_NAMES;
-    static const std::vector<std::wstring> MODEL_NAMES;
-    static const std::vector<Color4> MODEL_COLORS;
 
     ComPtr<ID3D12Resource> mMissShaderTable;
     UINT mMissShaderStrideInBytes;
@@ -320,32 +371,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     return app.run(hInstance, nCmdShow);
 }
 
-const std::wstring MainApp::RAY_GEN_SHADER_NAME = L"MyRayGenShader";
-const std::wstring MainApp::MISS_SHADER = L"MissShader";
-const std::wstring MainApp::CLOSEST_HIT_NAME = L"ClosestHit";
-const std::wstring MainApp::CLOSEST_HIT_PLANE_NAME = L"ClosestHit_Plane";
 
-const std::vector<std::wstring> MainApp::HIT_GROUP_NAMES =
-{
-    L"HitGroup_Sphere",
-    L"HitGroup_Plane",
-    L"HitGroup_Cube",
-};
-
-const std::vector<std::wstring> MainApp::MODEL_NAMES =
-{
-    L"sphere.glb",
-    L"checker.glb",
-    L"cube.glb",
-};
-
-
-const std::vector<Color4> MainApp::MODEL_COLORS =
-{
-    Color4(1,0,0,1),
-    Color4(1,1,0,1),
-    Color4(1,0,1,1),
-};
 
 void MainApp::updateCameraMatrices() {
     mSceneCB->cameraPosition = mCameraPosition;
@@ -559,43 +585,22 @@ void MainApp::createRaytracingPipelineStateObject() {
     mRaytracingShader = std::make_unique<RaytracingShader>(mDXRInterface.get());
 
     //シェーダーファイルの読み込み
-    {
+    for (auto&& f : SHADER_FILE_INFOS) {
         ShaderFile file;
-        file.shaderFile = (void*)g_pRayGenShader;
-        file.shaderFileSize = _countof(g_pRayGenShader);
-        file.entryPoints = { RAY_GEN_SHADER_NAME };
-        mRaytracingShader->loadShaderFiles(file);
-
-        file.shaderFile = (void*)g_pClosestHit;
-        file.shaderFileSize = _countof(g_pClosestHit);
-        file.entryPoints = { CLOSEST_HIT_NAME };
-        mRaytracingShader->loadShaderFiles(file);
-
-        file.shaderFile = (void*)g_pClosestHit_Plane;
-        file.shaderFileSize = _countof(g_pClosestHit_Plane);
-        file.entryPoints = { CLOSEST_HIT_PLANE_NAME };
-        mRaytracingShader->loadShaderFiles(file);
-
-        file.shaderFile = (void*)g_pMissShader;
-        file.shaderFileSize = _countof(g_pMissShader);
-        file.entryPoints = { MISS_SHADER };
+        file.shaderFile = f.shaderFile;
+        file.shaderFileSize = f.size;
+        file.entryPoints = f.entryPoints;
         mRaytracingShader->loadShaderFiles(file);
     }
 
-    HitGroup hit(HIT_GROUP_NAMES[0], HitGroupType::Triangle);
-    hit.closestHit = CLOSEST_HIT_NAME;
-    mRaytracingShader->bindHitGroup(hit);
+    for (int i = 0; i < GeometryType::Count; i++) {
+        HitGroup hit(GEOMETRY_INFOS[(GeometryType::MyEnum)i].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
+        hit.closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)i].CLOSEST_HIT_SHADER_NAME;
+        mRaytracingShader->bindHitGroup(hit);
+    }
 
-    hit = HitGroup(HIT_GROUP_NAMES[1], HitGroupType::Triangle);
-    hit.closestHit = CLOSEST_HIT_PLANE_NAME;
-    mRaytracingShader->bindHitGroup(hit);
-
-    hit = HitGroup(HIT_GROUP_NAMES[2], HitGroupType::Triangle);
-    hit.closestHit = CLOSEST_HIT_NAME;
-    mRaytracingShader->bindHitGroup(hit);
-
-    for (int i = 0; i < HIT_GROUP_NAMES.size(); i++) {
-        mRaytracingShader->setLocalRootSignature(HIT_GROUP_NAMES[i], mLocalRootSignatures[i].get());
+    for (int i = 0; i < GeometryType::Count; i++) {
+        mRaytracingShader->setLocalRootSignature(GEOMETRY_INFOS[(GeometryType::MyEnum)i].HIT_GROUP_SHADER_NAME, mLocalRootSignatures[i].get());
     }
 
     //グローバルルートシグネチャのセット
@@ -615,7 +620,7 @@ void MainApp::createRaytracingPipelineStateObject() {
     mRaytracingShader->missShader(missShaders);
 
 
-    std::vector<HitGroup> hitGroups(HIT_GROUP_NAMES.size());
+    std::vector<HitGroup> hitGroups(GeometryType::Count);
     std::vector<UINT> indices;
 
     int index = 0;
@@ -633,8 +638,8 @@ void MainApp::createRaytracingPipelineStateObject() {
     sphereLocal.localConstantsSize = sizeof(sphereRootArguments);
     sphereLocal.rootSignature = mLocalRootSignatures[index].get();
 
-    hitGroups[index] = HitGroup(HIT_GROUP_NAMES[index], HitGroupType::Triangle);
-    hitGroups[index].closestHit = CLOSEST_HIT_NAME;
+    hitGroups[index] = HitGroup(GEOMETRY_INFOS[(GeometryType::MyEnum)index].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
+    hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
     hitGroups[index].localRootSignature = sphereLocal;
 
     indices.emplace_back(index);
@@ -655,8 +660,8 @@ void MainApp::createRaytracingPipelineStateObject() {
     planeLocal.localConstantsSize = sizeof(planeRootArguments);
     planeLocal.rootSignature = mLocalRootSignatures[index].get();
 
-    hitGroups[index] = HitGroup(HIT_GROUP_NAMES[index], HitGroupType::Triangle);
-    hitGroups[index].closestHit = CLOSEST_HIT_PLANE_NAME;
+    hitGroups[index] = HitGroup(GEOMETRY_INFOS[(GeometryType::MyEnum)index].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
+    hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
     hitGroups[index].localRootSignature = planeLocal;
     indices.emplace_back(index);
 
@@ -676,8 +681,8 @@ void MainApp::createRaytracingPipelineStateObject() {
     cubeLocal.localConstantsSize = sizeof(cubeRootArguments);
     cubeLocal.rootSignature = mLocalRootSignatures[index].get();
 
-    hitGroups[index] = HitGroup(HIT_GROUP_NAMES[index], HitGroupType::Triangle);
-    hitGroups[index].closestHit = CLOSEST_HIT_NAME;
+    hitGroups[index] = HitGroup(GEOMETRY_INFOS[(GeometryType::MyEnum)index].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
+    hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
     hitGroups[index].localRootSignature = cubeLocal;
 
     indices.emplace_back(index);
@@ -751,7 +756,7 @@ void MainApp::buildAccelerationStructures() {
         }
 
         mAccelerationStructure->addBLASBuffer(device, vertices, indices);
-        mAccelerationStructure->buildBLAS(device, mDXRInterface->getCommandList());
+        GEOMETRY_INFOS[(GeometryType::MyEnum)k].id = mAccelerationStructure->buildBLAS(device, mDXRInterface->getCommandList());
 
         mResourceIndices.insert(mResourceIndices.end(), indices.begin(), indices.end());
         mResourceVertices.insert(mResourceVertices.end(), vertices.begin(), vertices.end());
@@ -863,11 +868,11 @@ void MainApp::updateTLAS() {
     mAccelerationStructure->tlasConfig(mDXRInterface->getDXRDevice(), TLAS_NUM);
     {
         XMMATRIX mat = XMMatrixIdentity();
-        mAccelerationStructure->addTLASBuffer(0, 0, 0, mat);
+        mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Sphere].id, 0, 0, mat);
         mat = XMMatrixTranslation(5, 0, 0);
-        mAccelerationStructure->addTLASBuffer(1, 1, 1, mat);
-        mat = XMMatrixTranslation(-5, 0, 0);
-        mAccelerationStructure->addTLASBuffer(2, 2, 0, mat);
+        mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Cube].id, 1, 0, mat);
+        mat = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
+        mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Plane].id, 2, 1, mat);
     }
     mAccelerationStructure->buildTLAS(mDXRInterface->getCommandList());
 

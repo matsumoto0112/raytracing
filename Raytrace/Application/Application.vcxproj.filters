@@ -18,6 +18,8 @@
     <FxCompile Include="Assets\Shader\Raytracing\MissShader.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\ClosestHit.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\ClosestHit_Plane.hlsl" />
+    <FxCompile Include="Assets\Shader\Raytracing\ClosestHit_ShadowCast.hlsl" />
+    <FxCompile Include="Assets\Shader\Raytracing\MissShader_ShadowCast.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

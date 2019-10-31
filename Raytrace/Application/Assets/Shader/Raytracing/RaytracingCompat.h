@@ -26,6 +26,10 @@ struct RayPayload {
     UINT recursion;
 };
 
+struct ShadowPayload {
+    bool hit;
+};
+
 /**
 * @brief ’¸“_î•ñ
 */

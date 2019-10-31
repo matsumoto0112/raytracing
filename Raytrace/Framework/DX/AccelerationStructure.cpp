@@ -22,8 +22,8 @@ namespace Framework::DX {
 
     void AccelerationStructure::addBLASBuffer(ID3D12Device5 * device, const VertexList& vertices, const IndexList& indices) {
         Buffer buffer;
-        const UINT indexSize = indices.size() * sizeof(indices[0]);
-        const UINT vertexSize = vertices.size() * sizeof(vertices[0]);
+        const UINT indexSize = UINT(indices.size()) * sizeof(indices[0]);
+        const UINT vertexSize = UINT(vertices.size()) * sizeof(vertices[0]);
         allocateUploadBuffer(device, (void*)indices.data(), indexSize, &buffer.indexBuffer.resource);
         allocateUploadBuffer(device, (void*)vertices.data(), vertexSize, &buffer.vertexBuffer.resource);
         mBuffers.emplace_back(buffer);
@@ -51,7 +51,7 @@ namespace Framework::DX {
         D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
         inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT::D3D12_ELEMENTS_LAYOUT_ARRAY;
         inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-        inputs.NumDescs = size;
+        inputs.NumDescs = UINT(size);
         inputs.pGeometryDescs = geomertyDescs.data();
         inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE::D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
 
@@ -61,14 +61,14 @@ namespace Framework::DX {
         AccelerationStructureBuffers buffers;
 
         buffers.scratch = createBuffer(
-            device, prebuild.ScratchDataSizeInBytes,
+            device, (UINT)prebuild.ScratchDataSizeInBytes,
             D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON,
             CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));
         buffers.scratch->SetName(L"Scratch");
 
         buffers.accelerationStructure = createBuffer(
-            device, prebuild.ResultDataMaxSizeInBytes,
+            device, (UINT)prebuild.ResultDataMaxSizeInBytes,
             D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
             CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));
@@ -86,7 +86,7 @@ namespace Framework::DX {
         barrier.UAV.pResource = buffers.accelerationStructure.Get();
         commandList->ResourceBarrier(1, &barrier);
 
-        UINT id = mBottomLevelASs.size();
+        UINT id = (UINT)mBottomLevelASs.size();
         mBottomLevelASs.emplace_back(buffers);
 
         mBufferStacks.insert(mBufferStacks.end(), mBuffers.begin(), mBuffers.end());
@@ -108,15 +108,15 @@ namespace Framework::DX {
         mTLASTmpBuffer.accelerationStructure.Reset();
         mTLASTmpBuffer.instanceDesc.Reset();
 
-        mTLASTmpBuffer.scratch = createBuffer(device, pre.ScratchDataSizeInBytes,
+        mTLASTmpBuffer.scratch = createBuffer(device, (UINT)pre.ScratchDataSizeInBytes,
             D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
             CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));
-        mTLASTmpBuffer.accelerationStructure = createBuffer(device, pre.ResultDataMaxSizeInBytes,
+        mTLASTmpBuffer.accelerationStructure = createBuffer(device, (UINT)pre.ResultDataMaxSizeInBytes,
             D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE,
             CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT));
-        mTLASSize = pre.ResultDataMaxSizeInBytes;
+        mTLASSize = (UINT)pre.ResultDataMaxSizeInBytes;
 
 
         mTLASTmpBuffer.instanceDesc = createBuffer(device, sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * tlasNum,
