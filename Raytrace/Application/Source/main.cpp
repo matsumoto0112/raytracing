@@ -25,6 +25,7 @@
 #include "DX/Texture2D.h"
 #include "DX/RaytracingShader.h"
 #include "DX/AccelerationStructure.h"
+#include "../Assets/Shader/Raytracing/Local.h"
 #include "../Assets/Shader/Raytracing/RaytracingCompat.h"
 
 #ifdef _DEBUG
@@ -73,10 +74,6 @@ namespace HitGroupParams {
                 Material,
                 Count
             };
-            struct MaterialConstantBuffer {
-                UINT indexOffset;
-                UINT vertexOffset;
-            }; //MaterialConstantBuffer 
         } //Constant 
     } //LocalRootSignatureParameter 
 } //HitGroup 

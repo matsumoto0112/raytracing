@@ -81,6 +81,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Assets\Shader\Raytracing\Local.h" />
     <ClInclude Include="Assets\Shader\Raytracing\RaytracingCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\RaytracingTypedef.h" />
     <ClInclude Include="Source\Util\Path.h" />
