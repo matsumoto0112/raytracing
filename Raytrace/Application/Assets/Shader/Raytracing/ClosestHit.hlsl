@@ -29,9 +29,9 @@ void ClosestHit(inout RayPayload payload, in MyAttr attr) {
     uint indexSizeInBytes = 2;
     uint indicesPerTriangle = 3;
     uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
-    uint baseIndex = PrimitiveIndex() * triangleIndexStride;
+    uint baseIndex = PrimitiveIndex() * triangleIndexStride + l_material.indexOffset;
 
-    uint3 indices = loadIndices(baseIndex, Indices);
+    uint3 indices = loadIndices(baseIndex, Indices) + l_material.vertexOffset;
     float3 normals[3] =
     {
         Vertices[indices[0]].normal,
@@ -41,9 +41,9 @@ void ClosestHit(inout RayPayload payload, in MyAttr attr) {
 
     float2 uvs[3] =
     {
-        Vertices[indices[0] + l_material.vertexOffset].uv,
-        Vertices[indices[1] + l_material.vertexOffset].uv,
-        Vertices[indices[2] + l_material.vertexOffset].uv,
+        Vertices[indices[0]].uv,
+        Vertices[indices[1]].uv,
+        Vertices[indices[2]].uv,
     };
 
     float3 N = getNormal(normals, attr);
