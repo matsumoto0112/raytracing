@@ -126,12 +126,12 @@ namespace Framework::DX {
         }
         mMissShaderStrideInBytes = table.getShaderRecordSize();
         mMissShaderTable = table.getResource();
-
+        mMissShaderTable->SetName(L"MissShaderTable");
     }
 
     void RaytracingShader::hitGroup(const HitGroupShaderList& hitGroupList, const HitGroupShaderIndex& indices) {
         ComPtr<ID3D12StateObjectProperties> props;
-        mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props));
+        MY_THROW_IF_FAILED(mDXRInterface->getStateObject()->QueryInterface(IID_PPV_ARGS(&props)), L"QueryInterfaceŽ¸”s");
         UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
         ID3D12Device* device = mDXRInterface->getDXRDevice();
 
@@ -141,10 +141,6 @@ namespace Framework::DX {
             if (hit.localRootSignature.use)
                 shaderRecordSize = Math::MathUtil::mymax(shaderIDSize + hit.localRootSignature.localConstantsSize, shaderRecordSize);
         }
-        auto getHitGroupByName = [](const std::wstring& name, const HitGroupShaderList& hitGroups) {
-            return *std::find_if(hitGroups.begin(), hitGroups.end(),
-                [&](auto& hit) {return hit.name == name; });
-        };
 
         ShaderTable table(device, numShaderRecords, shaderRecordSize, L"HitGroupShaderTable");
         for (UINT i = 0; i < numShaderRecords; i++) {
@@ -160,6 +156,7 @@ namespace Framework::DX {
         }
         mHitGroupShaderStrideInBytes = table.getShaderRecordSize();
         mHitGroupShaderTable = table.getResource();
+        mHitGroupShaderTable->SetName(L"HitGroupShaderTable");
     }
 
     void RaytracingShader::doRaytracing(UINT width, UINT height) {
@@ -185,6 +182,10 @@ namespace Framework::DX {
         commandList->SetPipelineState1(state);
 
         commandList->DispatchRays(&desc);
+    }
+
+    void RaytracingShader::printOut() {
+        printStateObjectDesc(mRaytracingPipeline);
     }
 
 } //Framework::DX 

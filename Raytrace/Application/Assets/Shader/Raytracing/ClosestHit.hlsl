@@ -11,6 +11,8 @@ typedef  HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuf
 
 ConstantBuffer<Material> l_material : register(b1);
 
+Texture2D<float4> l_texture : register(t3);
+
 inline float3 getNormal(float3 normals[3], in MyAttr attr) {
     return normals[0] +
         attr.barycentrics.x * (normals[1] - normals[0]) +
@@ -51,7 +53,7 @@ void ClosestHit(inout RayPayload payload, in MyAttr attr) {
 
     float2 UV = getUV(uvs, attr);
 
-    float4 color = float4(UV, 0.0f, 1.0f);
+    float4 color = l_texture.SampleLevel(samLinear, UV, 0.0);
     g_renderTarget[DispatchRaysIndex().xy] = color;
     //g_renderTarget[DispatchRaysIndex().xy] = g_sceneCB.lightAmbient;
     //payload.color = float4(1, 0, 0, 1);

@@ -17,6 +17,8 @@ RWTexture2D<float4> g_renderTarget : register(u0);
 //シーン情報
 ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
 
+SamplerState samLinear : register(s0);
+
 //closesthitなどで引数として受け取る三角形の重心
 typedef BuiltInTriangleIntersectionAttributes MyAttr;
 

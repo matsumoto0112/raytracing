@@ -7,6 +7,9 @@ namespace HitGroupParams {
             struct MaterialConstantBuffer {
                 UINT indexOffset;
                 UINT vertexOffset;
+#ifndef HLSL
+                D3D12_GPU_DESCRIPTOR_HANDLE texture;
+#endif
             };
         } //Constant 
     } //LocalRootSignatureParameter 

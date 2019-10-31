@@ -107,6 +107,8 @@ namespace Framework::DX {
         void hitGroup(const HitGroupShaderList& hitGroupList, const HitGroupShaderIndex& indices);
 
         void doRaytracing(UINT width, UINT height);
+
+        void printOut();
     private:
         DXRInterface* mDXRInterface;
         CD3DX12_STATE_OBJECT_DESC mRaytracingPipeline;
