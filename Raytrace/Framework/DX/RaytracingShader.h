@@ -158,7 +158,7 @@ namespace Framework::DX {
         ~RaytracingShader();
         void setGlobalRootSignature(RootSignature* globalRootSignature);
 
-        void setLocalRootSignature(const std::wstring& name, const LocalRootSignature& local);
+        void setLocalRootSignature(const std::wstring& name, RootSignature* localRootSignature);
 
         void loadShaderFiles(const ShaderFile& shaderFile);
 

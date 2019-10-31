@@ -167,9 +167,9 @@ namespace Framework::DX {
         globalRootSignature->setGlobalRootSignature(global);
     }
 
-    void RaytracingShader::setLocalRootSignature(const std::wstring& name, const LocalRootSignature& local) {
+    void RaytracingShader::setLocalRootSignature(const std::wstring& name, RootSignature* local) {
         auto subobject = mRaytracingPipeline.CreateSubobject<CD3DX12_LOCAL_ROOT_SIGNATURE_SUBOBJECT>();
-        local.rootSignature->setLocalRootSignature(subobject);
+        local->setLocalRootSignature(subobject);
 
         auto asso = mRaytracingPipeline.CreateSubobject<CD3DX12_SUBOBJECT_TO_EXPORTS_ASSOCIATION_SUBOBJECT>();
         asso->SetSubobjectToAssociate(*subobject);
