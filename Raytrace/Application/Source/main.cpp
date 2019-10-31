@@ -385,7 +385,7 @@ private:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     setlocale(LC_ALL, "");
-    MainApp app(800, 600, L"Game");
+    MainApp app(1920, 1080, L"Game");
     return app.run(hInstance, nCmdShow);
 }
 
@@ -414,7 +414,7 @@ void MainApp::updateCameraMatrices() {
 }
 
 void MainApp::initializeScene() {
-    mCameraPosition = Vector4(0, 70, -100, 1);
+    mCameraPosition = Vector4(2, 10, -18, 1);
     mCameraRotation = { 0.61f,0,0 };
     mLightPosition = { 20,40,-70 };
 
@@ -438,10 +438,10 @@ void MainApp::initializeScene() {
     PARAMETER_CHANGE_SLIDER("RX", mCameraRotation.x, -anbleRange, anbleRange);
     PARAMETER_CHANGE_SLIDER("RY", mCameraRotation.y, -anbleRange, anbleRange);
     PARAMETER_CHANGE_SLIDER("RZ", mCameraRotation.z, -anbleRange, anbleRange);
-    mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Light"));
-    PARAMETER_CHANGE_SLIDER("LX", mLightPosition.x, -range, range);
-    PARAMETER_CHANGE_SLIDER("LY", mLightPosition.y, -range, range);
-    PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
+    //mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Light"));
+    //PARAMETER_CHANGE_SLIDER("LX", mLightPosition.x, -range, range);
+    //PARAMETER_CHANGE_SLIDER("LY", mLightPosition.y, -range, range);
+    //PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
 
     mSceneCB->lightPosition = mLightPosition;
     mSceneCB->lightAmbient = Color4(0.3f, 0.3f, 0.3f, 1.0f);
@@ -837,12 +837,13 @@ void MainApp::calcFrameStatus() {
 
     //SetWindowText(mWindow->getHwnd(), Framework::Utility::StringBuilder(L"FPS:") << mTimer.getFPS());
 
-    //mRotation += 0.05;
-    //const float RANGE = 100.0f;
-    //const float x = Framework::Math::MathUtil::sin(mRotation) * RANGE;
-    //const float z = Framework::Math::MathUtil::cos(mRotation) * RANGE;
-    //mLightPosition.x = x;
-    //mLightPosition.z = z;
+    mRotation += 36.0f * mTimer.getDeltaTime();
+    mRotation = Framework::Math::MathUtil::atan2(Framework::Math::MathUtil::sin(mRotation), Framework::Math::MathUtil::cos(mRotation));
+    const float RANGE = 50;
+    const float x = Framework::Math::MathUtil::sin(mRotation) * RANGE;
+    const float z = Framework::Math::MathUtil::cos(mRotation) * RANGE;
+    mLightPosition.x = x;
+    mLightPosition.z = z;
 }
 
 UINT MainApp::createBufferSRV(D3DBuffer* buffer, UINT numElements, UINT elementSize) {

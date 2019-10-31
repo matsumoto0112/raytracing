@@ -81,6 +81,6 @@ void ClosestHit(inout RayPayload payload, in MyAttr attr) {
     color.rgb += Specular(N, L, float3(1, 1, 1));
     color = color * factor;
 
-    g_renderTarget[DispatchRaysIndex().xy] = color;
+    payload.color = color;
 }
 #endif //! SHADER_RAYTRACING_CLOSESTHIT_HLSL

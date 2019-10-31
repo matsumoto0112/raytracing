@@ -10,10 +10,10 @@
 namespace {
     inline DXGI_FORMAT NoSRGB(DXGI_FORMAT fmt) {
         switch (fmt) {
-        case DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
-        case DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
-        case DXGI_FORMAT::DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_B8G8R8X8_UNORM;
-        default:                                return fmt;
+            case DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+            case DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM;
+            case DXGI_FORMAT::DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:   return DXGI_FORMAT::DXGI_FORMAT_B8G8R8X8_UNORM;
+            default:                                return fmt;
         }
     }
 
@@ -60,7 +60,7 @@ namespace Framework::DX {
     void DeviceResource::initializeDXGIAdapter() {
         bool debugDXGI = false;
 
-    #ifdef _DEBUG
+#ifdef _DEBUG
         ComPtr<ID3D12Debug> debug;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug)))) {
             debug->EnableDebugLayer();
@@ -75,7 +75,7 @@ namespace Framework::DX {
             dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY::DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
             dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY::DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
         }
-    #endif
+#endif
 
         if (!debugDXGI) {
             Utility::throwIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&mFactory)));
@@ -93,7 +93,7 @@ namespace Framework::DX {
             if (FAILED(hr) || !allowTearing) {
                 MY_DEBUG_LOG(L"WARNING: Variable refresh rate displays are not supported.\n");
                 if (mOptions & REQUIER_TEARING_SUPPORT) {
-                   Utility::throwIfFalse(false, L"Error: Sample must be run on an OS with tearing support.\n");
+                    Utility::throwIfFalse(false, L"Error: Sample must be run on an OS with tearing support.\n");
                 }
                 mOptions &= ~ALLOW_TEARING;
             }
@@ -105,13 +105,13 @@ namespace Framework::DX {
     void DeviceResource::createDeviceResource() {
         Utility::throwIfFailed(D3D12CreateDevice(mAdapter.Get(), mMinFeatureLevel, IID_PPV_ARGS(&mDevice)));
 
-    #ifndef NDEBUG
+#ifndef NDEBUG
         ComPtr<ID3D12InfoQueue> infoQueue;
         if (SUCCEEDED(mDevice.As(&infoQueue))) {
-        #ifdef _DEBUG
+#ifdef _DEBUG
             infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY::D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
             infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY::D3D12_MESSAGE_SEVERITY_ERROR, true);
-        #endif
+#endif
             D3D12_MESSAGE_ID hide[] =
             {
                 D3D12_MESSAGE_ID::D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
@@ -122,7 +122,7 @@ namespace Framework::DX {
             filter.DenyList.pIDList = hide;
             infoQueue->AddStorageFilterEntries(&filter);
         }
-    #endif // !NDEBUG
+#endif // !NDEBUG
         static constexpr D3D_FEATURE_LEVEL FEATURE_LEVELS[] =
         {
             D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_12_1,
@@ -211,12 +211,12 @@ namespace Framework::DX {
                 (mOptions & ALLOW_TEARING) ? DXGI_SWAP_CHAIN_FLAG::DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0);
 
             if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
-            #ifdef _DEBUG
+#ifdef _DEBUG
                 wchar_t buff[64] = {};
                 swprintf_s(buff, L"デバイスロストが発生しました:0x%08X\n", (hr == DXGI_ERROR_DEVICE_REMOVED) ? mDevice->GetDeviceRemovedReason() : hr);
                 MY_DEBUG_LOG(buff);
-            #endif
-                //デバイスロストの通知
+#endif
+    //デバイスロストの通知
                 handleDeviceLost();
                 return;
             }
@@ -364,7 +364,7 @@ namespace Framework::DX {
         mFactory.Reset();
         mAdapter.Reset();
 
-    #ifdef _DEBUG
+#ifdef _DEBUG
         {
 
             ComPtr<IDXGIDebug> dxgiDebug;
@@ -372,7 +372,7 @@ namespace Framework::DX {
                 dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
             }
         }
-    #endif
+#endif
 
         initializeDXGIAdapter();
         createDeviceResource();
@@ -424,11 +424,11 @@ namespace Framework::DX {
             hr = mSwapChain->Present(1, 0);
         }
         if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
-        #ifdef _DEBUG
+#ifdef _DEBUG
             wchar_t buff[64] = {};
             swprintf_s(buff, L"プレゼント時にデバイスロスト発生: 0x%08X\n", (hr == DXGI_ERROR_DEVICE_REMOVED) ? mDevice->GetDeviceRemovedReason() : hr);
             MY_DEBUG_LOG(buff);
-        #endif
+#endif
             handleDeviceLost();
         }
         else {
@@ -489,16 +489,16 @@ namespace Framework::DX {
             if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), mMinFeatureLevel, __uuidof(ID3D12Device), nullptr))) {
                 mAdapterID = adapterID;
                 mAdapterDescription = desc.Description;
-            #ifdef _DEBUG
+#ifdef _DEBUG
                 wchar_t buff[256] = {};
                 swprintf_s(buff, L"Direct3D Adapter (%u): VID:%04X, PID:%04X - %ls\n", adapterID, desc.VendorId, desc.DeviceId, desc.Description);
                 MY_DEBUG_LOG(buff);
-            #endif
+#endif
                 break;
             }
         }
 
-    #ifndef NDEBUG
+#ifndef NDEBUG
         if (!adapter && mAdapterIDoverride == UINT_MAX) {
             if (FAILED(mFactory->EnumWarpAdapter(IID_PPV_ARGS(&adapter)))) {
                 throw std::exception("WARP12 not available. Enable the 'Graphics Tools' optional feature");
@@ -506,7 +506,7 @@ namespace Framework::DX {
 
             MY_DEBUG_LOG(L"Direct3D Adapter - WRAP12\n");
         }
-    #endif
+#endif
 
         if (!adapter) {
             if (mAdapterIDoverride != UINT_MAX) {

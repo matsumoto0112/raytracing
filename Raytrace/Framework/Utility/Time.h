@@ -28,7 +28,7 @@ namespace Framework::Utility {
         */
         double getFPS() const { return mFPS; }
         /**
-        * @brief 前フレームからの差分時間秒を取得する
+        * @brief 前フレームからの差分時間を取得する
         */
         double getDeltaTime() const { return mDiffTime; }
         /**

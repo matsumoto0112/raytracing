@@ -12,9 +12,7 @@ struct Ray {
 /**
 * @brief カメラからのレイを生成する
 */
-inline Ray generateCameraRay(in uint2 index, in float3 cameraPosition, in float4x4 projectionToWorld) {
-    //少しピクセルの中心にずらす
-    float2 offset = float2(0.5, 0.5);
+inline Ray generateCameraRay(in uint2 index, in float3 cameraPosition, in float4x4 projectionToWorld, in float2 offset = float2(0.5, 0.5)) {
     float2 xy = index + offset;
     //スクリーン座標に変換する
     float2 screenPos = xy / DispatchRaysDimensions().xy * 2.0 - 1.0;
