@@ -103,7 +103,7 @@ namespace Framework::DX {
         UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
         ID3D12Device* device = mDXRInterface->getDXRDevice();
 
-        UINT numShaderRecords = missShader.size();
+        UINT numShaderRecords = (UINT)missShader.size();
         UINT shaderRecordSize = shaderIDSize;
         //シェーダーレコードの大きさは一定なので最大値に合わせる必要がある
         for (UINT i = 0; i < numShaderRecords; i++) {
@@ -135,7 +135,7 @@ namespace Framework::DX {
         UINT shaderIDSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
         ID3D12Device* device = mDXRInterface->getDXRDevice();
 
-        UINT numShaderRecords = indices.size();
+        UINT numShaderRecords = (UINT)indices.size();
         UINT shaderRecordSize = shaderIDSize;
         for (auto&& hit : hitGroupList) {
             if (hit.localRootSignature.use)

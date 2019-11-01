@@ -15,7 +15,7 @@ namespace Framework::DX {
 
     struct ShaderFile {
         void* shaderFile;
-        UINT shaderFileSize;
+        size_t shaderFileSize;
         std::vector<std::wstring> entryPoints;
     };
 

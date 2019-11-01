@@ -11,19 +11,21 @@
     <ClInclude Include="Source\Util\Path.h" />
     <ClInclude Include="Assets\Shader\Raytracing\RaytracingCompat.h" />
     <ClInclude Include="Assets\Shader\Raytracing\RaytracingTypedef.h" />
-    <ClInclude Include="Assets\Shader\Raytracing\Local.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\Shader\Raytracing\RayGenShader.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\MissShader.hlsl" />
-    <FxCompile Include="Assets\Shader\Raytracing\ClosestHit.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\ClosestHit_Plane.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\ClosestHit_ShadowCast.hlsl" />
     <FxCompile Include="Assets\Shader\Raytracing\MissShader_ShadowCast.hlsl" />
+    <FxCompile Include="Assets\Shader\Raytracing\ClosestHit_Sphere.hlsl" />
+    <FxCompile Include="Assets\Shader\Raytracing\ClosestHit_Cube.hlsl" />
+    <FxCompile Include="Assets\Shader\Raytracing\ClosestHit_Stone.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="Assets\Shader\Raytracing\Helper.hlsli" />
     <None Include="Assets\Shader\Raytracing\Global.hlsli" />
+    <None Include="Assets\Shader\Raytracing\ClosestHit_Local.h" />
   </ItemGroup>
 </Project>

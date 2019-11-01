@@ -19,7 +19,9 @@ ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
 
 SamplerState samLinear : register(s0);
 
-//closesthitなどで引数として受け取る三角形の重心
-typedef BuiltInTriangleIntersectionAttributes MyAttr;
+/**
+* @brief 最大のレイの再帰回数
+*/
+#define MAX_RECURSION 3
 
 #endif //! SHADER_RAYTRACING_GLOBAL_HLSLI

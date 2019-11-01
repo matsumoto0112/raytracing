@@ -25,19 +25,24 @@
 #include "DX/Texture2D.h"
 #include "DX/RaytracingShader.h"
 #include "DX/AccelerationStructure.h"
-#include "../Assets/Shader/Raytracing/Local.h"
+#include "../Assets/Shader/Raytracing/ClosestHit_Local.h"
 #include "../Assets/Shader/Raytracing/RaytracingCompat.h"
+#include "ImGui/Item/Button.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/RayGenShader.hlsl.h"
-#include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit.hlsl.h"
+#include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit_Cube.hlsl.h"
+#include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit_Stone.hlsl.h"
+#include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit_Sphere.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit_Plane.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/ClosestHit_ShadowCast.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/MissShader.hlsl.h"
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/MissShader_ShadowCast.hlsl.h"
 #else
 #include "Temp/bin/x64/Release/Application/CompiledShaders/RayGenShader.hlsl.h"
-#include "Temp/bin/x64/Release/Application/CompiledShaders/ClosestHit.hlsl.h"
+#include "Temp/bin/x64/Release/Application/CompiledShaders/ClosestHit_Cube.hlsl.h"
+#include "Temp/bin/x64/Release/Application/CompiledShaders/ClosestHit_Stone.hlsl.h"
+#include "Temp/bin/x64/Release/Application/CompiledShaders/ClosestHit_Sphere.hlsl.h"
 #include "Temp/bin/x64/Release/Application/CompiledShaders/ClosestHit_Plane.hlsl.h"
 #include "Temp/bin/x64/Release/Application/CompiledShaders/ClosestHit_ShadowCast.hlsl.h"
 #include "Temp/bin/x64/Release/Application/CompiledShaders/MissShader.hlsl.h"
@@ -67,6 +72,7 @@ namespace GeometryType {
         Sphere,
         Plane,
         Cube,
+        Stone,
 
         Count
     };
@@ -82,37 +88,53 @@ namespace HitGroupParams {
             };
         } //Constant 
     } //LocalRootSignatureParameter 
+    namespace Type {
+        enum MyEnum {
+            Sphere,
+            Plane,
+            Cube,
+            Stone,
+
+            Count
+        };
+    } //Type 
 } //HitGroup 
 
 
 static constexpr UINT SPHERE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT CUBE_COUNT = 1;
-static constexpr UINT TLAS_NUM = SPHERE_COUNT + PLANE_COUNT + CUBE_COUNT;
+static constexpr UINT STONE_COUNT = 9;
+static constexpr UINT TLAS_NUM = SPHERE_COUNT + PLANE_COUNT + CUBE_COUNT + STONE_COUNT;
 
 static const std::vector<std::wstring> MODEL_NAMES =
 {
     L"sphere.glb",
-     L"checker.glb",
+    L"checker.glb",
     L"cube.glb",
+    L"stone.glb",
 };
 
 static const std::wstring RAY_GEN_SHADER_NAME = L"MyRayGenShader";
 static const std::wstring MISS_SHADER = L"MissShader";
 static const std::wstring MISS_SHADER_SHADOW_CAST = L"MissShader_ShadowCast";
-static const std::wstring CLOSEST_HIT_NAME = L"ClosestHit";
+static const std::wstring CLOSEST_HIT_SPHERE_NAME = L"ClosestHit_Sphere";
 static const std::wstring CLOSEST_HIT_PLANE_NAME = L"ClosestHit_Plane";
+static const std::wstring CLOSEST_HIT_CUBE_NAME = L"ClosestHit_Cube";
+static const std::wstring CLOSEST_HIT_STONE_NAME = L"ClosestHit_Stone";
 static const std::wstring CLOSEST_HIT_SHADOW_CAST_NAME = L"ClosestHit_ShadowCast";
 static const std::wstring HIT_GROUP_SPHERE_NAME = L"HitGroup_Sphere";
 static const std::wstring HIT_GROUP_PLANE_NAME = L"HitGroup_Plane";
 static const std::wstring HIT_GROUP_CUBE_NAME = L"HitGroup_Cube";
+static const std::wstring HIT_GROUP_STONE_NAME = L"HitGroup_Castle";
 static const std::wstring HIT_GROUP_SHADOW_NAME = L"HitGroup_Shadow";
 
 static const std::vector<Color4> MODEL_COLORS =
 {
     Color4(1,0,0,1),
-    Color4(1,1,0,1),
-    Color4(1,0,1,1),
+    Color4(1,1,1,1),
+    Color4(1,1,1,1),
+    Color4(1,1,1,1),
 };
 
 struct GeometryInfo {
@@ -124,9 +146,10 @@ struct GeometryInfo {
 
 static std::unordered_map<GeometryType::MyEnum, GeometryInfo> GEOMETRY_INFOS
 {
-    {GeometryType::Sphere ,GeometryInfo{0,CLOSEST_HIT_NAME,CLOSEST_HIT_SHADOW_CAST_NAME, HIT_GROUP_SPHERE_NAME} },
-    {GeometryType::Plane,GeometryInfo{0,CLOSEST_HIT_PLANE_NAME,CLOSEST_HIT_SHADOW_CAST_NAME,HIT_GROUP_PLANE_NAME} },
-    {GeometryType::Cube,GeometryInfo{0,CLOSEST_HIT_PLANE_NAME,CLOSEST_HIT_SHADOW_CAST_NAME,HIT_GROUP_CUBE_NAME} },
+    {GeometryType::Sphere , GeometryInfo{0,CLOSEST_HIT_SPHERE_NAME, CLOSEST_HIT_SHADOW_CAST_NAME,   HIT_GROUP_SPHERE_NAME} },
+    {GeometryType::Plane,   GeometryInfo{0,CLOSEST_HIT_PLANE_NAME,  CLOSEST_HIT_SHADOW_CAST_NAME,   HIT_GROUP_PLANE_NAME} },
+    {GeometryType::Cube,    GeometryInfo{0,CLOSEST_HIT_CUBE_NAME,   CLOSEST_HIT_SHADOW_CAST_NAME,   HIT_GROUP_CUBE_NAME} },
+    {GeometryType::Stone,  GeometryInfo{0,CLOSEST_HIT_STONE_NAME, CLOSEST_HIT_SHADOW_CAST_NAME,   HIT_GROUP_STONE_NAME} },
 };
 
 struct ShaderFileInfo {
@@ -142,7 +165,9 @@ static const std::vector<ShaderFileInfo> SHADER_FILE_INFOS =
     {SHADER_FILE_INFO_PROP(g_pRayGenShader,{RAY_GEN_SHADER_NAME}) },
     {SHADER_FILE_INFO_PROP(g_pMissShader,{MISS_SHADER}) },
     {SHADER_FILE_INFO_PROP(g_pMissShader_ShadowCast,{ MISS_SHADER_SHADOW_CAST}) },
-    {SHADER_FILE_INFO_PROP(g_pClosestHit,{CLOSEST_HIT_NAME}) },
+    {SHADER_FILE_INFO_PROP(g_pClosestHit_Sphere,{CLOSEST_HIT_SPHERE_NAME}) },
+    {SHADER_FILE_INFO_PROP(g_pClosestHit_Cube,{CLOSEST_HIT_CUBE_NAME}) },
+    {SHADER_FILE_INFO_PROP(g_pClosestHit_Stone,{CLOSEST_HIT_STONE_NAME}) },
     {SHADER_FILE_INFO_PROP(g_pClosestHit_Plane,{CLOSEST_HIT_PLANE_NAME}) },
     {SHADER_FILE_INFO_PROP(g_pClosestHit_ShadowCast,{CLOSEST_HIT_SHADOW_CAST_NAME}) },
 };
@@ -154,10 +179,11 @@ struct HitGroupBatch {
 
 static const std::vector<HitGroupBatch> HIT_GROUP_BATCHS
 {
-    {HIT_GROUP_SPHERE_NAME,CLOSEST_HIT_NAME },
-    {HIT_GROUP_PLANE_NAME,CLOSEST_HIT_PLANE_NAME },
-    {HIT_GROUP_CUBE_NAME,CLOSEST_HIT_NAME },
-    {HIT_GROUP_SHADOW_NAME,CLOSEST_HIT_SHADOW_CAST_NAME },
+    {HIT_GROUP_SPHERE_NAME, CLOSEST_HIT_SPHERE_NAME },
+    {HIT_GROUP_PLANE_NAME,  CLOSEST_HIT_PLANE_NAME },
+    {HIT_GROUP_CUBE_NAME,   CLOSEST_HIT_CUBE_NAME },
+    {HIT_GROUP_STONE_NAME, CLOSEST_HIT_STONE_NAME },
+    {HIT_GROUP_SHADOW_NAME, CLOSEST_HIT_SHADOW_CAST_NAME },
 };
 
 static const std::vector<std::wstring> MISS_SHADER_NAMES =
@@ -256,6 +282,7 @@ private:
     ConstantBuffer<SceneConstantBuffer> mSceneCB;
     Vector4 mCameraPosition;
     XMFLOAT3 mCameraRotation;
+    bool mLightAnimate;
     Vector4 mLightPosition;
 
     float mRotation;
@@ -266,12 +293,6 @@ private:
     D3DBuffer mRaytracingOutput;
     //シェーダーテーブル
 
-
-    ComPtr<ID3D12Resource> mMissShaderTable;
-    UINT mMissShaderStrideInBytes;
-    ComPtr<ID3D12Resource> mHitGroupShaderTable;
-    UINT mHitGroupShaderStrideInBytes;
-    ComPtr<ID3D12Resource> mRayGenShaderTable;
     Framework::Utility::GPUTimer mGPUTimer;
 
     std::unique_ptr<Framework::ImGUI::Window> mImGUIWindow;
@@ -414,6 +435,7 @@ void MainApp::updateCameraMatrices() {
 }
 
 void MainApp::initializeScene() {
+    mLightAnimate = false;
     mCameraPosition = Vector4(2, 10, -18, 1);
     mCameraRotation = { 0.61f,0,0 };
     mLightPosition = { 20,40,-70 };
@@ -438,14 +460,15 @@ void MainApp::initializeScene() {
     PARAMETER_CHANGE_SLIDER("RX", mCameraRotation.x, -anbleRange, anbleRange);
     PARAMETER_CHANGE_SLIDER("RY", mCameraRotation.y, -anbleRange, anbleRange);
     PARAMETER_CHANGE_SLIDER("RZ", mCameraRotation.z, -anbleRange, anbleRange);
-    //mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Light"));
-    //PARAMETER_CHANGE_SLIDER("LX", mLightPosition.x, -range, range);
-    //PARAMETER_CHANGE_SLIDER("LY", mLightPosition.y, -range, range);
-    //PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
+    mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Text>("Light"));
+    mCameraParameterWindow->addItem(std::make_shared<Framework::ImGUI::Button>("Animate Light", [&]() {mLightAnimate = !mLightAnimate; }));
+    PARAMETER_CHANGE_SLIDER("LX", mLightPosition.x, -range, range);
+    PARAMETER_CHANGE_SLIDER("LY", mLightPosition.y, -range, range);
+    PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
 
     mSceneCB->lightPosition = mLightPosition;
     mSceneCB->lightAmbient = Color4(0.3f, 0.3f, 0.3f, 1.0f);
-    mSceneCB->lightDiffuse = Color4(0, 0, 1, 1.0f);
+    mSceneCB->lightDiffuse = Color4(0.8f, 0.8f, 0.8f, 1.0f);
     //mSceneCB->fogStart = 500.0f;
     //mSceneCB->fogEnd = 1000.0f;
     int w = (int)Framework::Math::MathUtil::sqrt(CUBE_COUNT) + 1;
@@ -625,7 +648,7 @@ void MainApp::createRaytracingPipelineStateObject() {
     mRaytracingShader->setGlobalRootSignature(mGlobalRootSignature.get());
 
     //シェーダーの設定
-    ShaderConfig config(Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload) }), 2 * sizeof(float), 15);
+    ShaderConfig config(Framework::Math::MathUtil::mymax<UINT>({ sizeof(RayPayload) ,sizeof(ShadowPayload) }), 2 * sizeof(float), 15);
     mRaytracingShader->setConfig(config);
 
     mRaytracingShader->buildPipeline();
@@ -642,69 +665,37 @@ void MainApp::createRaytracingPipelineStateObject() {
 
     std::vector<HitGroup> hitGroups(GeometryType::Count + 1);
 
+    struct RootArgument {
+        HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer cb;
+    };
+
+    std::vector<LocalRootSignature> tmp(GeometryType::Count);
+    std::vector<RootArgument> tmpArguments(GeometryType::Count);
     int index = 0;
-    LocalRootSignature sphereLocal;
-    struct SphereRootArgument {
-        HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer cb;
-    } sphereRootArguments;
-    sphereRootArguments.cb.vertexOffset = mVertexOffsets[index];
-    sphereRootArguments.cb.indexOffset = mIndexOffsets[index];
-    sphereRootArguments.cb.texture = mTextures[index]->getGPUHandle();
-    sphereRootArguments.cb.color = MODEL_COLORS[index];
+    for (index = 0; index < GeometryType::Count; index++) {
+        RootArgument& rootArgument = tmpArguments[index];
+        rootArgument.cb.vertexOffset = mVertexOffsets[index];
+        rootArgument.cb.indexOffset = mIndexOffsets[index];
+        rootArgument.cb.texture = mTextures[index]->getGPUHandle();
+        rootArgument.cb.color = MODEL_COLORS[index];
 
-    sphereLocal.use = true;
-    sphereLocal.localConstants = &sphereRootArguments;
-    sphereLocal.localConstantsSize = sizeof(sphereRootArguments);
-    sphereLocal.rootSignature = mLocalRootSignatures[index].get();
+        LocalRootSignature& local = tmp[index];
+        local.use = true;
+        local.localConstants = &rootArgument;
+        local.localConstantsSize = sizeof(rootArgument);
+        local.rootSignature = mLocalRootSignatures[index].get();
 
-    hitGroups[index] = HitGroup(GEOMETRY_INFOS[(GeometryType::MyEnum)index].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
-    hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
-    hitGroups[index].localRootSignature = sphereLocal;
-    index++;
+        hitGroups[index] = HitGroup(GEOMETRY_INFOS[(GeometryType::MyEnum)index].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
+        hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
+        hitGroups[index].localRootSignature = local;
+    }
 
-    LocalRootSignature planeLocal;
-    struct PlaneRootArgument {
-        HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer cb;
-    } planeRootArguments;
-    planeRootArguments.cb.vertexOffset = mVertexOffsets[index];
-    planeRootArguments.cb.indexOffset = mIndexOffsets[index];
-    planeRootArguments.cb.texture = mTextures[index]->getGPUHandle();
-    planeRootArguments.cb.color = MODEL_COLORS[index];
-
-    planeLocal.use = true;
-    planeLocal.localConstants = &planeRootArguments;
-    planeLocal.localConstantsSize = sizeof(planeRootArguments);
-    planeLocal.rootSignature = mLocalRootSignatures[index].get();
-
-    hitGroups[index] = HitGroup(GEOMETRY_INFOS[(GeometryType::MyEnum)index].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
-    hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
-    hitGroups[index].localRootSignature = planeLocal;
-    index++;
-
-    LocalRootSignature cubeLocal;
-    struct CubeRootArgument {
-        HitGroupParams::LocalRootSignatureParams::Constant::MaterialConstantBuffer cb;
-    } cubeRootArguments;
-    cubeRootArguments.cb.vertexOffset = mVertexOffsets[index];
-    cubeRootArguments.cb.indexOffset = mIndexOffsets[index];
-    cubeRootArguments.cb.texture = mTextures[index]->getGPUHandle();
-    cubeRootArguments.cb.color = MODEL_COLORS[index];
-
-    cubeLocal.use = true;
-    cubeLocal.localConstants = &cubeRootArguments;
-    cubeLocal.localConstantsSize = sizeof(cubeRootArguments);
-    cubeLocal.rootSignature = mLocalRootSignatures[index].get();
-
-    hitGroups[index] = HitGroup(GEOMETRY_INFOS[(GeometryType::MyEnum)index].HIT_GROUP_SHADER_NAME, HitGroupType::Triangle);
-    hitGroups[index].closestHit = GEOMETRY_INFOS[(GeometryType::MyEnum)index].CLOSEST_HIT_SHADER_NAME;
-    hitGroups[index].localRootSignature = cubeLocal;
-
-    index++;
     hitGroups[index] = HitGroup(HIT_GROUP_SHADOW_NAME, HitGroupType::Triangle);
     hitGroups[index].closestHit = CLOSEST_HIT_SHADOW_CAST_NAME;
 
+
     //std::vector<UINT>  indices{ 0,3,1,3,2,3, };
-    std::vector<UINT>  indices{ 0,3,1,3, 2,3 };
+    std::vector<UINT>  indices{ 0,4,1,4, 2,4 ,3,4 };
 
     mRaytracingShader->hitGroup(hitGroups, indices);
 
@@ -837,13 +828,15 @@ void MainApp::calcFrameStatus() {
 
     //SetWindowText(mWindow->getHwnd(), Framework::Utility::StringBuilder(L"FPS:") << mTimer.getFPS());
 
-    mRotation += 36.0f * mTimer.getDeltaTime();
-    mRotation = Framework::Math::MathUtil::atan2(Framework::Math::MathUtil::sin(mRotation), Framework::Math::MathUtil::cos(mRotation));
-    const float RANGE = 50;
-    const float x = Framework::Math::MathUtil::sin(mRotation) * RANGE;
-    const float z = Framework::Math::MathUtil::cos(mRotation) * RANGE;
-    mLightPosition.x = x;
-    mLightPosition.z = z;
+    if (mLightAnimate) {
+        mRotation += 36.0f * mTimer.getDeltaTime();
+        mRotation = Framework::Math::MathUtil::atan2(Framework::Math::MathUtil::sin(mRotation), Framework::Math::MathUtil::cos(mRotation));
+        const float RANGE = 50;
+        const float x = Framework::Math::MathUtil::sin(mRotation) * RANGE;
+        const float z = Framework::Math::MathUtil::cos(mRotation) * RANGE;
+        mLightPosition.x = x;
+        mLightPosition.z = z;
+    }
 }
 
 UINT MainApp::createBufferSRV(D3DBuffer* buffer, UINT numElements, UINT elementSize) {
@@ -887,12 +880,18 @@ ComPtr<ID3D12Resource> MainApp::createBuffer(uint64_t size, D3D12_RESOURCE_FLAGS
 void MainApp::updateTLAS() {
     mAccelerationStructure->tlasConfig(mDXRInterface->getDXRDevice(), TLAS_NUM);
     {
-        XMMATRIX mat = XMMatrixIdentity();
+        XMMATRIX mat = XMMatrixTranslation(1000000, 0, 0);
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Sphere].id, 0, 0, mat);
         mat = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Plane].id, 1, 2, mat);
-        mat = XMMatrixTranslation(5, 0, 0);
+        mat = XMMatrixScaling(30, 30, 30) * XMMatrixTranslation(30, 100, 30);
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Cube].id, 2, 4, mat);
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                mat = XMMatrixTranslation(i * 20, -4.5, j * 20);
+                mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Stone].id, 3, 6, mat);
+            }
+        }
     }
     mAccelerationStructure->buildTLAS(mDXRInterface->getCommandList());
 

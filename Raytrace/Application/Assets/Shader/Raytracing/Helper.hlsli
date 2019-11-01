@@ -58,4 +58,41 @@ inline float3 hitWorldPosition() {
     return WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
 }
 
+/**
+* @brief 衝突点の法線を取得する
+*/
+inline float3 getNormal(float3 normals[3], in MyAttr attr) {
+    return normals[0] +
+        attr.barycentrics.x * (normals[1] - normals[0]) +
+        attr.barycentrics.y * (normals[2] - normals[0]);
+}
+
+/**
+* @brief 衝突点のUVを取得する
+*/
+inline float2 getUV(float2 uvs[3], in MyAttr attr) {
+    return uvs[0] +
+        attr.barycentrics.x * (uvs[1] - uvs[0]) +
+        attr.barycentrics.y * (uvs[2] - uvs[0]);
+}
+
+/**
+* @brief ランバードを計算する
+*/
+inline float3 Lambert(in float3 N, float3 L, float3 diffuse) {
+    const float dotNL = max(0.0, dot(N, L));
+    return diffuse * dotNL;
+}
+
+/**
+* @brief スペキュラを計算する
+*/
+inline float3 Specular(in float3 N, in float3 L, in float3 specular) {
+    L = normalize(L);
+    N = normalize(N);
+    const float dotNL = saturate(dot(L, N));
+    return specular * pow(dotNL, 30);
+}
+
+
 #endif //! SHADER_RAYTRACING_HELPER_HLSLI

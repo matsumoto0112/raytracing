@@ -50,6 +50,11 @@ struct SceneConstantBuffer {
     Vector4 lightPosition;
 };
 
+#ifdef HLSL
+//closesthitなどで引数として受け取る三角形の重心
+typedef BuiltInTriangleIntersectionAttributes MyAttr;
+#endif 
+
 
 #endif // !SHADER_RAYTRACING_RAYTRACINGCOMPAT_H
 
