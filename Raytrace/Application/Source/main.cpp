@@ -134,7 +134,7 @@ static const std::vector<Color4> MODEL_COLORS =
     Color4(1,0,0,1),
     Color4(1,1,1,1),
     Color4(1,1,1,1),
-    Color4(1,1,1,1),
+    Color4(0,0.9,0.7,1),
 };
 
 struct GeometryInfo {
