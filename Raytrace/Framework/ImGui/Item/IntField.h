@@ -20,6 +20,8 @@ namespace Framework::ImGUI {
         * @brief デストラクタ
         */
         ~IntField();
+        void setMinValue(int value) { mMinValue = value; }
+        void setMaxValue(int value) { mMaxValue = value; }
         /**
         * @brief 描画
         */

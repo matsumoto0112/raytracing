@@ -32,19 +32,19 @@ namespace Framework {
     }
 
     void ImGuiManager::beginFrame() {
-#if _DEBUG
+//#if _DEBUG
         ImGui_ImplDX12_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
-#endif
+//#endif
     }
 
     void ImGuiManager::endFrame(ID3D12GraphicsCommandList* commandList) {
-#ifdef _DEBUG
+//#ifdef _DEBUG
         commandList->SetDescriptorHeaps(1, mHeap.GetAddressOf());
         ImGui::Render();
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
-#endif
+//#endif
     }
 
 } //Framework 

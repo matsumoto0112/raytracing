@@ -28,6 +28,7 @@
 #include "../Assets/Shader/Raytracing/ClosestHit_Local.h"
 #include "../Assets/Shader/Raytracing/RaytracingCompat.h"
 #include "ImGui/Item/Button.h"
+#include "ImGui/Item/IntField.h"
 
 #ifdef _DEBUG
 #include "Temp/bin/x64/Debug/Application/CompiledShaders/RayGenShader.hlsl.h"
@@ -104,7 +105,7 @@ namespace HitGroupParams {
 static constexpr UINT SPHERE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT CUBE_COUNT = 1;
-static constexpr UINT STONE_COUNT = 9;
+static constexpr UINT STONE_COUNT = 10000;
 static constexpr UINT TLAS_NUM = SPHERE_COUNT + PLANE_COUNT + CUBE_COUNT + STONE_COUNT;
 
 static const std::vector<std::wstring> MODEL_NAMES =
@@ -113,6 +114,7 @@ static const std::vector<std::wstring> MODEL_NAMES =
     L"checker.glb",
     L"cube.glb",
     L"stone.glb",
+   
 };
 
 static const std::wstring RAY_GEN_SHADER_NAME = L"MyRayGenShader";
@@ -251,10 +253,10 @@ public:
         doRaytracing();
         copyOutput();
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
         mImGUIWindow->draw();
         mCameraParameterWindow->draw();
-#endif
+//#endif
         Framework::ImGuiManager::getInstance()->endFrame(mDeviceResource->getCommandList());
 
         mGPUTimer.endFrame(list);
@@ -288,6 +290,7 @@ private:
     float mRotation;
 
     std::array<XMFLOAT3, CUBE_COUNT> mCubePositions;
+    UINT mCurrentStoneNum;
 
     //レイトレーシング出力先
     D3DBuffer mRaytracingOutput;
@@ -436,9 +439,12 @@ void MainApp::updateCameraMatrices() {
 
 void MainApp::initializeScene() {
     mLightAnimate = false;
-    mCameraPosition = Vector4(2, 10, -18, 1);
-    mCameraRotation = { 0.61f,0,0 };
+    //mCameraPosition = Vector4(2, 10, -18, 1);
+    mCameraPosition = Vector4(0, 11.565f, -41.497f, 1);
+
+    mCameraRotation = { 0.47f,0,0 };
     mLightPosition = { 20,40,-70 };
+    mCurrentStoneNum = 1;
 
     mCameraParameterWindow = std::make_unique<Framework::ImGUI::Window>("Camera");
 #define PARAMETER_CHANGE_SLIDER(name,type,min,max){\
@@ -465,6 +471,12 @@ void MainApp::initializeScene() {
     PARAMETER_CHANGE_SLIDER("LX", mLightPosition.x, -range, range);
     PARAMETER_CHANGE_SLIDER("LY", mLightPosition.y, -range, range);
     PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
+    {
+        auto field = std::make_shared<Framework::ImGUI::IntField>("Stone Num", mCurrentStoneNum);
+        field->setMaxValue(STONE_COUNT);
+        field->setCallBack([&](int val) {mCurrentStoneNum = val; });
+        mCameraParameterWindow->addItem(field);
+    }
 
     mSceneCB->lightPosition = mLightPosition;
     mSceneCB->lightAmbient = Color4(0.3f, 0.3f, 0.3f, 1.0f);
@@ -509,7 +521,7 @@ void MainApp::doRaytracing() {
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::RenderTarget, mRaytracingOutput.gpuHandle);
     mAccelerationStructure->setDescriptorTable(list, GlobalRootSignatureParameter::AccelerationStructureSlot);
     list->SetComputeRootDescriptorTable(GlobalRootSignatureParameter::VertexBuffers, mResourceIndexBuffer.gpuHandle);
-    mRaytracingShader->doRaytracing(mWidth, mHeight);
+    mRaytracingShader->doRaytracing(mWidth, mHeight, &mGPUTimer);
 }
 
 void MainApp::createConstantBuffers() {
@@ -886,9 +898,15 @@ void MainApp::updateTLAS() {
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Plane].id, 1, 2, mat);
         mat = XMMatrixScaling(30, 30, 30) * XMMatrixTranslation(30, 100, 30);
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Cube].id, 2, 4, mat);
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                mat = XMMatrixTranslation(i * 20, -4.5, j * 20);
+
+        const UINT width = Framework::Math::MathUtil::sqrt(mCurrentStoneNum) + 1;
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < width; j++) {
+                if (i * width + j >= mCurrentStoneNum)break;
+                float x = (i - 0.5f * width) * 1.0f;
+                float z = (j - 0.5f * width) *  1.0f;
+                XMVECTOR pos = { x, -4.5f,z };
+                mat = XMMatrixScaling(0.05f, 0.05f, 0.05f) * XMMatrixTranslationFromVector(pos);
                 mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Stone].id, 3, 6, mat);
             }
         }

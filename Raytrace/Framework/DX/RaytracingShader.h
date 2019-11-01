@@ -6,6 +6,10 @@
 #include "Utility/Typedef.h"
 #include "DX/DXRInterface.h"
 
+namespace Framework::Utility {
+    class GPUTimer;
+} //Framework::Utility 
+
 namespace Framework::DX {
     enum class HitGroupType {
         Triangle = 0,
@@ -82,9 +86,9 @@ namespace Framework::DX {
         using HitGroupShaderList = std::vector<HitGroup>;
         using HitGroupShaderIndex = std::vector<UINT>;
     public:
-        ///**
-        //* @brief コンストラクタ
-        //*/
+        /**
+        * @brief コンストラクタ
+        */
         RaytracingShader(DXRInterface* dxrInterface);
         /**
         * @brief デストラクタ
@@ -106,7 +110,7 @@ namespace Framework::DX {
         void missShader(const MissShaderList& missShader);
         void hitGroup(const HitGroupShaderList& hitGroupList, const HitGroupShaderIndex& indices);
 
-        void doRaytracing(UINT width, UINT height);
+        void doRaytracing(UINT width, UINT height, Utility::GPUTimer* gpuTimer = nullptr);
 
         void printOut();
     private:

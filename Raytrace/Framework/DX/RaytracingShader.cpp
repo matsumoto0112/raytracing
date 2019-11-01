@@ -3,6 +3,7 @@
 #include "DX/RaytracingHelper.h"
 #include "Utility/Debug.h"
 #include "Math/MathUtility.h"
+#include "Utility/GPUTimer.h"
 
 namespace Framework::DX {
 
@@ -159,7 +160,7 @@ namespace Framework::DX {
         mHitGroupShaderTable->SetName(L"HitGroupShaderTable");
     }
 
-    void RaytracingShader::doRaytracing(UINT width, UINT height) {
+    void RaytracingShader::doRaytracing(UINT width, UINT height, Utility::GPUTimer* gpuTimer) {
         ID3D12GraphicsCommandList5* commandList = mDXRInterface->getCommandList();
         ID3D12StateObject* state = mDXRInterface->getStateObject();
 
@@ -180,8 +181,13 @@ namespace Framework::DX {
         desc.Depth = 1;
 
         commandList->SetPipelineState1(state);
-
+        if (gpuTimer) {
+            gpuTimer->start(commandList);
+        }
         commandList->DispatchRays(&desc);
+        if (gpuTimer) {
+            gpuTimer->stop(commandList);
+        }
     }
 
     void RaytracingShader::printOut() {

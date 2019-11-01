@@ -38,7 +38,7 @@ void ClosestHit_Stone(inout RayPayload payload, in MyAttr attr) {
 
 
     float4 color = float4(Lambert(N, L, l_material.color.rgb * g_sceneCB.lightDiffuse.rgb), 1.0);
-    float factor = shadowPayload.hit ? 0.1 : 1.0;
+    float factor = shadowPayload.hit ? 0.5 : 1.0;
 
     color.rgb += Specular(N, L, float3(1, 1, 1));
     color += g_sceneCB.lightAmbient;
@@ -63,7 +63,7 @@ void ClosestHit_Stone(inout RayPayload payload, in MyAttr attr) {
         secondRay,
         secondPayload);
 
-    payload.color = payload.color;
+    payload.color = payload.color * factor;
 
 }
 #endif //! SHADER_RAYTRACING_CLOSESTHIT_HLSL
