@@ -132,7 +132,7 @@ static const std::wstring HIT_GROUP_SHADOW_NAME = L"HitGroup_Shadow";
 
 static const std::vector<Color4> MODEL_COLORS =
 {
-    Color4(1,1,1,1),
+    Color4(0,0,-30,1),
     Color4(1,1,1,1),
     Color4(1,1,1,1),
     Color4(0,0.9,0.7,1),
@@ -885,7 +885,7 @@ ComPtr<ID3D12Resource> MainApp::createBuffer(uint64_t size, D3D12_RESOURCE_FLAGS
 void MainApp::updateTLAS() {
     mAccelerationStructure->tlasConfig(mDXRInterface->getDXRDevice(), TLAS_NUM);
     {
-        XMMATRIX mat = XMMatrixScaling(5, 5, 5) * XMMatrixTranslation(0,0,-30);
+        XMMATRIX mat = XMMatrixScaling(5, 5, 5) * XMMatrixTranslation(0, 0, -30);
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Sphere].id, 0, 0, mat);
         mat = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Plane].id, 1, 2, mat);
