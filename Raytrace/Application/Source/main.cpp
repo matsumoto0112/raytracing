@@ -67,7 +67,7 @@ namespace GlobalRootSignatureParameter {
         ConstantBuffer,
         Count
     };
-} //GlobalRootSignatureParameter 
+} //GlobalRootSignatureParameter
 namespace GeometryType {
     enum MyEnum {
         Sphere,
@@ -87,8 +87,8 @@ namespace HitGroupParams {
                 Material,
                 Count
             };
-        } //Constant 
-    } //LocalRootSignatureParameter 
+        } //Constant
+    } //LocalRootSignatureParameter
     namespace Type {
         enum MyEnum {
             Sphere,
@@ -98,14 +98,14 @@ namespace HitGroupParams {
 
             Count
         };
-    } //Type 
-} //HitGroup 
+    } //Type
+} //HitGroup
 
 
 static constexpr UINT SPHERE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT CUBE_COUNT = 1;
-static constexpr UINT STONE_COUNT = 10000;
+static constexpr UINT STONE_COUNT = 1000;
 static constexpr UINT TLAS_NUM = SPHERE_COUNT + PLANE_COUNT + CUBE_COUNT + STONE_COUNT;
 
 static const std::vector<std::wstring> MODEL_NAMES =
@@ -114,7 +114,6 @@ static const std::vector<std::wstring> MODEL_NAMES =
     L"checker.glb",
     L"cube.glb",
     L"stone.glb",
-   
 };
 
 static const std::wstring RAY_GEN_SHADER_NAME = L"MyRayGenShader";
@@ -133,7 +132,7 @@ static const std::wstring HIT_GROUP_SHADOW_NAME = L"HitGroup_Shadow";
 
 static const std::vector<Color4> MODEL_COLORS =
 {
-    Color4(1,0,0,1),
+    Color4(1,1,1,1),
     Color4(1,1,1,1),
     Color4(1,1,1,1),
     Color4(0,0.9,0.7,1),
@@ -160,7 +159,7 @@ struct ShaderFileInfo {
     std::vector<std::wstring> entryPoints;
 };
 
-#define SHADER_FILE_INFO_PROP(file,names) (void*)file,_countof(file),names , 
+#define SHADER_FILE_INFO_PROP(file,names) (void*)file,_countof(file),names ,
 
 static const std::vector<ShaderFileInfo> SHADER_FILE_INFOS =
 {
@@ -444,7 +443,7 @@ void MainApp::initializeScene() {
 
     mCameraRotation = { 0.47f,0,0 };
     mLightPosition = { 20,40,-70 };
-    mCurrentStoneNum = 1;
+    mCurrentStoneNum = STONE_COUNT;
 
     mCameraParameterWindow = std::make_unique<Framework::ImGUI::Window>("Camera");
 #define PARAMETER_CHANGE_SLIDER(name,type,min,max){\
@@ -471,12 +470,6 @@ void MainApp::initializeScene() {
     PARAMETER_CHANGE_SLIDER("LX", mLightPosition.x, -range, range);
     PARAMETER_CHANGE_SLIDER("LY", mLightPosition.y, -range, range);
     PARAMETER_CHANGE_SLIDER("LZ", mLightPosition.z, -range, range);
-    {
-        auto field = std::make_shared<Framework::ImGUI::IntField>("Stone Num", mCurrentStoneNum);
-        field->setMaxValue(STONE_COUNT);
-        field->setCallBack([&](int val) {mCurrentStoneNum = val; });
-        mCameraParameterWindow->addItem(field);
-    }
 
     mSceneCB->lightPosition = mLightPosition;
     mSceneCB->lightAmbient = Color4(0.3f, 0.3f, 0.3f, 1.0f);
@@ -535,7 +528,7 @@ void MainApp::createDeviceDependentResources() {
     createAuxillaryDeviceResources();
     //ヒープ作成
     createDescriptorHeap();
-    //テクスチャの作成 
+    //テクスチャの作成
     mTextures.resize(MODEL_NAMES.size());
     for (int i = 0; i < MODEL_NAMES.size(); i++) {
         Framework::Utility::GLBLoader glbLoader(
@@ -892,7 +885,7 @@ ComPtr<ID3D12Resource> MainApp::createBuffer(uint64_t size, D3D12_RESOURCE_FLAGS
 void MainApp::updateTLAS() {
     mAccelerationStructure->tlasConfig(mDXRInterface->getDXRDevice(), TLAS_NUM);
     {
-        XMMATRIX mat = XMMatrixTranslation(1000000, 0, 0);
+        XMMATRIX mat = XMMatrixScaling(5, 5, 5) * XMMatrixTranslation(0,0,-30);
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Sphere].id, 0, 0, mat);
         mat = XMMatrixScaling(100, 1, 100) * XMMatrixTranslation(0, -5, 0);
         mAccelerationStructure->addTLASBuffer(GEOMETRY_INFOS[GeometryType::Plane].id, 1, 2, mat);

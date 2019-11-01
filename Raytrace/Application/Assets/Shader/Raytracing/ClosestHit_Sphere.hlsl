@@ -7,40 +7,41 @@
 #include "ClosestHit_Local.h"
 #include "Helper.hlsli"
 
+inline float random(in float2 p) {
+    return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+inline bool refract(in float3 V, in float3 N, float ni, out float3 ref) {
+    float3 nV = normalize(V);
+    float dt = dot(nV, N);
+    float D = 1.0 - pow(ni, 2.0) * (1.0 - pow(dt, 2.0));
+    if (D > 0.0) {
+        ref = -ni * (nV - N * dt) - N * sqrt(D);
+        return true;
+    }
+    return false;
+}
+
 [shader("closesthit")]
 void ClosestHit_Sphere(inout RayPayload payload, in MyAttr attr) {
     if (payload.recursion > MAX_RECURSION) {
         return;
     }
 
-    uint indexSizeInBytes = 2;
-    uint indicesPerTriangle = 3;
-    uint triangleIndexStride = indicesPerTriangle * indexSizeInBytes;
-    uint baseIndex = PrimitiveIndex() * triangleIndexStride + l_material.indexOffset;
-
-    uint3 indices = loadIndices(baseIndex, Indices) + l_material.vertexOffset;
-    //–@ü‚ÌŽæ“¾
-    float3 normals[3] =
-    {
-        Vertices[indices[0]].normal,
-        Vertices[indices[1]].normal,
-        Vertices[indices[2]].normal,
-    };
-
-    float3 N = getNormal(normals, attr);
+    float3 N = getNormal(getIndices(), attr);
 
     float3 worldPos = hitWorldPosition();
 
     float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
     RayDesc shadowRay;
-    shadowRay.Origin = hitWorldPosition();
+    shadowRay.Origin = worldPos;
     shadowRay.Direction = L;
     shadowRay.TMin = 0.01;
     shadowRay.TMax = 10000.0;
     ShadowPayload shadowPayload = { false };
     TraceRay(
         g_scene,
-        RAY_FLAG_NONE,
+        RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH,
         ~0,
         1,
         1,
@@ -48,27 +49,46 @@ void ClosestHit_Sphere(inout RayPayload payload, in MyAttr attr) {
         shadowRay,
         shadowPayload);
 
-    float factor = shadowPayload.hit ? 0.1 : 1.0;
+    float3 reflected = reflect(WorldRayDirection(), N);
+    float3 refracted;
+    float3 R;
+    N = dot(WorldRayDirection(), N) > 0 ? -N : N;
+    if (refract(-WorldRayDirection(), N, 1.0 / 1.5f, refracted)) {
+        R = refracted;
+    }
+    else {
+        return;
+    }
 
-    float2 uvs[3] =
-    {
-        Vertices[indices[0]].uv,
-        Vertices[indices[1]].uv,
-        Vertices[indices[2]].uv,
-    };
+    //float2 UV = getUV(getIndices(), attr);
+    RayPayload secondPayload = { payload.color,payload.recursion + 1 };
+    RayDesc secondRay;
+    secondRay.Origin = hitWorldPosition();
+    secondRay.Direction = R;
+    secondRay.TMin = 0.01;
+    secondRay.TMax = 10000.0;
+    TraceRay(
+        g_scene,
+        RAY_FLAG_NONE,
+        ~0,
+        0,
+        1,
+        0,
+        secondRay,
+        secondPayload);
 
-    float2 UV = getUV(uvs, attr);
-    float3 texColor = l_texture.SampleLevel(samLinear, UV, 0.0).rgb;
-    float4 color = float4(Lambert(N, L, texColor), 1);
+    float4 color = l_material.color * secondPayload.color;
+    payload.color = color;
 
-    float3 V = normalize(g_sceneCB.cameraPosition.xyz - worldPos);
-    color.rgb += Specular(N, L, float3(1, 1, 1));
-    color.rgb += g_sceneCB.lightAmbient.rgb;
-    color = saturate(color);
-    color = color * factor;
+    //float factor = shadowPayload.hit ? 0.1 : 1.0;
+    //float4 color = float4(Lambert(N, L, l_material.color.rgb * g_sceneCB.lightDiffuse.rgb), 1);
 
+    //float3 V = normalize(g_sceneCB.cameraPosition.xyz - worldPos);
+    //color.rgb += Specular(N, L, float3(1, 1, 1));
+    //color += g_sceneCB.lightAmbient;
+
+    //color = color * secondPayload.color;
+    //color = color * factor;
     //payload.color = color;
-    payload.color = float4(0, 0, 0, 1);
-
 }
 #endif //! SHADER_RAYTRACING_CLOSESTHIT_HLSL
