@@ -15,7 +15,6 @@ void ClosestHit_Stone(inout RayPayload payload, in MyAttr attr) {
     }
 
     float3 N = getNormal(getIndices(), attr);
-
     float3 worldPos = hitWorldPosition();
 
     float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);

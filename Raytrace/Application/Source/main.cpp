@@ -105,7 +105,7 @@ namespace HitGroupParams {
 static constexpr UINT SPHERE_COUNT = 1;
 static constexpr UINT PLANE_COUNT = 1;
 static constexpr UINT CUBE_COUNT = 1;
-static constexpr UINT STONE_COUNT = 1000;
+static constexpr UINT STONE_COUNT = 1;
 static constexpr UINT TLAS_NUM = SPHERE_COUNT + PLANE_COUNT + CUBE_COUNT + STONE_COUNT;
 
 static const std::vector<std::wstring> MODEL_NAMES =
@@ -841,6 +841,8 @@ void MainApp::calcFrameStatus() {
         const float z = Framework::Math::MathUtil::cos(mRotation) * RANGE;
         mLightPosition.x = x;
         mLightPosition.z = z;
+
+        mLightPosition.w = Framework::Math::MathUtil::sin(mRotation) *0.5f + 0.5f;
     }
 }
 

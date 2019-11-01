@@ -23,33 +23,37 @@ void ClosestHit_Sphere(inout RayPayload payload, in MyAttr attr) {
     if (payload.recursion > MAX_RECURSION) {
         return;
     }
-
+    float2 UV = getUV(getIndices(), attr);
     float3 N = normalize(hitWorldPosition() - l_material.color.xyz);
     float3 worldPos = hitWorldPosition();
-
     float3 L = normalize(g_sceneCB.lightPosition.xyz - worldPos);
+    if (random(UV) < g_sceneCB.lightPosition.w) {
+        float3 dir = WorldRayDirection();
+        RayPayload secondPayload = { payload.color,payload.recursion };
+        RayDesc secondRay;
+        secondRay.Origin = worldPos;
+        secondRay.Direction = dir;
+        secondRay.TMin = 0.01;
+        secondRay.TMax = 10000.0;
+        TraceRay(
+            g_scene,
+            RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
+            ~0,
+            0,
+            1,
+            0,
+            secondRay,
+            secondPayload);
 
-    float3 dir =  WorldRayDirection();
-    float2 UV = getUV(getIndices(), attr);
-    RayPayload secondPayload = { payload.color,payload.recursion };
-    RayDesc secondRay;
-    secondRay.Origin = worldPos;
-    secondRay.Direction =dir;
-    secondRay.TMin = 0.01;
-    secondRay.TMax = 10000.0;
-    TraceRay(
-        g_scene,
-        RAY_FLAG_CULL_BACK_FACING_TRIANGLES,
-        ~0,
-        0,
-        1,
-        0,
-        secondRay,
-        secondPayload);
-
-    float4 color =  secondPayload.color * 0.5f;
-    float dotNL = saturate(dot(N, L));
-    color.rgb += float3(1, 1, 1) * pow(dotNL, 50.0);
-    payload.color = color;
+        float4 color = secondPayload.color * 0.5f;
+        float dotNL = saturate(dot(N, L));
+        color.rgb += float3(1, 1, 1) * pow(dotNL, 50.0);
+        payload.color = color;
+    }
+    else {
+        float dotNL = saturate(dot(N, L));
+        payload.color = float4(1, 0, 0, 1) *dotNL;
+        payload.color += float4(1, 1, 1, 1) * pow(dotNL, 50.0);
+    }
 }
 #endif //! SHADER_RAYTRACING_CLOSESTHIT_HLSL
